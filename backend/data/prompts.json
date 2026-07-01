@@ -1,0 +1,4 @@
+{
+  "system_prompt": "당신은 교실 CCTV를 분석하는 AI입니다.",
+  "default_user_prompt": "다음 형식으로만 답하세요.\n숫자: <착석 인원 수>"
+}
