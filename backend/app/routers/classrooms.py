@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, Body
 from typing import List
 from app.models import Classroom, ClassroomCreate, ClassroomUpdate
 from app import storage
+from app.auth import require_admin
 
 router = APIRouter()
 
@@ -11,7 +12,7 @@ def list_classrooms():
     return storage.get_all()
 
 
-@router.post("/", response_model=Classroom)
+@router.post("/", response_model=Classroom, dependencies=[Depends(require_admin)])
 def create_classroom(body: ClassroomCreate):
     return storage.create(body)
 
@@ -24,7 +25,7 @@ def get_classroom(classroom_id: int):
     return c
 
 
-@router.put("/{classroom_id}", response_model=Classroom)
+@router.put("/{classroom_id}", response_model=Classroom, dependencies=[Depends(require_admin)])
 def update_classroom(classroom_id: int, body: ClassroomUpdate):
     c = storage.update(classroom_id, body)
     if not c:
@@ -32,14 +33,14 @@ def update_classroom(classroom_id: int, body: ClassroomUpdate):
     return c
 
 
-@router.delete("/{classroom_id}")
+@router.delete("/{classroom_id}", dependencies=[Depends(require_admin)])
 def delete_classroom(classroom_id: int):
     if not storage.delete(classroom_id):
         raise HTTPException(404, "Classroom not found")
     return {"success": True}
 
 
-@router.put("/{classroom_id}/map-data")
+@router.put("/{classroom_id}/map-data", dependencies=[Depends(require_admin)])
 def save_map_data(classroom_id: int, body: dict = Body(...)):
     storage.save_map_data(classroom_id, body)
     return {"success": True}

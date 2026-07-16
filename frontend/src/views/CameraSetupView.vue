@@ -309,11 +309,10 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
-import axios from 'axios'
+import api from '@/api'
 
 const SEAT_ROI_COLORS = ['#ef4444','#3b82f6','#22c55e','#f97316','#a855f7','#06b6d4','#ec4899','#84cc16']
 
-const api = axios.create({ baseURL: '/api' })
 const route = useRoute()
 const cStore = useClassroomStore()
 

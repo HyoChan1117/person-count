@@ -81,16 +81,8 @@
           <div
             v-for="cam in seatResult.cameras"
             :key="cam.camera_id"
-            class="rounded-xl overflow-hidden border border-violet-200 shadow-sm bg-white"
+            class="rounded-xl border border-violet-200 shadow-sm bg-white"
           >
-            <div class="relative bg-slate-800 cursor-pointer hover:opacity-90 transition" style="aspect-ratio:16/9"
-              @click="cam.image && openPreview(cam)"
-            >
-              <img v-if="cam.image" :src="`data:image/jpeg;base64,${cam.image}`" class="w-full h-full object-cover" />
-              <div v-else-if="cam.error" class="flex items-center justify-center h-full text-red-400 text-xs p-3 text-center">{{ cam.error }}</div>
-              <div v-else class="flex items-center justify-center h-full text-slate-500 text-xs">이미지 없음</div>
-              <div v-if="cam.image" class="absolute bottom-1.5 right-1.5 text-[10px] text-white/60 bg-black/30 px-1.5 py-0.5 rounded">클릭 확대</div>
-            </div>
             <div class="p-3">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-medium text-slate-600">{{ cam.name }}</span>
@@ -168,16 +160,8 @@
           <div
             v-for="cam in yoloLlmResult.cameras"
             :key="cam.camera_id"
-            class="rounded-xl overflow-hidden border border-blue-200 shadow-sm bg-white"
+            class="rounded-xl border border-blue-200 shadow-sm bg-white"
           >
-            <div class="relative bg-slate-800 cursor-pointer hover:opacity-90 transition" style="aspect-ratio:16/9"
-              @click="cam.image && openYoloPreview(cam)"
-            >
-              <img v-if="cam.image" :src="`data:image/jpeg;base64,${cam.image}`" class="w-full h-full object-cover" />
-              <div v-else-if="cam.error" class="flex items-center justify-center h-full text-red-400 text-xs p-3 text-center">{{ cam.error }}</div>
-              <div v-else class="flex items-center justify-center h-full text-slate-500 text-xs">이미지 없음</div>
-              <div v-if="cam.image" class="absolute bottom-1.5 right-1.5 text-[10px] text-white/60 bg-black/30 px-1.5 py-0.5 rounded">클릭 확대</div>
-            </div>
             <div class="p-3">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-xs font-medium text-slate-600">{{ cam.name }}</span>
@@ -234,47 +218,17 @@
       />
     </Teleport>
 
-    <!-- 좌석 점유 확대 모달 -->
-    <Teleport to="body">
-      <div
-        v-if="preview.open"
-        class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-        @click.self="closePreview"
-      >
-        <div class="bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden">
-          <div class="flex items-center justify-between px-5 py-3 bg-slate-800">
-            <div>
-              <span class="text-white font-semibold text-sm">{{ preview.cameraName }}</span>
-              <span class="text-slate-400 text-xs ml-2">— {{ preview.subtitle }}</span>
-            </div>
-            <div class="flex items-center gap-3">
-              <span v-if="preview.badge" class="text-sm font-bold" :class="preview.badgeClass">{{ preview.badge }}</span>
-              <button @click="closePreview" class="text-slate-400 hover:text-white text-lg leading-none">✕</button>
-            </div>
-          </div>
-          <div class="relative flex items-center justify-center min-h-48 bg-slate-900 p-2">
-            <img
-              v-if="preview.image"
-              :src="`data:image/jpeg;base64,${preview.image}`"
-              class="max-w-full max-h-[60vh] rounded object-contain"
-            />
-            <div v-else class="text-red-400 text-sm py-16">이미지 없음</div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import SeatPromptModal from '@/components/modals/SeatPromptModal.vue'
 import ClassroomPromptModal from '@/components/modals/ClassroomPromptModal.vue'
-import axios from 'axios'
+import api from '@/api'
 
-const api = axios.create({ baseURL: '/api' })
 const route = useRoute()
 const cStore = useClassroomStore()
 
@@ -314,39 +268,6 @@ async function fetchYoloLlm() {
   } finally {
     yoloLlmLoading.value = false
   }
-}
-
-// ── 확대 모달 ─────────────────────────────────────────────────────────────────
-
-const preview = reactive({
-  open: false,
-  cameraName: '',
-  subtitle: '',
-  image: null,
-  badge: null,
-  badgeClass: '',
-})
-
-function openPreview(cam) {
-  preview.open = true
-  preview.cameraName = cam.name
-  preview.subtitle = '좌석 점유 분석'
-  preview.image = cam.image ?? null
-  preview.badge = cam.occupied_count != null ? `${cam.occupied_count}석 점유` : null
-  preview.badgeClass = 'text-violet-400'
-}
-
-function openYoloPreview(cam) {
-  preview.open = true
-  preview.cameraName = cam.name
-  preview.subtitle = 'YOLO+LLM 분석'
-  preview.image = cam.image ?? null
-  preview.badge = cam.yolo_count != null ? `YOLO ${cam.yolo_count}명` : null
-  preview.badgeClass = 'text-blue-400'
-}
-
-function closePreview() {
-  preview.open = false
 }
 
 // ── 배치도 점유 오버레이 ──────────────────────────────────────────────────────

@@ -3,7 +3,8 @@ from __future__ import annotations
 
 import cv2
 import numpy as np
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from app.auth import require_admin
 from pydantic import BaseModel
 from typing import List
 
@@ -48,12 +49,12 @@ class SeatCountsRequest(BaseModel):
 class SeatLinesRequest(BaseModel):
     seat_lines: dict  # {"A1": [[x1, y1], [x2, y2]]}
 
-@router.post("/{classroom_id}/map-image")
+@router.post("/{classroom_id}/map-image", dependencies=[Depends(require_admin)])
 def save_map_image(classroom_id: int, body: MapImageRequest):
     storage.save_map_image(classroom_id, body.image)
     return {"ok": True}
 
-@router.post("/{classroom_id}/seat-counts")
+@router.post("/{classroom_id}/seat-counts", dependencies=[Depends(require_admin)])
 def update_seat_counts(classroom_id: int, body: SeatCountsRequest):
     """맵 에디터에서 카메라별 담당 자리 수를 동기화한다. 라벨(대소문자 무시)로 카메라를 매칭."""
     classroom = storage.get_one(classroom_id)
@@ -80,7 +81,7 @@ def update_seat_counts(classroom_id: int, body: SeatCountsRequest):
 
 
 
-@router.post("/{classroom_id}/seat-lines/{camera_id}")
+@router.post("/{classroom_id}/seat-lines/{camera_id}", dependencies=[Depends(require_admin)])
 def save_seat_lines(classroom_id: int, camera_id: str, body: SeatLinesRequest):
     """Save per-seat occupancy lines in camera frame coordinates."""
     classroom = storage.get_one(classroom_id)
@@ -99,7 +100,7 @@ def save_seat_lines(classroom_id: int, camera_id: str, body: SeatLinesRequest):
 
 # ── Background Subtraction ───────────────────────────────────────────────────
 
-@router.post("/{classroom_id}/bg-reference/{camera_id}")
+@router.post("/{classroom_id}/bg-reference/{camera_id}", dependencies=[Depends(require_admin)])
 def save_bg_reference(classroom_id: int, camera_id: str):
     """현재 RTSP 프레임을 이 카메라의 '빈 강의실 기준'으로 저장."""
     classroom = storage.get_one(classroom_id)
@@ -152,7 +153,7 @@ def bg_detect(classroom_id: int, camera_id: str):
         raise HTTPException(503, f"배경 차분 감지 오류: {e}")
 
 
-@router.post("/{classroom_id}/bg-reference-upload/{camera_id}")
+@router.post("/{classroom_id}/bg-reference-upload/{camera_id}", dependencies=[Depends(require_admin)])
 async def upload_bg_reference(classroom_id: int, camera_id: str, file: UploadFile = File(...)):
     """업로드한 이미지를 이 카메라의 빈 강의실 기준으로 저장."""
     classroom = storage.get_one(classroom_id)

@@ -3,7 +3,7 @@
     <div class="max-w-3xl mx-auto">
       <div class="flex items-center justify-between mb-6">
         <h1 class="text-xl font-bold text-slate-800">교실 목록</h1>
-        <button @click="showForm = true" class="btn-primary">+ 새 교실 추가</button>
+        <button v-if="auth.isAdmin" @click="showForm = true" class="btn-primary">+ 새 교실 추가</button>
       </div>
 
       <div v-if="store.loading" class="text-center py-12 text-slate-400">불러오는 중...</div>
@@ -22,6 +22,7 @@
           <div class="flex items-start justify-between mb-3">
             <h2 class="font-semibold text-slate-800">{{ c.name }}</h2>
             <button
+              v-if="auth.isAdmin"
               @click.stop="deleteClassroom(c.id)"
               class="text-slate-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition"
             >✕</button>
@@ -46,10 +47,12 @@
 
           <div class="flex gap-2 flex-wrap">
             <router-link
+              v-if="auth.isAdmin"
               :to="`/classrooms/${c.id}/setup`"
               class="flex-1 text-center text-xs bg-blue-600 text-white py-1.5 rounded-lg hover:bg-blue-700 transition"
             >카메라 설정</router-link>
             <button
+              v-if="auth.isAdmin"
               @click="openPromptModal(c)"
               class="text-xs bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition"
               title="교실 프롬프트 편집"
@@ -59,7 +62,7 @@
               class="flex-1 text-center text-xs bg-slate-100 text-slate-700 py-1.5 rounded-lg hover:bg-slate-200 transition"
             >대시보드</router-link>
           </div>
-          <div class="mt-2">
+          <div v-if="auth.isAdmin" class="mt-2">
             <router-link
               :to="`/classrooms/${c.id}/map`"
               class="block text-center text-xs bg-emerald-50 text-emerald-700 py-1.5 rounded-lg hover:bg-emerald-100 transition border border-emerald-200"
@@ -97,8 +100,10 @@
 import { ref, onMounted } from 'vue'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import { usePromptStore } from '@/stores/promptStore.js'
+import { useAuthStore } from '@/stores/authStore'
 import ClassroomPromptModal from '@/components/modals/ClassroomPromptModal.vue'
 
+const auth = useAuthStore()
 const store = useClassroomStore()
 const promptStore = usePromptStore()
 const showForm = ref(false)

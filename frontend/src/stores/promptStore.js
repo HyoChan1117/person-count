@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import axios from 'axios'
-
-const api = axios.create({ baseURL: '/api' })
+import api from '@/api'
 
 export const usePromptStore = defineStore('prompt', () => {
   const config = ref({ system_prompt: '', default_user_prompt: '' })

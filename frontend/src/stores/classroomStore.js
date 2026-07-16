@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import axios from 'axios'
-
-const api = axios.create({ baseURL: '/api' })
+import api from '@/api'
 
 export const useClassroomStore = defineStore('classroom', () => {
   const classrooms = ref([])
