@@ -30,7 +30,30 @@
             title="YOLO+LLM 프롬프트 편집"
             class="btn-yolo-llm-config"
           >⚙️</button>
+
+          <div class="w-px h-5 bg-slate-200 mx-0.5" />
+
+          <button @click="toggleLive" class="btn-live" :class="{ '!bg-red-600 hover:!bg-red-700': liveOn }">
+            {{ liveOn ? '⏹ 실시간 종료' : '🎥 실시간 탐지' }}
+          </button>
         </div>
+      </div>
+
+      <!-- 실시간 YOLO 탐지 -->
+      <div v-if="liveOn" class="mb-6">
+        <div v-if="!liveCameras.length" class="text-center py-10 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
+          RTSP가 설정된 카메라가 없습니다.
+        </div>
+        <div v-else class="rounded-xl border border-red-200 shadow-sm bg-white overflow-hidden max-w-xl">
+          <div class="px-3 py-1.5 flex items-center gap-2 border-b border-red-100">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+            <select v-model="liveCameraId" class="text-xs font-medium text-slate-600 bg-transparent outline-none">
+              <option v-for="cam in liveCameras" :key="cam.camera_id" :value="cam.camera_id">{{ cam.name }}</option>
+            </select>
+          </div>
+          <img :key="liveKey" :src="liveSrc" class="w-full aspect-video object-cover bg-slate-900" />
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1.5">부하를 줄이기 위해 한 번에 카메라 1대만 실시간으로 표시합니다.</p>
       </div>
 
       <!-- 좌석 점유 결과 -->
@@ -60,45 +83,49 @@
           </div>
         </div>
 
-        <!-- 배치도 오버레이 -->
-        <div v-if="getMapData()?.objects?.length" class="bg-white border border-violet-200 rounded-xl p-4 shadow-sm mb-3">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="text-xs font-semibold text-slate-700">교실 배치도</span>
-            <div class="flex items-center gap-2 text-[10px]">
-              <span class="w-3 h-3 rounded-sm bg-red-200 border border-red-400 inline-block" />
-              <span class="text-slate-500 mr-2">점유</span>
-              <span class="w-3 h-3 rounded-sm bg-orange-200 border border-orange-400 inline-block" />
-              <span class="text-slate-500 mr-2">근접(미착석)</span>
-              <span class="w-3 h-3 rounded-sm bg-green-200 border border-green-400 inline-block" />
-              <span class="text-slate-500">미점유</span>
-            </div>
-          </div>
-          <canvas ref="mapCanvasRef" class="rounded-lg w-full" />
-        </div>
-
-        <!-- 카메라별 카드 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div
-            v-for="cam in seatResult.cameras"
-            :key="cam.camera_id"
-            class="rounded-xl border border-violet-200 shadow-sm bg-white"
-          >
-            <div class="p-3">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-slate-600">{{ cam.name }}</span>
-                <span class="text-xs text-violet-600 font-bold">{{ cam.occupied_count }}/{{ cam.total }}석</span>
+        <!-- 배치도 + 카메라별 카드 -->
+        <div class="flex flex-col lg:flex-row gap-4 mb-3 items-start">
+          <!-- 배치도 오버레이 (절반 크기) -->
+          <div v-if="getMapData()?.objects?.length" class="bg-white border border-violet-200 rounded-xl p-4 shadow-sm w-full lg:w-1/2 shrink-0">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-semibold text-slate-700">교실 배치도</span>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="w-3 h-3 rounded-sm bg-red-200 border border-red-400 inline-block" />
+                <span class="text-slate-500 mr-2">점유</span>
+                <span class="w-3 h-3 rounded-sm bg-slate-200 border border-slate-400 inline-block" />
+                <span class="text-slate-500">미점유</span>
               </div>
-              <div class="flex flex-wrap gap-1 mb-2">
-                <span
-                  v-for="s in cam.occupied"
-                  :key="'occ-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700"
-                >{{ s }}</span>
-                <span
-                  v-for="s in cam.empty"
-                  :key="'emp-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400"
-                >{{ s }}</span>
+            </div>
+            <canvas ref="mapCanvasRef" class="rounded-lg w-full" />
+          </div>
+
+          <!-- 카메라별 카드 -->
+          <div
+            class="grid gap-4 flex-1 w-full"
+            :class="getMapData()?.objects?.length ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'"
+          >
+            <div
+              v-for="cam in seatResult.cameras"
+              :key="cam.camera_id"
+              class="rounded-xl border border-violet-200 shadow-sm bg-white"
+            >
+              <div class="p-3">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-medium text-slate-600">{{ cam.name }}</span>
+                  <span class="text-xs text-violet-600 font-bold">{{ cam.occupied_count }}/{{ cam.total }}석</span>
+                </div>
+                <div class="flex flex-wrap gap-1 mb-2">
+                  <span
+                    v-for="s in cam.occupied"
+                    :key="'occ-'+s"
+                    class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700"
+                  >{{ s }}</span>
+                  <span
+                    v-for="s in cam.empty"
+                    :key="'emp-'+s"
+                    class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400"
+                  >{{ s }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -139,55 +166,53 @@
           </div>
         </div>
 
-        <!-- YOLO+LLM 배치도 오버레이 -->
-        <div v-if="getMapData()?.objects?.length" class="bg-white border border-blue-200 rounded-xl p-4 shadow-sm mb-3">
-          <div class="flex items-center gap-3 mb-3">
-            <span class="text-xs font-semibold text-slate-700">교실 배치도</span>
-            <div class="flex items-center gap-2 text-[10px]">
-              <span class="w-3 h-3 rounded-sm bg-red-200 border border-red-400 inline-block" />
-              <span class="text-slate-500 mr-2">점유</span>
-              <span class="w-3 h-3 rounded-sm bg-orange-200 border border-orange-400 inline-block" />
-              <span class="text-slate-500 mr-2">근접(미착석)</span>
-              <span class="w-3 h-3 rounded-sm bg-green-200 border border-green-400 inline-block" />
-              <span class="text-slate-500">미점유</span>
+        <!-- YOLO+LLM 배치도 + 카메라별 카드 -->
+        <div class="flex flex-col lg:flex-row gap-4 mb-3 items-start">
+          <!-- 배치도 오버레이 (절반 크기) -->
+          <div v-if="getMapData()?.objects?.length" class="bg-white border border-blue-200 rounded-xl p-4 shadow-sm w-full lg:w-1/2 shrink-0">
+            <div class="flex items-center gap-3 mb-3">
+              <span class="text-xs font-semibold text-slate-700">교실 배치도</span>
+              <div class="flex items-center gap-2 text-[10px]">
+                <span class="w-3 h-3 rounded-sm bg-red-200 border border-red-400 inline-block" />
+                <span class="text-slate-500 mr-2">점유</span>
+                <span class="w-3 h-3 rounded-sm bg-slate-200 border border-slate-400 inline-block" />
+                <span class="text-slate-500">미점유</span>
+              </div>
             </div>
+            <canvas ref="yoloMapCanvasRef" class="rounded-lg w-full" />
           </div>
-          <canvas ref="yoloMapCanvasRef" class="rounded-lg w-full" />
-        </div>
 
-        <!-- 카메라별 카드 -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- 카메라별 카드 -->
           <div
-            v-for="cam in yoloLlmResult.cameras"
-            :key="cam.camera_id"
-            class="rounded-xl border border-blue-200 shadow-sm bg-white"
+            class="grid gap-4 flex-1 w-full"
+            :class="getMapData()?.objects?.length ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'"
           >
-            <div class="p-3">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-xs font-medium text-slate-600">{{ cam.name }}</span>
-                <span class="text-xs text-blue-600 font-bold">
-                  {{ cam.occupied_count }}/{{ cam.total }}석
-                </span>
+            <div
+              v-for="cam in yoloLlmResult.cameras"
+              :key="cam.camera_id"
+              class="rounded-xl border border-blue-200 shadow-sm bg-white"
+            >
+              <div class="p-3">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-xs font-medium text-slate-600">{{ cam.name }}</span>
+                  <span class="text-xs text-blue-600 font-bold">
+                    {{ cam.occupied_count }}/{{ cam.total }}석
+                  </span>
+                </div>
+                <div v-if="cam.total > 0" class="flex flex-wrap gap-1 mb-2">
+                  <span
+                    v-for="s in cam.occupied"
+                    :key="'occ-'+s"
+                    class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700"
+                  >{{ s }}</span>
+                  <span
+                    v-for="s in cam.empty"
+                    :key="'emp-'+s"
+                    class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400"
+                  >{{ s }}</span>
+                </div>
+                <p v-if="cam.error" class="text-xs text-red-400">{{ cam.error }}</p>
               </div>
-              <div v-if="cam.total > 0" class="flex flex-wrap gap-1 mb-2">
-                <span
-                  v-for="s in cam.occupied"
-                  :key="'occ-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700"
-                >{{ s }}</span>
-                <span
-                  v-for="s in cam.near"
-                  :key="'near-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-orange-100 text-orange-700"
-                >{{ s }}</span>
-                <span
-                  v-for="s in cam.empty"
-                  :key="'emp-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400"
-                >{{ s }}</span>
-              </div>
-              <p v-if="cam.llm_response" class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">{{ filterLlmResponse(cam.llm_response) }}</p>
-              <p v-else-if="cam.error" class="text-xs text-red-400">{{ cam.error }}</p>
             </div>
           </div>
         </div>
@@ -242,7 +267,44 @@ const seatResult = ref(null)
 const yoloLlmLoading = ref(false)
 const yoloLlmResult = ref(null)
 
-onMounted(() => cStore.fetchOne(Number(route.params.id)))
+const mapData = ref(null)
+
+// ── 실시간 YOLO 탐지 ─────────────────────────────────────────────────────────
+
+const liveOn = ref(false)
+const liveKey = ref(0)
+const liveCameraId = ref(null)
+
+const liveCameras = computed(() => (classroom.value?.cameras ?? []).filter(c => c.rtsp_url))
+
+function toggleLive() {
+  liveOn.value = !liveOn.value
+  if (liveOn.value) {
+    if (!liveCameraId.value || !liveCameras.value.some(c => c.camera_id === liveCameraId.value)) {
+      liveCameraId.value = liveCameras.value[0]?.camera_id ?? null
+    }
+    liveKey.value++
+  }
+}
+
+// 카메라를 바꿀 때도 이전 스트림이 남지 않도록 <img>를 완전히 새로 만든다
+watch(liveCameraId, () => { if (liveOn.value) liveKey.value++ })
+
+const liveSrc = computed(() => `/api/analysis/${route.params.id}/live/${liveCameraId.value}?t=${liveKey.value}`)
+
+async function fetchMapData() {
+  try {
+    const { data } = await api.get(`/classrooms/${route.params.id}/map-data`)
+    mapData.value = data
+  } catch {
+    mapData.value = null
+  }
+}
+
+onMounted(() => {
+  cStore.fetchOne(Number(route.params.id))
+  fetchMapData()
+})
 
 async function fetchSeatOccupancy() {
   seatLoading.value = true
@@ -276,10 +338,7 @@ const mapCanvasRef = ref(null)
 const yoloMapCanvasRef = ref(null)
 
 function getMapData() {
-  try {
-    const raw = localStorage.getItem(`map_${route.params.id}`)
-    return raw ? JSON.parse(raw) : null
-  } catch { return null }
+  return mapData.value
 }
 
 // LLM 응답 "5 - 공부\n8 - 휴대폰" → Map { '5' → '공부', '8' → '휴대폰' }
@@ -302,16 +361,13 @@ async function drawMapOnCanvas(canvas, cameras, seatActivity = new Map()) {
   const { objects, mapW = 900, mapH = 600 } = mapData
 
   const allOccupied = new Set()
-  const allNear = new Set()
   const allEmpty = new Set()
   for (const cam of cameras) {
     for (const s of cam.occupied ?? []) allOccupied.add(s)
-    for (const s of cam.near ?? []) allNear.add(s)
     for (const s of cam.empty ?? []) allEmpty.add(s)
   }
   // LLM이 활동을 응답한 좌석은 점유로 확정
   for (const [sid] of seatActivity) allOccupied.add(sid)
-  for (const s of allOccupied) allNear.delete(s)
 
   const maxW = Math.min(canvas.parentElement?.clientWidth ?? 500, 480)
   const scale = Math.min(maxW / mapW, 1)
@@ -321,15 +377,6 @@ async function drawMapOnCanvas(canvas, cameras, seatActivity = new Map()) {
   const ctx = canvas.getContext('2d')
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  ctx.strokeStyle = '#e2e8f0'
-  ctx.lineWidth = 0.5
-  for (let x = 0; x <= mapW; x += 40) {
-    ctx.beginPath(); ctx.moveTo(x * scale, 0); ctx.lineTo(x * scale, mapH * scale); ctx.stroke()
-  }
-  for (let y = 0; y <= mapH; y += 40) {
-    ctx.beginPath(); ctx.moveTo(0, y * scale); ctx.lineTo(mapW * scale, y * scale); ctx.stroke()
-  }
-
   for (const obj of objects) {
     const x = obj.x * scale, y = obj.y * scale
     const w = obj.w * scale, h = obj.h * scale
@@ -338,9 +385,11 @@ async function drawMapOnCanvas(canvas, cameras, seatActivity = new Map()) {
       ctx.fillStyle = '#e2e8f0'
       ctx.beginPath(); ctx.roundRect(x, y, w, h, 3); ctx.fill()
     } else if (obj.type === 'cctv') {
-      ctx.fillStyle = '#475569'
-      ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill()
-      ctx.fillStyle = '#fff'
+      ctx.fillStyle = '#e2e8f0'
+      ctx.strokeStyle = '#94a3b8'
+      ctx.lineWidth = 1.5
+      ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
+      ctx.fillStyle = '#334155'
       ctx.font = `bold ${Math.min(h * 0.28, 11)}px sans-serif`
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
       ctx.fillText(obj.label || 'CAM', x + w / 2, y + h / 2)
@@ -348,17 +397,16 @@ async function drawMapOnCanvas(canvas, cameras, seatActivity = new Map()) {
       const label = obj.label?.trim()
       const activity = label ? seatActivity.get(label) : undefined
       const isOcc  = label && allOccupied.has(label)
-      const isNear = label && !isOcc && allNear.has(label)
-      const isEmpty = label && !isOcc && !isNear && allEmpty.has(label)
-      ctx.fillStyle = isOcc ? '#fee2e2' : isNear ? '#ffedd5' : isEmpty ? '#dcfce7' : '#f5e9cc'
-      ctx.strokeStyle = isOcc ? '#ef4444' : isNear ? '#f97316' : isEmpty ? '#22c55e' : '#c9a55a'
-      ctx.lineWidth = isOcc || isNear || isEmpty ? 2.5 : 1.5
-      ctx.beginPath(); ctx.roundRect(x, y, w, h, 5); ctx.fill(); ctx.stroke()
+      const isEmpty = label && !isOcc && allEmpty.has(label)
+      ctx.fillStyle = isOcc ? '#fee2e2' : isEmpty ? '#f1f5f9' : '#f8fafc'
+      ctx.strokeStyle = isOcc ? '#ef4444' : isEmpty ? '#94a3b8' : '#cbd5e1'
+      ctx.lineWidth = isOcc || isEmpty ? 2.5 : 1.5
+      ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke()
       if (label) {
         const hasActivity = !!activity
         const labelY = hasActivity ? y + h * 0.38 : y + h / 2
         ctx.font = `bold ${Math.min(h * 0.36, 15)}px sans-serif`
-        ctx.fillStyle = isOcc ? '#dc2626' : isNear ? '#ea580c' : isEmpty ? '#16a34a' : '#5a3e1b'
+        ctx.fillStyle = isOcc ? '#dc2626' : isEmpty ? '#64748b' : '#1e293b'
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
         ctx.fillText(label, x + w / 2, labelY)
         if (hasActivity) {
@@ -384,13 +432,6 @@ async function drawYoloLlmMap() {
   drawMapOnCanvas(yoloMapCanvasRef.value, cameras, seatActivity)
 }
 
-function filterLlmResponse(text) {
-  return text.split('\n')
-    .map(l => l.replace(/\*\*/g, '').trim())
-    .filter(l => !l.startsWith('자세:'))
-    .join('\n').trim()
-}
-
 watch(seatResult, () => { if (seatResult.value) drawOccupancyMap() })
 watch(yoloLlmResult, () => { if (yoloLlmResult.value) drawYoloLlmMap() })
 </script>
@@ -407,5 +448,8 @@ watch(yoloLlmResult, () => { if (yoloLlmResult.value) drawYoloLlmMap() })
 }
 .btn-yolo-llm-config {
   @apply bg-blue-100 text-blue-700 text-xs px-2 py-1.5 rounded-lg hover:bg-blue-200 transition;
+}
+.btn-live {
+  @apply bg-slate-700 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-slate-800 transition;
 }
 </style>

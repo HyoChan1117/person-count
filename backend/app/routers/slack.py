@@ -67,7 +67,6 @@ def _run_seat_and_reply(channel_id: str, response_url: str, classroom_id: int) -
         from app.services.vision_llm_detection import _run_seat_occupancy
 
         all_occupied: set[str] = set()
-        all_near: set[str] = set()
         all_seen: set[str] = set()
 
         cameras_with_seats = [c for c in classroom.cameras if c.rtsp_url and c.seat_lines]
@@ -80,29 +79,24 @@ def _run_seat_and_reply(channel_id: str, response_url: str, classroom_id: int) -
                 continue
             r = _run_seat_occupancy(frame, cam, yolo_model=classroom.yolo_model or "yolov8x", conf_threshold=classroom.conf_threshold)
             all_occupied.update(r.get("occupied", []))
-            all_near.update(r.get("near", []))
             all_seen.update(r.get("occupied", []))
-            all_seen.update(r.get("near", []))
             all_seen.update(r.get("empty", []))
 
-        all_near -= all_occupied  # 빨강 우선
-        all_empty = all_seen - all_occupied - all_near
+        all_empty = all_seen - all_occupied
 
         total_seats = len(all_seen)
         total_occupied = len(all_occupied)
-        total_near = len(all_near)
         now = time.strftime("%Y-%m-%d %H:%M:%S")
-        near_text = f", 🟠 근접 {total_near}석" if total_near else ""
         comment = (
             f"🪑 *{classroom.name}* 좌석 점유 현황 (YOLO) — "
-            f"🔴 점유 {total_occupied}/{total_seats}석{near_text} ({now})"
+            f"🔴 점유 {total_occupied}/{total_seats}석 ({now})"
         )
 
         map_data = storage.get_map_data(classroom_id)
         base_url = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
         if map_data and base_url:
             from app.services.map_renderer import render_occupancy_map
-            png_bytes = render_occupancy_map(map_data, all_occupied, all_empty, near=all_near)
+            png_bytes = render_occupancy_map(map_data, all_occupied, all_empty)
             snap_id = _store_snapshot(png_bytes)
             image_url = f"{base_url}/api/slack/snapshot/{snap_id}"
             _post_to_slack(response_url, {
@@ -134,7 +128,6 @@ def _run_yolo_llm_and_reply(channel_id: str, response_url: str, classroom_id: in
         user_prompt = (base + "\n" + extra).strip() if extra else base
 
         all_occupied: set[str] = set()
-        all_near: set[str] = set()
         all_seen: set[str] = set()
         total_yolo = 0
 
@@ -152,34 +145,29 @@ def _run_yolo_llm_and_reply(channel_id: str, response_url: str, classroom_id: in
                 user_prompt=user_prompt,
                 conf_threshold=classroom.yolo_llm_conf_threshold,
                 seat_lines=cam.seat_lines or {},
-                llm_model=classroom.yolo_llm_model or "claude-haiku-4-5-20251001",
+                llm_model=classroom.yolo_llm_model or "claude-sonnet-5",
                 yolo_model=classroom.yolo_llm_yolo_model or "yolo26x",
             )
             total_yolo += r["yolo_count"]
             all_occupied.update(r.get("occupied", []))
-            all_near.update(r.get("near", []))
             all_seen.update(r.get("occupied", []))
-            all_seen.update(r.get("near", []))
             all_seen.update(r.get("empty", []))
 
-        all_near -= all_occupied
-        all_empty = all_seen - all_occupied - all_near
+        all_empty = all_seen - all_occupied
 
         total_seats = len(all_seen)
         total_occupied = len(all_occupied)
-        total_near = len(all_near)
         now = time.strftime("%Y-%m-%d %H:%M:%S")
-        near_text = f", 🟠 근접 {total_near}석" if total_near else ""
         comment = (
             f"🤖 *{classroom.name}* 좌석 점유 현황 (YOLO+LLM) — "
-            f"🔴 점유 {total_occupied}/{total_seats}석{near_text} ({now})"
+            f"🔴 점유 {total_occupied}/{total_seats}석 ({now})"
         )
 
         map_data = storage.get_map_data(classroom_id)
         base_url = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
         if map_data and base_url:
             from app.services.map_renderer import render_occupancy_map
-            png_bytes = render_occupancy_map(map_data, all_occupied, all_empty, near=all_near)
+            png_bytes = render_occupancy_map(map_data, all_occupied, all_empty)
             snap_id = _store_snapshot(png_bytes)
             image_url = f"{base_url}/api/slack/snapshot/{snap_id}"
             _post_to_slack(response_url, {
@@ -257,5 +245,23 @@ async def slash_seat_detail_command(request: Request, background_tasks: Backgrou
 
     background_tasks.add_task(_run_yolo_llm_and_reply, channel_id, response_url, classroom.id)
     return JSONResponse({"text": f"⏳ *{classroom.name}* 좌석 점유 분석 중... 잠시만 기다려주세요."})
+
+
+@router.post("/slash-admin")
+async def slash_admin_command(request: Request):
+    """Slack /관리자 커맨드 핸들러. 관리자 웹 페이지 링크를 알려준다 (요청한 사람에게만 표시)."""
+    body = await request.body()
+    if not _verify_signature(
+        body,
+        request.headers.get("X-Slack-Request-Timestamp", ""),
+        request.headers.get("X-Slack-Signature", ""),
+    ):
+        raise HTTPException(403, "Invalid Slack signature")
+
+    admin_url = os.getenv("ADMIN_PANEL_URL") or os.getenv("PUBLIC_BASE_URL", "")
+    if not admin_url:
+        return JSONResponse({"text": "❓ 관리자 페이지 주소가 설정되어 있지 않습니다. (ADMIN_PANEL_URL 환경변수를 확인하세요)"})
+
+    return JSONResponse({"text": f"🔑 관리자 페이지: {admin_url}"})
 
 

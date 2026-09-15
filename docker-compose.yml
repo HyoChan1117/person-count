@@ -1,7 +1,7 @@
 services:
   backend:
     build: ./backend
-    env_file: ./backend/.env
+    env_file: ./backend/.env.production
     environment:
       CORS_ORIGINS: "*"
     volumes:

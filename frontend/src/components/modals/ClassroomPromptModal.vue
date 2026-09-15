@@ -141,16 +141,37 @@ import { usePromptStore } from '@/stores/promptStore.js'
 
 const YOLO_MODEL_OPTIONS = [
   { value: 'yolo26x', label: 'YOLO26x', desc: '강의실 — 사람 몸 감지 (고정밀)' },
-  { value: 'medium',       label: 'Medium',        desc: '독서실 — 머리만 보이는 환경 (경량)' },
 ]
 
 const LLM_MODEL_OPTIONS = [
-  { value: 'claude-haiku-4-5-20251001', label: 'Haiku 4.5', desc: '빠름 / 저비용 (기본값)' },
-  { value: 'claude-sonnet-4-6',         label: 'Sonnet 4.6', desc: '정확 / 고비용' },
+  { value: 'claude-sonnet-5', label: 'Sonnet 5', desc: '빠름 / 저비용 (기본값)' },
+  { value: 'claude-opus-5',   label: 'Opus 5',   desc: '정확 / 고비용' },
 ]
 
 const EXCLUSION_HEADER = '# 카운트 제외 대상'
 const SEAT_HEADER = '# 카메라별 자릿수'
+
+function extractListSection(text, header) {
+  const idx = text.indexOf(header)
+  if (idx === -1) return { items: [], rest: text }
+  const before = text.slice(0, idx).trim()
+  const after = text.slice(idx + header.length)
+  const lines = after.split('\n')
+  const items = []
+  const leftover = []
+  let inList = true
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    if (inList && trimmed.startsWith('- ')) {
+      items.push(trimmed.slice(2).trim())
+    } else {
+      inList = false
+      leftover.push(line)
+    }
+  }
+  return { items, rest: [before, ...leftover].filter(Boolean).join('\n').trim() }
+}
 
 
 const props = defineProps({
@@ -203,29 +224,11 @@ function parsePrompt(text) {
     remaining = [before, ...leftover].filter(Boolean).join('\n').trim()
   }
 
-  const headerIdx = remaining.indexOf(EXCLUSION_HEADER)
-  if (headerIdx !== -1) {
-    const before = remaining.slice(0, headerIdx).trim()
-    const after = remaining.slice(headerIdx + EXCLUSION_HEADER.length)
-    const lines = after.split('\n')
-    const itemLines = []
-    const leftover = []
-    let inList = true
-    for (const line of lines) {
-      const trimmed = line.trim()
-      if (!trimmed) continue
-      if (inList && trimmed.startsWith('- ')) {
-        itemLines.push(trimmed.slice(2).trim())
-      } else {
-        inList = false
-        leftover.push(line)
-      }
-    }
-    result.exclusions = itemLines
-    result.extra = [before, ...leftover].filter(Boolean).join('\n').trim()
-  } else {
-    result.extra = remaining
-  }
+  const excl = extractListSection(remaining, EXCLUSION_HEADER)
+  result.exclusions = excl.items
+  remaining = excl.rest
+
+  result.extra = remaining
 
   return result
 }
@@ -245,7 +248,7 @@ const DEFAULT_EXTRA = '각 사람이 좌석에 앉아 있는지(seated), 서 있
 const parsed = parsePrompt(props.classroom.prompt ?? '')
 
 const selectedYoloModel = ref(props.classroom.yolo_llm_yolo_model ?? 'yolo26x')
-const selectedLlmModel = ref(props.classroom.yolo_llm_model ?? 'claude-haiku-4-5-20251001')
+const selectedLlmModel = ref(props.classroom.yolo_llm_model ?? 'claude-sonnet-5')
 const confThreshold = ref(props.classroom.yolo_llm_conf_threshold ?? 0.35)
 const exclusionItems = ref([...parsed.exclusions])
 const extraNotes = ref(parsed.extra || DEFAULT_EXTRA)

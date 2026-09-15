@@ -73,7 +73,6 @@ import { useClassroomStore } from '@/stores/classroomStore.js'
 
 const MODEL_OPTIONS = [
   { value: 'yolo26x-pose', label: 'YOLO26x-pose', desc: '강의실 — 머리+몸 전체 감지 (고정밀)' },
-  { value: 'medium',  label: 'Medium',   desc: '독서실 — 머리만 보이는 환경 (경량)' },
 ]
 
 const props = defineProps({

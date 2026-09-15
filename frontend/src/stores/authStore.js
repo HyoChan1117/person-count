@@ -1,31 +1,22 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', () => {
-  const token = ref(localStorage.getItem('auth_token'))
-  const user = ref(JSON.parse(localStorage.getItem('auth_user') || 'null'))
+  const token = ref(localStorage.getItem('admin_token'))
 
-  const isAuthenticated = computed(() => !!token.value)
-  const isAdmin = computed(() => !!user.value?.is_admin)
+  const isAdmin = computed(() => !!token.value)
 
-  function setToken(newToken) {
-    token.value = newToken
-    localStorage.setItem('auth_token', newToken)
-    try {
-      const payload = JSON.parse(atob(newToken.split('.')[1]))
-      user.value = { email: payload.sub, name: payload.name, picture: payload.picture, is_admin: payload.is_admin }
-      localStorage.setItem('auth_user', JSON.stringify(user.value))
-    } catch {
-      // ignore malformed token
-    }
+  async function login(password) {
+    const res = await axios.post('/auth/admin/login', { password })
+    token.value = res.data.token
+    localStorage.setItem('admin_token', token.value)
   }
 
   function logout() {
     token.value = null
-    user.value = null
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('auth_user')
+    localStorage.removeItem('admin_token')
   }
 
-  return { token, user, isAuthenticated, isAdmin, setToken, logout }
+  return { token, isAdmin, login, logout }
 })

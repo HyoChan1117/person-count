@@ -116,24 +116,6 @@
                 633
               ]
             ],
-            "27": [
-              [
-                559,
-                238
-              ],
-              [
-                268,
-                310
-              ],
-              [
-                617,
-                292
-              ],
-              [
-                153,
-                430
-              ]
-            ],
             "28": [
               [
                 616,
@@ -706,28 +688,53 @@
         }
       ],
       "created_at": "2026-06-08T22:46:55.565831",
-      "updated_at": "2026-07-01T14:12:24.653262",
-      "prompt": "# 카운트 제외 대상\n- 모니터 화면 속 사람\n- 의자에 걸려있는 옷\n- 인형\n- 서 있는 사람\n- 걸어나가는 사람\n- 등 뒤에 의자 등받이가 없는 사람\n각 사람이 좌석에 앉아 있는지(seated), 서 있는지(standing) 판단하세요.",
+      "updated_at": "2026-09-15T19:48:44.156441",
+      "prompt": "각 사람이 좌석에 앉아 있는지(seated), 서 있는지(standing) 판단하세요.",
       "seat_prompt": "1. YOLO가 놓친 앉아있는 사람이 없는지 반드시 재확인합니다.\n2. 하체가 보이지 않거나 머리와 등만 보여도 앉아있는 사람으로 판단합니다.\n3. 사람인지 불확실하더라도 앉아있을 가능성이 있으면 점유로 판단합니다.",
       "yolo_model": "yolo26x-pose",
-      "conf_threshold": 0.25,
-      "yolo_llm_model": "claude-sonnet-4-6",
+      "conf_threshold": 0.2,
+      "yolo_llm_model": "claude-opus-5",
       "yolo_llm_conf_threshold": 0.2,
-      "yolo_llm_yolo_model": "yolo26x"
-    },
-    {
-      "id": 2,
-      "name": "창조관 405호",
-      "cameras": [],
-      "prompt": null,
-      "yolo_model": "yolov8x",
-      "conf_threshold": null,
-      "yolo_llm_model": "claude-haiku-4-5-20251001",
-      "yolo_llm_conf_threshold": null,
-      "yolo_llm_yolo_model": "yolo26x-pose",
-      "created_at": "2026-06-30T01:32:58.293673",
-      "updated_at": "2026-06-30T01:32:58.293673"
+      "yolo_llm_yolo_model": "yolo26x",
+      "schedule": {
+        "mon": [
+          11,
+          12,
+          16,
+          17
+        ],
+        "tue": [
+          9,
+          10,
+          11,
+          12,
+          14,
+          15
+        ],
+        "wed": [
+          9,
+          10,
+          11,
+          12,
+          14,
+          15
+        ],
+        "thu": [
+          9,
+          10,
+          11,
+          12,
+          15
+        ],
+        "fri": [
+          11,
+          12,
+          15,
+          16,
+          17
+        ]
+      }
     }
   ],
-  "next_id": 3
+  "next_id": 4
 }

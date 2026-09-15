@@ -24,11 +24,12 @@ class Classroom(BaseModel):
     name: str
     cameras: List[Camera] = []
     prompt: Optional[str] = None
-    yolo_model: Optional[str] = "yolov8x"  # "yolov8x" | "medium"
+    yolo_model: Optional[str] = "yolov8x"
     conf_threshold: Optional[float] = None  # YOLO 감지 신뢰도 임계값 (None = 기본값 0.30)
-    yolo_llm_model: Optional[str] = "claude-haiku-4-5-20251001"  # YOLO+LLM에 사용할 Claude 모델
+    yolo_llm_model: Optional[str] = "claude-sonnet-5"  # YOLO+LLM에 사용할 Claude 모델
     yolo_llm_conf_threshold: Optional[float] = None  # YOLO+LLM용 YOLO 임계값 (None = 기본값 0.35)
-    yolo_llm_yolo_model: Optional[str] = "yolo26x-pose"  # YOLO+LLM용 YOLO 모델 ("yolo26x-pose" | "medium")
+    yolo_llm_yolo_model: Optional[str] = "yolo26x-pose"  # YOLO+LLM용 YOLO 모델
+    schedule: Optional[dict] = None  # {"mon": [9, 10, ...], ...} 요일별 수업이 있는 정시(9~21)
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
@@ -46,6 +47,7 @@ class ClassroomUpdate(BaseModel):
     yolo_llm_model: Optional[str] = None
     yolo_llm_conf_threshold: Optional[float] = None
     yolo_llm_yolo_model: Optional[str] = None
+    schedule: Optional[dict] = None
 
 
 class PromptConfig(BaseModel):

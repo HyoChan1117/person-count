@@ -1,9 +1,12 @@
 """분석 라우터: 프레임 캡처, ROI 저장, 인원 카운트."""
 from __future__ import annotations
 
+from datetime import datetime, timedelta
+
 import cv2
 import numpy as np
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
+from fastapi.responses import StreamingResponse
 from app.auth import require_admin
 from pydantic import BaseModel
 from typing import List
@@ -35,6 +38,33 @@ def get_camera_frame(classroom_id: int, camera_id: str):
         raise
     except Exception as e:
         raise HTTPException(503, f"프레임 캡처 오류: {e}")
+
+
+# ── 실시간 YOLO 탐지 스트리밍 ──────────────────────────────────────────────────
+
+@router.get("/{classroom_id}/live/{camera_id}")
+def live_detection(classroom_id: int, camera_id: str, request: Request):
+    classroom = storage.get_one(classroom_id)
+    if not classroom:
+        raise HTTPException(404, "Classroom not found")
+    camera = next((c for c in classroom.cameras if c.camera_id == camera_id), None)
+    if not camera:
+        raise HTTPException(404, "Camera not found")
+    if not camera.rtsp_url:
+        raise HTTPException(400, "카메라에 RTSP URL이 없습니다")
+
+    from app.services.live_stream import mjpeg_stream
+    generator = mjpeg_stream(
+        request,
+        camera.rtsp_url,
+        model_name=classroom.yolo_model or "yolov8x",
+        conf_threshold=classroom.conf_threshold or 0.3,
+    )
+    return StreamingResponse(
+        generator,
+        media_type="multipart/x-mixed-replace; boundary=frame",
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"},
+    )
 
 
 # ── ROI / 맵 저장 ─────────────────────────────────────────────────────────────
@@ -206,7 +236,6 @@ def seat_occupancy(classroom_id: int):
 
         results = []
         global_occupied: set[str] = set()
-        global_near: set[str] = set()
         global_seen: set[str] = set()
 
         for camera, frame in capture_rtsp_frames_parallel(cameras_with_seats):
@@ -216,7 +245,7 @@ def seat_occupancy(classroom_id: int):
                     "camera_id": camera.camera_id,
                     "name": camera.name,
                     "error": "캡처 실패",
-                    "occupied": [], "near": [], "empty": seat_ids,
+                    "occupied": [], "empty": seat_ids,
                     "total": len(seat_ids), "occupied_count": 0,
                 })
                 global_seen.update(seat_ids)
@@ -225,26 +254,22 @@ def seat_occupancy(classroom_id: int):
                 r = _run_seat_occupancy(frame, camera, yolo_model=classroom.yolo_model or "yolov8x", conf_threshold=classroom.conf_threshold)
                 results.append({"camera_id": camera.camera_id, "name": camera.name, **r})
                 global_occupied.update(r.get("occupied", []))
-                global_near.update(r.get("near", []))
                 global_seen.update(r.get("occupied", []))
-                global_seen.update(r.get("near", []))
                 global_seen.update(r.get("empty", []))
             except Exception as e:
                 results.append({
                     "camera_id": camera.camera_id, "name": camera.name,
                     "error": str(e),
-                    "occupied": [], "near": [], "empty": seat_ids,
+                    "occupied": [], "empty": seat_ids,
                     "total": len(seat_ids), "occupied_count": 0,
                 })
                 global_seen.update(seat_ids)
 
-        global_near -= global_occupied  # 빨강 우선: 이미 점유된 좌석은 near에서 제거
-        global_empty = global_seen - global_occupied - global_near
+        global_empty = global_seen - global_occupied
         return {
             "cameras": results,
             "total_seats": len(global_seen),
             "total_occupied": len(global_occupied),
-            "total_near": len(global_near),
             "total_empty": len(global_empty),
         }
     except HTTPException:
@@ -278,7 +303,6 @@ def yolo_llm_count(classroom_id: int):
         results = []
         total_count = 0
         global_occupied: set[str] = set()
-        global_near: set[str] = set()
         global_seen: set[str] = set()
 
         for camera, frame in capture_rtsp_frames_parallel(cameras_with_rtsp):
@@ -289,7 +313,7 @@ def yolo_llm_count(classroom_id: int):
                     "name": camera.name,
                     "error": "캡처 실패",
                     "yolo_count": 0,
-                    "occupied": [], "near": [], "empty": seat_ids,
+                    "occupied": [], "empty": seat_ids,
                     "total": len(seat_ids), "occupied_count": 0,
                     "llm_response": None,
                 })
@@ -302,15 +326,13 @@ def yolo_llm_count(classroom_id: int):
                     user_prompt=user_prompt,
                     conf_threshold=classroom.yolo_llm_conf_threshold,
                     seat_lines=camera.seat_lines or {},
-                    llm_model=classroom.yolo_llm_model or "claude-haiku-4-5-20251001",
+                    llm_model=classroom.yolo_llm_model or "claude-sonnet-5",
                     yolo_model=classroom.yolo_llm_yolo_model or "yolo26x",
                 )
                 results.append({"camera_id": camera.camera_id, "name": camera.name, **r})
                 total_count += r["yolo_count"]
                 global_occupied.update(r.get("occupied", []))
-                global_near.update(r.get("near", []))
                 global_seen.update(r.get("occupied", []))
-                global_seen.update(r.get("near", []))
                 global_seen.update(r.get("empty", []))
             except Exception as e:
                 results.append({
@@ -318,21 +340,59 @@ def yolo_llm_count(classroom_id: int):
                     "name": camera.name,
                     "error": str(e),
                     "yolo_count": 0,
-                    "occupied": [], "near": [], "empty": seat_ids,
+                    "occupied": [], "empty": seat_ids,
                     "total": len(seat_ids), "occupied_count": 0,
                     "llm_response": None,
                 })
                 global_seen.update(seat_ids)
 
-        global_near -= global_occupied
         return {
             "cameras": results,
             "total_yolo_count": total_count,
             "total_seats": len(global_seen),
             "total_occupied": len(global_occupied),
-            "total_near": len(global_near),
         }
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(503, f"YOLO+LLM 카운트 오류: {e}")
+
+
+# ── 좌석 점유 모니터링 (10분 주기 스냅샷 기록, 매주 월요일 00시 초기화) ────────────
+
+@router.get("/{classroom_id}/occupancy-stats-daily")
+def occupancy_stats_daily(classroom_id: int, date: str):
+    """지정 날짜(YYYY-MM-DD, 이번 주 내) 하루치 좌석별 점유 시간(분)을 집계한다."""
+    classroom = storage.get_one(classroom_id)
+    if not classroom:
+        raise HTTPException(404, "Classroom not found")
+    try:
+        day = datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(400, "date는 YYYY-MM-DD 형식이어야 합니다")
+
+    now = datetime.now()
+    since = day.isoformat(timespec="seconds")
+    until = (day + timedelta(days=1)).isoformat(timespec="seconds")
+    period_minutes = int((now - day).total_seconds() // 60) if day.date() == now.date() else 24 * 60
+    period_minutes = max(0, min(period_minutes, 24 * 60))
+
+    from app.services.occupancy_monitor import compute_seat_stats
+    stats = compute_seat_stats(classroom_id, since_iso=since, until_iso=until)
+    return {"date": date, "period_minutes": period_minutes, "seats": stats}
+
+
+@router.get("/{classroom_id}/occupancy-hourly")
+def occupancy_hourly(classroom_id: int, date: str):
+    """지정 날짜의 09시~21시 정각 기준 시간별 점유 좌석 수를 반환한다."""
+    classroom = storage.get_one(classroom_id)
+    if not classroom:
+        raise HTTPException(404, "Classroom not found")
+    try:
+        datetime.strptime(date, "%Y-%m-%d")
+    except ValueError:
+        raise HTTPException(400, "date는 YYYY-MM-DD 형식이어야 합니다")
+
+    from app.services.occupancy_monitor import compute_hourly_occupancy
+    hours = compute_hourly_occupancy(classroom_id, date, schedule=classroom.schedule)
+    return {"date": date, "hours": hours}

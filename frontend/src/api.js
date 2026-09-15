@@ -1,9 +1,10 @@
 import axios from 'axios'
+import { useAuthStore } from '@/stores/authStore'
 
 const api = axios.create({ baseURL: '/api' })
 
 api.interceptors.request.use(config => {
-  const token = localStorage.getItem('auth_token')
+  const token = localStorage.getItem('admin_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -11,10 +12,8 @@ api.interceptors.request.use(config => {
 api.interceptors.response.use(
   res => res,
   err => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('auth_user')
-      window.location.href = '/login'
+    if (err.response?.status === 401 || err.response?.status === 403) {
+      useAuthStore().logout()
     }
     return Promise.reject(err)
   }

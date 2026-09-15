@@ -43,30 +43,6 @@
           class="text-xs border border-slate-200 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-blue-400 mb-3"
           @keydown.stop
         />
-        <label class="text-[10px] text-slate-500 mb-1 block">방향 {{ selectedCCTV.angle ?? 0 }}°
-          <span class="text-slate-300">(0=오른쪽, 시계방향)</span>
-        </label>
-        <input
-          type="range" v-model.number="selectedCCTV.angle"
-          min="0" max="359"
-          class="w-full accent-amber-500 mb-3"
-          @keydown.stop
-        />
-        <label class="text-[10px] text-slate-500 mb-1 block">화각 {{ selectedCCTV.fov ?? 90 }}°</label>
-        <input
-          type="range" v-model.number="selectedCCTV.fov"
-          min="10" max="180"
-          class="w-full accent-amber-500 mb-3"
-          @keydown.stop
-        />
-        <label class="text-[10px] text-slate-500 mb-1 block">범위 {{ selectedCCTV.range ?? 150 }}px</label>
-        <input
-          type="range" v-model.number="selectedCCTV.range"
-          min="50" max="600" step="10"
-          class="w-full accent-amber-500"
-          @keydown.stop
-        />
-
         <div class="border-t border-slate-100 mt-3 mb-2" />
         <div class="flex items-center justify-between mb-2">
           <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">담당 자리</div>
@@ -155,17 +131,24 @@
         ref="scrollEl"
         class="flex-1 overflow-auto p-6 flex items-start justify-start"
       >
-        <canvas
-          ref="canvasEl"
-          :width="mapW"
-          :height="mapH"
-          class="shadow-xl rounded-lg bg-white"
-          :style="{ cursor: cursorStyle }"
-          @mousedown="onMouseDown"
-          @mousemove="onMouseMove"
-          @mouseup="onMouseUp"
-          @mouseleave="onMouseUp"
-        />
+        <div class="relative inline-block">
+          <canvas
+            ref="canvasEl"
+            :width="mapW"
+            :height="mapH"
+            class="shadow-xl rounded-lg bg-white block"
+            :style="{ cursor: cursorStyle }"
+            @mousedown="onMouseDown"
+            @mousemove="onMouseMove"
+            @mouseup="onMouseUp"
+            @mouseleave="onMouseUp"
+          />
+          <div
+            class="absolute -right-1.5 -bottom-1.5 w-4 h-4 rounded-sm bg-white border-2 border-blue-500 cursor-nwse-resize"
+            title="드래그해서 맵 크기 조절"
+            @mousedown="onMapResizeMouseDown"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -175,6 +158,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
+import api from '@/api'
 
 const TOOLS = [
   { type: 'cctv',  label: 'CCTV', icon: '📷', defaultW: 90,  defaultH: 70  },
@@ -204,6 +188,30 @@ const activeTool = ref(null)
 const hoverHandle = ref(null)
 const seatAssignMode = ref(false)
 const assigningCctvId = ref(null)
+
+// ── 맵 크기 드래그 조절 ──────────────────────────────────────────────────────
+const MAP_W_MIN = 400, MAP_W_MAX = 2400
+const MAP_H_MIN = 300, MAP_H_MAX = 1600
+let mapResizeStart = null
+
+function onMapResizeMouseDown(e) {
+  e.preventDefault()
+  mapResizeStart = { x: e.clientX, y: e.clientY, w: mapW.value, h: mapH.value }
+  window.addEventListener('mousemove', onMapResizeMouseMove)
+  window.addEventListener('mouseup', onMapResizeMouseUp)
+}
+
+function onMapResizeMouseMove(e) {
+  if (!mapResizeStart) return
+  mapW.value = Math.min(MAP_W_MAX, Math.max(MAP_W_MIN, Math.round(mapResizeStart.w + (e.clientX - mapResizeStart.x))))
+  mapH.value = Math.min(MAP_H_MAX, Math.max(MAP_H_MIN, Math.round(mapResizeStart.h + (e.clientY - mapResizeStart.y))))
+}
+
+function onMapResizeMouseUp() {
+  mapResizeStart = null
+  window.removeEventListener('mousemove', onMapResizeMouseMove)
+  window.removeEventListener('mouseup', onMapResizeMouseUp)
+}
 
 // 단일 선택 편의 computed (resize handle 등에서 사용)
 const selectedId = computed(() => selectedIds.value.length === 1 ? selectedIds.value[0] : null)
@@ -352,27 +360,37 @@ function scheduleBackendSave() {
   }, 1500)
 }
 
-function load() {
+function applyMapData(data) {
+  objects.value = data.objects ?? []
+  mapW.value = data.mapW ?? 900
+  mapH.value = data.mapH ?? 600
+  nextId = (objects.value.reduce((m, o) => Math.max(m, o.id), 0) ?? 0) + 1
+}
+
+async function load() {
+  try {
+    const { data } = await api.get(`/classrooms/${route.params.id}/map-data`)
+    applyMapData(data)
+    return
+  } catch {}
+  // 서버에 저장된 배치도가 없을 때만 로컬 캐시로 폴백
   try {
     const raw = localStorage.getItem(storageKey.value)
     if (!raw) return
-    const data = JSON.parse(raw)
-    objects.value = data.objects ?? []
-    mapW.value = data.mapW ?? 900
-    mapH.value = data.mapH ?? 600
-    nextId = (objects.value.reduce((m, o) => Math.max(m, o.id), 0) ?? 0) + 1
+    applyMapData(JSON.parse(raw))
   } catch {}
 }
 
-onMounted(() => {
+onMounted(async () => {
   cStore.fetchOne(Number(route.params.id))
-  load()
+  await load()
   nextTick(() => { pushHistory(); redraw() })
   window.addEventListener('keydown', onKeyDown)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeyDown)
+  onMapResizeMouseUp()
 })
 
 function onKeyDown(e) {
@@ -490,141 +508,66 @@ function drawObject(ctx, obj, isSelected) {
 
 function drawDesk(ctx, obj, isSelected) {
   const { x, y, w, h } = obj
-  // Shadow
-  ctx.fillStyle = 'rgba(0,0,0,0.08)'
-  ctx.beginPath(); ctx.roundRect(x + 3, y + 3, w, h, 6); ctx.fill()
   // Body - tint if assigned in assign mode (다중 CCTV 지원, 구버전 cctvId 마이그레이션)
   const cctvIds = obj.cctvIds ?? (obj.cctvId != null ? [obj.cctvId] : [])
   const isAssignedToActive = seatAssignMode.value && cctvIds.includes(assigningCctvId.value)
-  ctx.fillStyle = isAssignedToActive ? '#d4e8ff' : '#e8d5a3'
-  ctx.strokeStyle = isSelected ? '#3b82f6' : (cctvIds.length > 0 ? getCctvColor(cctvIds[0]) : '#9b7d3f')
-  ctx.lineWidth = isSelected ? 2.5 : (cctvIds.length > 0 ? 2.5 : 2)
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, 6); ctx.fill(); ctx.stroke()
-  // Leg lines
-  ctx.strokeStyle = '#c9a55a'
-  ctx.lineWidth = 1
-  const lm = 8
-  ctx.beginPath(); ctx.moveTo(x + lm, y + h); ctx.lineTo(x + lm, y + h - Math.min(h * 0.3, 10)); ctx.stroke()
-  ctx.beginPath(); ctx.moveTo(x + w - lm, y + h); ctx.lineTo(x + w - lm, y + h - Math.min(h * 0.3, 10)); ctx.stroke()
+  ctx.fillStyle = isAssignedToActive ? '#dbeafe' : '#f8fafc'
+  ctx.strokeStyle = isSelected ? '#3b82f6' : (cctvIds.length > 0 ? getCctvColor(cctvIds[0]) : '#cbd5e1')
+  ctx.lineWidth = isSelected ? 2.5 : 2
+  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke()
   // Label
+  ctx.font = `bold ${Math.min(h * 0.36, 16)}px sans-serif`
+  ctx.fillStyle = '#1e293b'
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  const label = obj.label?.trim()
-  if (label) {
-    // 상단 소형 '책상' 태그
-    ctx.font = `${Math.min(h * 0.2, 9)}px sans-serif`
-    ctx.fillStyle = '#b89a5a'
-    ctx.fillText('책상', x + w / 2, y + h * 0.28)
-    // 이름 강조 표시
-    ctx.font = `bold ${Math.min(h * 0.36, 16)}px sans-serif`
-    ctx.fillStyle = '#3b2a0e'
-    ctx.fillText(label, x + w / 2, y + h * 0.64)
-  } else {
-    ctx.font = `${Math.min(h * 0.32, 15)}px sans-serif`
-    ctx.fillStyle = '#5a3e1b'
-    ctx.fillText('책상', x + w / 2, y + h / 2)
-  }
+  ctx.fillText(obj.label?.trim() || '책상', x + w / 2, y + h / 2)
   // CCTV 배정 색상 도트 (다중 지원)
   if (cctvIds.length > 0) {
     const dotR = 5
     const gap = 13
     cctvIds.forEach((cid, i) => {
-      const color = getCctvColor(cid)
-      ctx.save()
-      ctx.fillStyle = color
+      ctx.fillStyle = getCctvColor(cid)
       ctx.beginPath()
       ctx.arc(x + w - 8 - i * gap, y + 8, dotR, 0, Math.PI * 2)
       ctx.fill()
       ctx.strokeStyle = 'white'
       ctx.lineWidth = 1.5
       ctx.stroke()
-      ctx.restore()
     })
   }
 }
 
 function drawChair(ctx, obj, isSelected) {
   const { x, y, w, h } = obj
-  const bh = h * 0.62 // seat height ratio
-  // Seat
-  ctx.fillStyle = '#7ec8e3'
-  ctx.strokeStyle = isSelected ? '#3b82f6' : '#2980b9'
+  ctx.fillStyle = '#e0f2fe'
+  ctx.strokeStyle = isSelected ? '#3b82f6' : '#8fd4f0'
   ctx.lineWidth = isSelected ? 2.5 : 2
-  ctx.beginPath(); ctx.roundRect(x, y + h - bh, w, bh, 5); ctx.fill(); ctx.stroke()
-  // Backrest
-  ctx.fillStyle = '#5ab4d4'
-  ctx.strokeStyle = isSelected ? '#3b82f6' : '#2980b9'
-  ctx.lineWidth = isSelected ? 2.5 : 1.5
-  ctx.beginPath(); ctx.roundRect(x + w * 0.15, y, w * 0.7, h * 0.42, 4); ctx.fill(); ctx.stroke()
-  // Label
-  ctx.fillStyle = '#1a5c7a'
-  ctx.font = `${Math.min(bh * 0.4, 13)}px sans-serif`
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  ctx.fillText('의자', x + w / 2, y + h - bh / 2)
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
 }
 
 function drawCCTV(ctx, obj, isSelected) {
   const { x, y, w, h } = obj
-  const bodyW = w * 0.62, bodyH = h * 0.5
-  const bodyX = x, bodyY = y + h * 0.22
-  const lensX = x + bodyW * 0.42, lensY = y + h * 0.47
+  const cx = x + w / 2, cy = y + h / 2
 
-  // FOV 범위 콘 (카메라 아래에 그려지도록 먼저 그림)
-  const range = obj.range ?? 150
-  const fovRad = ((obj.fov ?? 90) * Math.PI) / 180
-  const dirRad = ((obj.angle ?? 0) * Math.PI) / 180
-  ctx.save()
-  ctx.beginPath()
-  ctx.moveTo(lensX, lensY)
-  ctx.arc(lensX, lensY, range, dirRad - fovRad / 2, dirRad + fovRad / 2)
-  ctx.closePath()
-  ctx.fillStyle = isSelected ? 'rgba(255, 185, 0, 0.22)' : 'rgba(255, 185, 0, 0.12)'
-  ctx.strokeStyle = isSelected ? 'rgba(255, 150, 0, 0.65)' : 'rgba(255, 150, 0, 0.3)'
-  ctx.lineWidth = 1
-  ctx.fill()
-  ctx.stroke()
-  ctx.restore()
+  // Body (단순 사각형 + 렌즈 점)
+  ctx.fillStyle = '#e2e8f0'
+  ctx.strokeStyle = isSelected ? '#3b82f6' : '#94a3b8'
+  ctx.lineWidth = isSelected ? 2.5 : 2
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
+  ctx.fillStyle = '#64748b'
+  ctx.beginPath(); ctx.arc(cx, cy, Math.min(w, h) * 0.22, 0, Math.PI * 2); ctx.fill()
 
-  // Mount bracket
-  ctx.fillStyle = '#777'
-  ctx.beginPath()
-  ctx.roundRect(x + w * 0.52, y + h * 0.08, w * 0.44, h * 0.48, 3)
-  ctx.fill()
-  // Camera body
-  ctx.fillStyle = '#444'
-  ctx.strokeStyle = isSelected ? '#3b82f6' : '#222'
-  ctx.lineWidth = isSelected ? 2.5 : 1.5
-  ctx.beginPath(); ctx.roundRect(bodyX, bodyY, bodyW, bodyH, 5); ctx.fill(); ctx.stroke()
-  // Lens ring
-  const lensR = Math.min(bodyW, bodyH) * 0.28
-  ctx.strokeStyle = '#999'; ctx.lineWidth = 1.5
-  ctx.beginPath(); ctx.arc(lensX, lensY, lensR, 0, Math.PI * 2); ctx.stroke()
-  // Lens fill
-  ctx.fillStyle = '#1a1a2e'
-  ctx.beginPath(); ctx.arc(lensX, lensY, lensR * 0.7, 0, Math.PI * 2); ctx.fill()
-  // Lens shine
-  ctx.fillStyle = 'rgba(255,255,255,0.35)'
-  ctx.beginPath(); ctx.arc(lensX - lensR * 0.25, lensY - lensR * 0.25, lensR * 0.2, 0, Math.PI * 2); ctx.fill()
-  // IR dots
-  ctx.fillStyle = '#cc3333'
-  for (let i = 0; i < 3; i++) {
-    ctx.beginPath()
-    ctx.arc(x + bodyW * 0.75 + i * 2, y + h * 0.36 + i % 2 * 5, 1.5, 0, Math.PI * 2)
-    ctx.fill()
-  }
   // CCTV 색상 도트
-  const cctvColor = getCctvColor(obj.id)
-  ctx.save()
-  ctx.fillStyle = cctvColor
+  ctx.fillStyle = getCctvColor(obj.id)
   ctx.beginPath()
-  ctx.arc(x + w - 8, y + 8, 5, 0, Math.PI * 2)
+  ctx.arc(x + w - 7, y + 7, 5, 0, Math.PI * 2)
   ctx.fill()
   ctx.strokeStyle = 'white'
   ctx.lineWidth = 1.2
   ctx.stroke()
-  ctx.restore()
+
   // Label (이름이 설정되면 이름 표시, 아니면 CCTV)
   const label = obj.label?.trim()
-  ctx.fillStyle = '#333'
+  ctx.fillStyle = '#334155'
   ctx.font = `bold ${Math.min(h * 0.2, 12)}px sans-serif`
   ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
   ctx.fillText(label || 'CCTV', x + w / 2, y + h * 0.98)
@@ -720,7 +663,7 @@ function onMouseDown(e) {
       h: tool.defaultH,
     }
     if (activeTool.value === 'desk') newObj.label = ''
-    if (activeTool.value === 'cctv') { newObj.label = ''; newObj.angle = 0; newObj.fov = 90; newObj.range = 150 }
+    if (activeTool.value === 'cctv') newObj.label = ''
     objects.value.push(newObj)
     selectedIds.value = [newObj.id]
     activeTool.value = null
