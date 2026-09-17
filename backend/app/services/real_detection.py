@@ -17,8 +17,23 @@ _yolo_cache: dict[str, object] = {}
 infer_lock = threading.Lock()
 
 
+# 모델 로딩 자체를 직렬화한다. 실시간 스트리밍 워커와 분석 요청이 거의 동시에 같은 모델을
+# 처음 요청하면(예: 대시보드 사전 준비 + 실시간 탐지 시작) 락이 없을 때 두 스레드가 각각
+# x-large 모델을 통째로 로드해 메모리가 순간적으로 두 배로 뛴다.
+_load_lock = threading.Lock()
+
+
 def _get_yolo(model_name: str = "yolo26x"):
-    if model_name not in _yolo_cache:
+    model = _yolo_cache.get(model_name)
+    if model is not None:
+        return model
+
+    with _load_lock:
+        # 락을 기다리는 사이 다른 스레드가 이미 로드했을 수 있다
+        model = _yolo_cache.get(model_name)
+        if model is not None:
+            return model
+
         from ultralytics import YOLO
         path = _MODELS_DIR / f"{model_name}.pt"
         if not path.exists():
@@ -27,4 +42,4 @@ def _get_yolo(model_name: str = "yolo26x"):
             tmp = YOLO(f"{model_name}.pt")
             tmp.save(str(path))
         _yolo_cache[model_name] = YOLO(str(path))
-    return _yolo_cache[model_name]
+        return _yolo_cache[model_name]

@@ -28,8 +28,8 @@ from app.services.real_detection import _get_yolo, infer_lock
 logger = logging.getLogger(__name__)
 
 _BOUNDARY = b"--frame"
-_EMIT_INTERVAL = 0.1  # 전송 주기: 초당 10프레임 (추론이 이보다 느려도 마지막 프레임을 유지해 매끄럽게 보임)
-_INFER_INTERVAL = 0.15  # 추론 최소 간격: 이게 없으면 워커가 쉬지 않고 GPU/CPU를 독점해 다른 YOLO 요청까지 지연됨
+_EMIT_INTERVAL = 0.05  # 전송 주기: 추론보다 촘촘히 확인해 새 프레임이 나오는 즉시 내보낸다
+_INFER_INTERVAL = 0.066  # 추론 최소 간격(약 15fps): 이게 없으면 워커가 쉬지 않고 GPU를 점유해 다른 YOLO 요청까지 지연됨
 _JPEG_QUALITY = 75
 
 

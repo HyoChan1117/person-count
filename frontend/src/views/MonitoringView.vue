@@ -1,17 +1,17 @@
 <template>
-  <div class="h-full overflow-y-auto bg-slate-50 p-6">
+  <div class="h-full overflow-y-auto bg-neutral-50 p-6">
     <div class="max-w-3xl mx-auto">
-      <router-link to="/classrooms" class="text-xs text-slate-400 hover:text-slate-600">← 목록</router-link>
+      <router-link to="/classrooms" class="text-xs text-neutral-400 hover:text-neutral-600">← 목록</router-link>
 
       <div class="mt-2 mb-4 flex items-start justify-between gap-4">
         <div>
-          <h1 class="text-xl font-bold text-slate-800">좌석별 누적 점유 시간</h1>
-          <p class="text-xs text-slate-400 mt-1">{{ classroom?.name }}</p>
+          <h1 class="text-xl font-bold text-neutral-800">좌석별 누적 점유 시간</h1>
+          <p class="text-xs text-neutral-400 mt-1">{{ classroom?.name }}</p>
         </div>
         <button
           v-if="classroom"
           @click="scheduleOpen = true"
-          class="text-xs bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition shrink-0"
+          class="text-xs bg-white border border-neutral-200 text-neutral-600 px-3 py-1.5 rounded-lg hover:bg-neutral-50 transition shrink-0"
         >📅 시간표 설정</button>
       </div>
 
@@ -25,29 +25,29 @@
           class="rounded-lg py-2 text-center transition"
           :class="[
             day.isFuture
-              ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
+              ? 'bg-neutral-50 text-neutral-300 cursor-not-allowed'
               : selectedDateStr === day.dateStr
                 ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-white text-slate-600 border border-slate-200 hover:border-blue-300 hover:text-blue-600',
+                : 'bg-white text-neutral-600 border border-neutral-200 hover:border-blue-300 hover:text-blue-600',
           ]"
         >
           <div class="text-sm font-semibold">{{ day.label }}</div>
-          <div class="text-[10px] mt-0.5" :class="day.isFuture ? 'text-slate-300' : selectedDateStr === day.dateStr ? 'text-blue-100' : 'text-slate-400'">
+          <div class="text-[10px] mt-0.5" :class="day.isFuture ? 'text-neutral-300' : selectedDateStr === day.dateStr ? 'text-blue-100' : 'text-neutral-400'">
             {{ day.shortDate }}
           </div>
         </button>
       </div>
 
-      <div v-if="loading" class="text-center py-20 text-slate-400 text-sm">불러오는 중...</div>
+      <div v-if="loading" class="text-center py-20 text-neutral-400 text-sm">불러오는 중...</div>
 
-      <div v-else-if="!hasAnyData" class="text-center py-20 text-slate-400 text-sm">
+      <div v-else-if="!hasAnyData" class="text-center py-20 text-neutral-400 text-sm">
         {{ selectedDayLabel }}에 저장된 점유 기록이 없습니다.<br>
         <span class="text-xs">10분마다 자동으로 좌석 점유 상태가 기록됩니다.</span>
       </div>
 
       <template v-else>
         <!-- 정각 기준 시간별 점유 좌석 수 -->
-        <p class="text-xs text-slate-400 mb-2">수업 시간인 09:00 ~ 21:00 사이, 교실별로 설정한 시간표에 따라 정각 기준으로 확인합니다.</p>
+        <p class="text-xs text-neutral-400 mb-2">수업 시간인 09:00 ~ 21:00 사이, 교실별로 설정한 시간표에 따라 정각 기준으로 확인합니다.</p>
         <div class="flex flex-wrap gap-2 mb-2">
           <button
             v-for="h in hourlyStats"
@@ -56,16 +56,16 @@
             @click="toggleHour(h.hour)"
             class="w-[74px] bg-white rounded-xl border py-2.5 text-center transition"
             :class="[
-              !h.scheduled ? 'border-slate-100 bg-slate-50 cursor-not-allowed' : h.occupied === null ? 'border-slate-200 cursor-not-allowed' : 'border-slate-200 hover:border-blue-300',
+              !h.scheduled ? 'border-neutral-100 bg-neutral-50 cursor-not-allowed' : h.occupied === null ? 'border-neutral-200 cursor-not-allowed' : 'border-neutral-200 hover:border-blue-300',
               selectedHour === h.hour ? '!border-blue-500 ring-1 ring-blue-500' : '',
             ]"
           >
             <div
               class="w-5 h-5 mx-auto rounded-full flex items-center justify-center text-[11px] font-bold mb-1"
-              :class="h.scheduled && h.occupied !== null ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-300'"
+              :class="h.scheduled && h.occupied !== null ? 'bg-emerald-500 text-white' : 'bg-neutral-100 text-neutral-300'"
             >{{ h.scheduled && h.occupied !== null ? '✓' : '·' }}</div>
-            <div class="text-xs font-semibold" :class="h.scheduled && h.occupied !== null ? 'text-slate-700' : 'text-slate-300'">{{ h.time }}</div>
-            <div class="text-[10px] mt-0.5" :class="h.scheduled && h.occupied !== null ? 'text-slate-400' : 'text-slate-300'">
+            <div class="text-xs font-semibold" :class="h.scheduled && h.occupied !== null ? 'text-neutral-700' : 'text-neutral-300'">{{ h.time }}</div>
+            <div class="text-[10px] mt-0.5" :class="h.scheduled && h.occupied !== null ? 'text-neutral-400' : 'text-neutral-300'">
               {{ !h.scheduled ? '수업 없음' : h.occupied !== null ? `점유 ${h.occupied}석` : '대기중' }}
             </div>
           </button>
@@ -75,7 +75,7 @@
         <div v-if="selectedHourData" class="bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3 mb-6 text-sm">
           <div class="flex items-center gap-2 mb-2">
             <span class="font-semibold text-blue-700">{{ selectedHourData.time }}</span>
-            <span class="text-xs text-slate-500">점유 {{ selectedHourData.occupied }}석 / {{ selectedHourData.total }}석</span>
+            <span class="text-xs text-neutral-500">점유 {{ selectedHourData.occupied }}석 / {{ selectedHourData.total }}석</span>
           </div>
           <div v-if="selectedHourData.seats?.length" class="flex flex-wrap gap-1.5">
             <span
@@ -84,13 +84,13 @@
               class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium"
             >{{ sid }}번</span>
           </div>
-          <div v-else class="text-xs text-slate-400">이 시간에 점유된 좌석이 없습니다.</div>
+          <div v-else class="text-xs text-neutral-400">이 시간에 점유된 좌석이 없습니다.</div>
         </div>
 
         <!-- 가장 오래 점유한 좌석 순위 -->
-        <h2 class="text-sm font-bold text-slate-700 mb-1">{{ rankingTitle }}</h2>
-        <p class="text-xs text-slate-400 mb-2">하루 종일 10분마다 점유 여부를 확인해 좌석마다 누적한 시간입니다.</p>
-        <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <h2 class="text-sm font-bold text-neutral-700 mb-1">{{ rankingTitle }}</h2>
+        <p class="text-xs text-neutral-400 mb-2">하루 종일 10분마다 점유 여부를 확인해 좌석마다 누적한 시간입니다.</p>
+        <div class="bg-white rounded-xl border border-neutral-200 p-4">
           <div
             v-for="(row, i) in seatRows"
             :key="row.seatId"
@@ -98,10 +98,10 @@
           >
             <span
               class="text-xs font-bold w-10 h-7 shrink-0 rounded-lg border flex items-center justify-center"
-              :class="isTopRow(i, row) ? 'border-red-300 text-red-600 bg-red-50' : 'border-slate-200 text-slate-400 bg-slate-50'"
+              :class="isTopRow(i, row) ? 'border-red-300 text-red-600 bg-red-50' : 'border-neutral-200 text-neutral-400 bg-neutral-50'"
             >{{ row.seatId }}</span>
             <div
-              class="flex-1 h-3 rounded-full overflow-hidden bg-slate-100"
+              class="flex-1 h-3 rounded-full overflow-hidden bg-neutral-100"
               :class="isTopRow(i, row) && barsFilled ? 'gauge-glow' : ''"
               :title="`${row.seatId}번 · 점유 ${row.timeText} / ${rangeDescription}`"
             >
@@ -113,7 +113,7 @@
             </div>
             <span
               class="text-xs w-16 text-right shrink-0 tabular-nums"
-              :class="isTopRow(i, row) ? 'text-slate-700 font-semibold' : 'text-slate-400'"
+              :class="isTopRow(i, row) ? 'text-neutral-700 font-semibold' : 'text-neutral-400'"
             >{{ row.timeText }}</span>
           </div>
         </div>

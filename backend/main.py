@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import classrooms, analysis, prompts, slack
+from app.routers import classrooms, analysis, prompts, slack, face
 from app.routers import auth as auth_router
 
 OCCUPANCY_MONITOR_INTERVAL = int(os.getenv("OCCUPANCY_MONITOR_INTERVAL", "600"))
@@ -35,6 +35,16 @@ async def _occupancy_monitor_loop():
             await asyncio.to_thread(collect_all)
         except Exception as e:
             print(f"[occupancy_monitor] 루프 오류: {e}")
+
+        # 좌석 점유와 같은 주기로 얼굴 인식 순찰도 한 바퀴 돌린다.
+        # (PTZ가 움직이므로 좌석 촬영이 모두 끝난 뒤에 시작한다)
+        try:
+            from app.services.patrol import start_all
+            started = start_all()
+            if started:
+                print(f"[patrol] 정기 순찰 시작: {', '.join(started)}")
+        except Exception as e:
+            print(f"[patrol] 정기 순찰 오류: {e}")
 
 
 @asynccontextmanager
@@ -71,6 +81,7 @@ app.include_router(classrooms.router, prefix="/api/classrooms", tags=["classroom
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
 app.include_router(prompts.router, prefix="/api/prompts", tags=["prompts"])
 app.include_router(slack.router, prefix="/api/slack", tags=["slack"])
+app.include_router(face.router, prefix="/api/face", tags=["face"])
 
 
 @app.get("/")

@@ -1,131 +1,141 @@
 <template>
-  <div class="h-full overflow-y-auto bg-slate-50 p-6">
+  <div class="h-full overflow-y-auto bg-neutral-50 p-6 lg:p-8">
     <div class="max-w-5xl mx-auto">
 
       <!-- Header -->
-      <div class="flex items-start justify-between mb-6 gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <router-link to="/classrooms" class="text-xs text-slate-400 hover:text-slate-600">← 목록</router-link>
-          <h1 class="text-xl font-bold text-slate-800 mt-1">{{ classroom?.name }} 대시보드</h1>
+          <router-link to="/classrooms" class="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 transition mb-2">
+            ← 좌석 확인
+          </router-link>
+          <h1 class="text-2xl font-bold text-neutral-900 tracking-tight">{{ classroom?.name }}</h1>
+          <p class="text-sm text-neutral-500 mt-0.5">실시간 인원 현황</p>
         </div>
-        <div class="flex items-center gap-1.5">
-          <button @click="fetchSeatOccupancy" :disabled="seatLoading" class="btn-seat">
-            {{ seatLoading ? '분석 중...' : '🪑 YOLO' }}
+
+        <div class="flex items-center gap-1 bg-white border border-neutral-200 rounded-xl p-1.5 shadow-sm w-fit">
+          <button @click="fetchSeatOccupancy" :disabled="seatLoading" class="btn-primary">
+            🪑 {{ seatLoading ? '분석 중...' : 'YOLO 분석' }}
           </button>
           <button
             v-if="classroom"
             @click="seatPromptOpen = true"
             title="좌석 점유 프롬프트 편집"
-            class="btn-seat-config"
+            class="btn-icon-ghost"
           >⚙️</button>
 
-          <div class="w-px h-5 bg-slate-200 mx-0.5" />
+          <div class="w-px h-6 bg-neutral-200 mx-1" />
 
-          <button @click="fetchYoloLlm" :disabled="yoloLlmLoading" class="btn-yolo-llm">
-            {{ yoloLlmLoading ? '분석 중...' : '🤖 YOLO+LLM' }}
+          <button @click="fetchYoloLlm" :disabled="yoloLlmLoading" class="btn-secondary">
+            🤖 {{ yoloLlmLoading ? '분석 중...' : 'YOLO+LLM' }}
           </button>
           <button
             v-if="classroom"
             @click="yoloLlmPromptOpen = true"
             title="YOLO+LLM 프롬프트 편집"
-            class="btn-yolo-llm-config"
+            class="btn-icon-ghost"
           >⚙️</button>
 
-          <div class="w-px h-5 bg-slate-200 mx-0.5" />
+          <div class="w-px h-6 bg-neutral-200 mx-1" />
 
-          <button @click="toggleLive" class="btn-live" :class="{ '!bg-red-600 hover:!bg-red-700': liveOn }">
-            {{ liveOn ? '⏹ 실시간 종료' : '🎥 실시간 탐지' }}
+          <button @click="toggleLive" class="inline-flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg transition"
+            :class="liveOn ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-neutral-800 text-white hover:bg-neutral-900'">
+            <span class="w-1.5 h-1.5 rounded-full" :class="liveOn ? 'bg-white animate-pulse' : 'bg-neutral-400'" />
+            {{ liveOn ? '실시간 종료' : '실시간 탐지' }}
           </button>
         </div>
       </div>
 
       <!-- 실시간 YOLO 탐지 -->
-      <div v-if="liveOn" class="mb-6">
-        <div v-if="!liveCameras.length" class="text-center py-10 text-slate-400 text-sm bg-white rounded-xl border border-slate-200">
+      <div v-if="liveOn" class="mb-8">
+        <div v-if="!liveCameras.length" class="text-center py-12 text-neutral-400 text-sm bg-white rounded-2xl border border-neutral-200">
           RTSP가 설정된 카메라가 없습니다.
         </div>
-        <div v-else class="rounded-xl border border-red-200 shadow-sm bg-white overflow-hidden max-w-xl">
-          <div class="px-3 py-1.5 flex items-center gap-2 border-b border-red-100">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-            <select v-model="liveCameraId" class="text-xs font-medium text-slate-600 bg-transparent outline-none">
-              <option v-for="cam in liveCameras" :key="cam.camera_id" :value="cam.camera_id">{{ cam.name }}</option>
-            </select>
+        <div v-else class="rounded-2xl border border-neutral-200 shadow-sm bg-white overflow-hidden">
+          <div class="px-4 py-2.5 flex items-center justify-between gap-2 border-b border-neutral-100 bg-neutral-50/60">
+            <div class="flex items-center gap-2">
+              <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+              <select v-model="liveCameraId" class="text-sm font-medium text-neutral-600 bg-transparent outline-none">
+                <option v-for="cam in liveCameras" :key="cam.camera_id" :value="cam.camera_id">{{ cam.name }}</option>
+              </select>
+            </div>
+            <button @click="toggleFullscreen" title="전체화면" class="text-xs text-neutral-400 hover:text-neutral-700 transition px-2 py-1 rounded-lg hover:bg-neutral-100">
+              ⛶ 전체화면
+            </button>
           </div>
-          <img :key="liveKey" :src="liveSrc" class="w-full aspect-video object-cover bg-slate-900" />
+          <img ref="liveImgRef" :key="liveKey" :src="liveSrc" class="w-full aspect-video object-contain bg-neutral-900" />
         </div>
-        <p class="text-[11px] text-slate-400 mt-1.5">부하를 줄이기 위해 한 번에 카메라 1대만 실시간으로 표시합니다.</p>
+        <p class="text-[11px] text-neutral-400 mt-2">부하를 줄이기 위해 한 번에 카메라 1대만 실시간으로 표시합니다.</p>
       </div>
 
       <!-- 좌석 점유 결과 -->
-      <div v-if="seatLoading" class="text-center py-20 text-slate-400 text-sm">
-        <div class="text-3xl mb-2 animate-spin inline-block">⟳</div>
+      <div v-if="seatLoading" class="flex flex-col items-center justify-center py-24 text-neutral-400 text-sm gap-3">
+        <div class="w-9 h-9 rounded-full border-2 border-neutral-200 border-t-violet-500 animate-spin" />
         <div>분석 중...</div>
       </div>
 
       <div v-else-if="seatResult">
         <!-- 요약 -->
-        <div class="bg-white border border-violet-200 rounded-xl p-4 shadow-sm mb-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-[10px] text-violet-400 uppercase tracking-wide mb-0.5">🪑 YOLO 분석</div>
-              <div class="text-sm font-semibold text-slate-700">좌석 점유 현황</div>
+        <div class="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm mb-4">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-lg shrink-0">🪑</div>
+              <div>
+                <div class="text-[11px] font-medium text-violet-500 uppercase tracking-wide">YOLO 분석</div>
+                <div class="text-sm font-semibold text-neutral-800">좌석 점유 현황</div>
+              </div>
             </div>
-            <div class="text-right flex items-end gap-1.5">
-              <span class="text-2xl font-bold text-violet-600">{{ seatResult.total_occupied }}</span>
-              <span class="text-sm text-slate-400 pb-0.5">/ {{ seatResult.total_seats }}석</span>
+            <div class="text-right shrink-0 flex items-end gap-1.5">
+              <span class="text-3xl font-bold text-violet-600 leading-none">{{ seatResult.total_occupied }}</span>
+              <span class="text-sm text-neutral-400 pb-0.5">/ {{ seatResult.total_seats }}석</span>
             </div>
           </div>
-          <div class="mt-3 w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div class="mt-4 w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
             <div
-              class="h-full bg-violet-400 rounded-full transition-all duration-500"
+              class="h-full bg-violet-500 rounded-full transition-all duration-500"
               :style="{ width: seatResult.total_seats ? `${Math.round(seatResult.total_occupied / seatResult.total_seats * 100)}%` : '0%' }"
             />
           </div>
         </div>
 
         <!-- 배치도 + 카메라별 카드 -->
-        <div class="flex flex-col lg:flex-row gap-4 mb-3 items-start">
+        <div class="flex flex-col lg:flex-row gap-4 mb-4 items-start">
           <!-- 배치도 오버레이 (절반 크기) -->
-          <div v-if="getMapData()?.objects?.length" class="bg-white border border-violet-200 rounded-xl p-4 shadow-sm w-full lg:w-1/2 shrink-0">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="text-xs font-semibold text-slate-700">교실 배치도</span>
-              <div class="flex items-center gap-2 text-[10px]">
-                <span class="w-3 h-3 rounded-sm bg-red-200 border border-red-400 inline-block" />
-                <span class="text-slate-500 mr-2">점유</span>
-                <span class="w-3 h-3 rounded-sm bg-slate-200 border border-slate-400 inline-block" />
-                <span class="text-slate-500">미점유</span>
+          <div v-if="getMapData()?.objects?.length" class="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm w-full lg:w-1/2 shrink-0">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-semibold text-neutral-800">교실 배치도</span>
+              <div class="flex items-center gap-3 text-[11px] text-neutral-500">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400" />점유</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-neutral-300" />미점유</span>
               </div>
             </div>
-            <canvas ref="mapCanvasRef" class="rounded-lg w-full" />
+            <canvas ref="mapCanvasRef" class="rounded-xl w-full" />
           </div>
 
           <!-- 카메라별 카드 -->
           <div
-            class="grid gap-4 flex-1 w-full"
+            class="grid gap-3 flex-1 w-full"
             :class="getMapData()?.objects?.length ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'"
           >
             <div
               v-for="cam in seatResult.cameras"
               :key="cam.camera_id"
-              class="rounded-xl border border-violet-200 shadow-sm bg-white"
+              class="rounded-2xl border border-neutral-200 shadow-sm bg-white p-4 hover:border-violet-200 transition-colors"
             >
-              <div class="p-3">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-medium text-slate-600">{{ cam.name }}</span>
-                  <span class="text-xs text-violet-600 font-bold">{{ cam.occupied_count }}/{{ cam.total }}석</span>
-                </div>
-                <div class="flex flex-wrap gap-1 mb-2">
-                  <span
-                    v-for="s in cam.occupied"
-                    :key="'occ-'+s"
-                    class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700"
-                  >{{ s }}</span>
-                  <span
-                    v-for="s in cam.empty"
-                    :key="'emp-'+s"
-                    class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400"
-                  >{{ s }}</span>
-                </div>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-medium text-neutral-600">{{ cam.name }}</span>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">{{ cam.occupied_count }}/{{ cam.total }}석</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="s in cam.occupied"
+                  :key="'occ-'+s"
+                  class="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-red-50 text-red-600 border border-red-100"
+                >{{ s }}</span>
+                <span
+                  v-for="s in cam.empty"
+                  :key="'emp-'+s"
+                  class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-50 text-neutral-400 border border-neutral-100"
+                >{{ s }}</span>
               </div>
             </div>
           </div>
@@ -133,94 +143,94 @@
       </div>
 
       <!-- YOLO+LLM 결과 -->
-      <div v-if="yoloLlmLoading" class="text-center py-20 text-slate-400 text-sm" :class="{ 'mt-6': seatResult }">
-        <div class="text-3xl mb-2 animate-spin inline-block">⟳</div>
+      <div v-if="yoloLlmLoading" class="flex flex-col items-center justify-center py-24 text-neutral-400 text-sm gap-3" :class="{ 'mt-6': seatResult }">
+        <div class="w-9 h-9 rounded-full border-2 border-neutral-200 border-t-blue-500 animate-spin" />
         <div>YOLO+LLM 분석 중...</div>
       </div>
 
-      <div v-else-if="yoloLlmResult" :class="{ 'mt-6': seatResult }">
+      <div v-else-if="yoloLlmResult" :class="{ 'mt-8': seatResult }">
         <!-- 구분선 -->
-        <div v-if="seatResult" class="flex items-center gap-3 mb-4">
-          <div class="h-px flex-1 bg-slate-200" />
-          <span class="text-xs text-slate-400">YOLO+LLM 분석</span>
-          <div class="h-px flex-1 bg-slate-200" />
+        <div v-if="seatResult" class="flex items-center gap-3 mb-6">
+          <div class="h-px flex-1 bg-neutral-200" />
+          <span class="text-[11px] font-medium text-neutral-400 uppercase tracking-wide px-2">YOLO+LLM 분석</span>
+          <div class="h-px flex-1 bg-neutral-200" />
         </div>
 
         <!-- 요약 -->
-        <div class="bg-white border border-blue-200 rounded-xl p-4 shadow-sm mb-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-[10px] text-blue-400 uppercase tracking-wide mb-0.5">🤖 YOLO+LLM 분석</div>
-              <div class="text-sm font-semibold text-slate-700">좌석 점유 현황</div>
+        <div class="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm mb-4">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-lg shrink-0">🤖</div>
+              <div>
+                <div class="text-[11px] font-medium text-blue-500 uppercase tracking-wide">YOLO+LLM 분석</div>
+                <div class="text-sm font-semibold text-neutral-800">좌석 점유 현황</div>
+              </div>
             </div>
-            <div class="text-right flex items-end gap-1.5">
-              <span class="text-2xl font-bold text-blue-600">{{ yoloLlmResult.total_occupied }}</span>
-              <span class="text-sm text-slate-400 pb-0.5">/ {{ yoloLlmResult.total_seats }}석</span>
+            <div class="text-right shrink-0 flex items-end gap-1.5">
+              <span class="text-3xl font-bold text-blue-600 leading-none">{{ yoloLlmResult.total_occupied }}</span>
+              <span class="text-sm text-neutral-400 pb-0.5">/ {{ yoloLlmResult.total_seats }}석</span>
             </div>
           </div>
-          <div class="mt-3 w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div class="mt-4 w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
             <div
-              class="h-full bg-blue-400 rounded-full transition-all duration-500"
+              class="h-full bg-blue-500 rounded-full transition-all duration-500"
               :style="{ width: yoloLlmResult.total_seats ? `${Math.round(yoloLlmResult.total_occupied / yoloLlmResult.total_seats * 100)}%` : '0%' }"
             />
           </div>
         </div>
 
         <!-- YOLO+LLM 배치도 + 카메라별 카드 -->
-        <div class="flex flex-col lg:flex-row gap-4 mb-3 items-start">
+        <div class="flex flex-col lg:flex-row gap-4 mb-4 items-start">
           <!-- 배치도 오버레이 (절반 크기) -->
-          <div v-if="getMapData()?.objects?.length" class="bg-white border border-blue-200 rounded-xl p-4 shadow-sm w-full lg:w-1/2 shrink-0">
-            <div class="flex items-center gap-3 mb-3">
-              <span class="text-xs font-semibold text-slate-700">교실 배치도</span>
-              <div class="flex items-center gap-2 text-[10px]">
-                <span class="w-3 h-3 rounded-sm bg-red-200 border border-red-400 inline-block" />
-                <span class="text-slate-500 mr-2">점유</span>
-                <span class="w-3 h-3 rounded-sm bg-slate-200 border border-slate-400 inline-block" />
-                <span class="text-slate-500">미점유</span>
+          <div v-if="getMapData()?.objects?.length" class="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm w-full lg:w-1/2 shrink-0">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-sm font-semibold text-neutral-800">교실 배치도</span>
+              <div class="flex items-center gap-3 text-[11px] text-neutral-500">
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400" />점유</span>
+                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-neutral-300" />미점유</span>
               </div>
             </div>
-            <canvas ref="yoloMapCanvasRef" class="rounded-lg w-full" />
+            <canvas ref="yoloMapCanvasRef" class="rounded-xl w-full" />
           </div>
 
           <!-- 카메라별 카드 -->
           <div
-            class="grid gap-4 flex-1 w-full"
+            class="grid gap-3 flex-1 w-full"
             :class="getMapData()?.objects?.length ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'"
           >
             <div
               v-for="cam in yoloLlmResult.cameras"
               :key="cam.camera_id"
-              class="rounded-xl border border-blue-200 shadow-sm bg-white"
+              class="rounded-2xl border border-neutral-200 shadow-sm bg-white p-4 hover:border-blue-200 transition-colors"
             >
-              <div class="p-3">
-                <div class="flex items-center justify-between mb-2">
-                  <span class="text-xs font-medium text-slate-600">{{ cam.name }}</span>
-                  <span class="text-xs text-blue-600 font-bold">
-                    {{ cam.occupied_count }}/{{ cam.total }}석
-                  </span>
-                </div>
-                <div v-if="cam.total > 0" class="flex flex-wrap gap-1 mb-2">
-                  <span
-                    v-for="s in cam.occupied"
-                    :key="'occ-'+s"
-                    class="text-[10px] px-1.5 py-0.5 rounded font-medium bg-red-100 text-red-700"
-                  >{{ s }}</span>
-                  <span
-                    v-for="s in cam.empty"
-                    :key="'emp-'+s"
-                    class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-400"
-                  >{{ s }}</span>
-                </div>
-                <p v-if="cam.error" class="text-xs text-red-400">{{ cam.error }}</p>
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-medium text-neutral-600">{{ cam.name }}</span>
+                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
+                  {{ cam.occupied_count }}/{{ cam.total }}석
+                </span>
               </div>
+              <div v-if="cam.total > 0" class="flex flex-wrap gap-1.5">
+                <span
+                  v-for="s in cam.occupied"
+                  :key="'occ-'+s"
+                  class="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-red-50 text-red-600 border border-red-100"
+                >{{ s }}</span>
+                <span
+                  v-for="s in cam.empty"
+                  :key="'emp-'+s"
+                  class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-50 text-neutral-400 border border-neutral-100"
+                >{{ s }}</span>
+              </div>
+              <p v-if="cam.error" class="text-xs text-red-400">{{ cam.error }}</p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- 빈 상태 -->
-      <div v-if="!seatResult && !yoloLlmResult && !seatLoading && !yoloLlmLoading" class="text-center py-20 text-slate-400 text-sm">
-        버튼을 눌러 분석하세요
+      <div v-if="!seatResult && !yoloLlmResult && !seatLoading && !yoloLlmLoading" class="flex flex-col items-center justify-center py-28 text-neutral-400 gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center text-2xl">📊</div>
+        <div class="text-sm">버튼을 눌러 분석하세요</div>
       </div>
 
     </div>
@@ -292,6 +302,13 @@ watch(liveCameraId, () => { if (liveOn.value) liveKey.value++ })
 
 const liveSrc = computed(() => `/api/analysis/${route.params.id}/live/${liveCameraId.value}?t=${liveKey.value}`)
 
+const liveImgRef = ref(null)
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen()
+  else liveImgRef.value?.requestFullscreen?.()
+}
+
 async function fetchMapData() {
   try {
     const { data } = await api.get(`/classrooms/${route.params.id}/map-data`)
@@ -304,6 +321,8 @@ async function fetchMapData() {
 onMounted(() => {
   cStore.fetchOne(Number(route.params.id))
   fetchMapData()
+  // 실시간 탐지를 켜는 순간 RTSP 연결·모델 로딩을 기다리지 않도록 미리 준비시킨다
+  api.get(`/analysis/${route.params.id}/prewarm`).catch(() => {})
 })
 
 async function fetchSeatOccupancy() {
@@ -437,19 +456,13 @@ watch(yoloLlmResult, () => { if (yoloLlmResult.value) drawYoloLlmMap() })
 </script>
 
 <style scoped>
-.btn-seat {
-  @apply bg-violet-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-violet-700 transition disabled:opacity-50;
+.btn-primary {
+  @apply inline-flex items-center gap-1.5 bg-violet-600 text-white text-xs font-medium px-3.5 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed;
 }
-.btn-seat-config {
-  @apply bg-violet-100 text-violet-700 text-xs px-2 py-1.5 rounded-lg hover:bg-violet-200 transition;
+.btn-secondary {
+  @apply inline-flex items-center gap-1.5 bg-blue-600 text-white text-xs font-medium px-3.5 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed;
 }
-.btn-yolo-llm {
-  @apply bg-blue-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-blue-700 transition disabled:opacity-50;
-}
-.btn-yolo-llm-config {
-  @apply bg-blue-100 text-blue-700 text-xs px-2 py-1.5 rounded-lg hover:bg-blue-200 transition;
-}
-.btn-live {
-  @apply bg-slate-700 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-slate-800 transition;
+.btn-icon-ghost {
+  @apply w-8 h-8 flex items-center justify-center text-xs rounded-lg text-neutral-500 hover:bg-neutral-100 transition;
 }
 </style>

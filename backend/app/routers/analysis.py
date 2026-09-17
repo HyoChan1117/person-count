@@ -1,6 +1,7 @@
 """분석 라우터: 프레임 캡처, ROI 저장, 인원 카운트."""
 from __future__ import annotations
 
+import threading
 from datetime import datetime, timedelta
 
 import cv2
@@ -41,6 +42,39 @@ def get_camera_frame(classroom_id: int, camera_id: str):
 
 
 # ── 실시간 YOLO 탐지 스트리밍 ──────────────────────────────────────────────────
+
+@router.get("/{classroom_id}/prewarm")
+def prewarm(classroom_id: int):
+    """실시간 탐지를 켜기 전에 RTSP 연결과 YOLO 모델을 미리 준비한다.
+
+    실시간 스트림의 첫 화면이 늦게 뜨는 이유는 추론 자체가 아니라 그 앞단의 준비 과정
+    (RTSP 핸드셰이크 + 키프레임 대기 수 초, 그리고 x-large 모델 최초 로딩)이다. 화면에
+    들어온 시점에 이걸 백그라운드로 미리 해두면 실제로 켤 때는 곧바로 프레임이 나온다.
+    """
+    classroom = storage.get_one(classroom_id)
+    if not classroom:
+        raise HTTPException(404, "Classroom not found")
+
+    rtsp_urls = [c.rtsp_url for c in classroom.cameras if c.rtsp_url]
+    model_name = classroom.yolo_model or "yolov8x"
+
+    def _warm():
+        from app.services.frame_capture import prewarm_rtsp
+        from app.services.real_detection import _get_yolo
+        for url in rtsp_urls:
+            try:
+                prewarm_rtsp(url)
+            except Exception as e:
+                print(f"[prewarm] RTSP 준비 실패: {e}")
+        try:
+            _get_yolo(model_name)
+        except Exception as e:
+            print(f"[prewarm] 모델 준비 실패: {e}")
+
+    # 준비가 끝날 때까지 요청을 붙잡아 두지 않는다 (화면 로딩을 막지 않도록)
+    threading.Thread(target=_warm, daemon=True).start()
+    return {"ok": True, "cameras": len(rtsp_urls), "model": model_name}
+
 
 @router.get("/{classroom_id}/live/{camera_id}")
 def live_detection(classroom_id: int, camera_id: str, request: Request):

@@ -1,0 +1,50 @@
+{
+  "detections": [
+    {
+      "id": 50,
+      "place_id": 5,
+      "zone_name": "3-1번 구역 · 15번 자리",
+      "name": null,
+      "score": 0.147,
+      "authorized": null,
+      "ts": "2026-09-17T21:40:44"
+    },
+    {
+      "id": 51,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.095,
+      "authorized": null,
+      "ts": "2026-09-17T21:40:52"
+    },
+    {
+      "id": 52,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.036,
+      "authorized": null,
+      "ts": "2026-09-17T21:44:11"
+    },
+    {
+      "id": 53,
+      "place_id": 5,
+      "zone_name": "3-1번 구역 · 15번 자리",
+      "name": null,
+      "score": 0.236,
+      "authorized": null,
+      "ts": "2026-09-17T21:45:53"
+    },
+    {
+      "id": 54,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.083,
+      "authorized": null,
+      "ts": "2026-09-17T21:46:01"
+    }
+  ],
+  "next_id": 55
+}

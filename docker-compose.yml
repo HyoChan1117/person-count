@@ -2,6 +2,7 @@ services:
   backend:
     build: ./backend
     env_file: ./backend/.env.production
+    gpus: all
     environment:
       CORS_ORIGINS: "*"
     volumes:
