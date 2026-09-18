@@ -2,8 +2,8 @@
   <router-link :to="`/dashboard/${room.id}`" class="block h-full focus-visible:outline-none">
     <UiCard interactive class="flex h-full flex-col justify-between">
       <div class="flex items-start justify-between gap-2">
-        <h3 class="text-lg font-semibold text-fg">{{ room.name }}</h3>
-        <StatusBadge :status="badge.status" :label="badge.label" size="lg" />
+        <h3 class="min-w-0 truncate text-lg font-semibold text-fg" :title="room.name">{{ room.name }}</h3>
+        <StatusBadge class="shrink-0" :status="badge.status" :label="badge.label" size="lg" />
       </div>
 
       <div>

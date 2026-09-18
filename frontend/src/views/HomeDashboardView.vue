@@ -20,7 +20,8 @@
       </UiCard>
     </section>
 
-    <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_30rem] gap-section">
+    <!-- 2xl(1536px) 미만에서는 우측 패널을 카드 그리드 아래로 내려 카드 폭을 확보한다 -->
+    <div class="grid flex-none grid-cols-1 gap-section 2xl:min-h-0 2xl:flex-1 2xl:grid-cols-[minmax(0,1fr)_30rem]">
       <section class="grid min-h-[36rem] grid-cols-4 grid-rows-2 gap-gutter" aria-label="교실별 점유율">
         <template v-if="store.rooms.length">
           <ClassroomOccupancyCard v-for="room in store.rooms" :key="room.id" :room="room" />
@@ -30,7 +31,7 @@
         </UiCard>
       </section>
 
-      <aside class="flex min-h-0 flex-col gap-gutter">
+      <aside class="grid grid-cols-2 items-start gap-gutter 2xl:flex 2xl:min-h-0 2xl:flex-col 2xl:items-stretch">
         <PatrolStatusPanel :place="store.primaryPatrol" />
         <RecentDetectionsList :items="store.recentDetections" @reveal="store.markSeen" />
       </aside>
