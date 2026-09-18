@@ -53,6 +53,7 @@ import { isDemoMode } from '@/demo'
 import UiCard from '@/components/ui/UiCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import BlurredImage from '@/components/ui/BlurredImage.vue'
+import { convexHull } from '@/utils/convexHull'
 
 const props = defineProps({
   classroomId: { type: Number, required: true },
@@ -107,8 +108,8 @@ watch(() => [props.seatId, props.slot?.ts, props.camera?.camera_id, canShowImage
 const polygon = computed(() => {
   const pts = props.camera?.seat_lines?.[props.seatId]
   if (!pts || pts.length < 4) return ''
-  const [f1, f2, b1, b2] = pts
-  return [b1, b2, f2, f1].map((p) => p.join(',')).join(' ')
+  // 저장된 점 순서는 일정하지 않으므로 그릴 때만 볼록 껍질 순서로 정렬한다(저장 형식은 그대로)
+  return convexHull(pts.slice(0, 4)).map((p) => p.join(',')).join(' ')
 })
 
 // 클래스는 Tailwind가 스캔할 수 있도록 리터럴로 적는다
