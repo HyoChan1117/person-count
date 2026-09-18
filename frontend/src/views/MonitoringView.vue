@@ -65,11 +65,11 @@
       </section>
 
       <!-- 기존 통계 (다음 화면 전환 때 토큰으로 정리 예정) -->
-      <div class="mx-auto w-full max-w-4xl pb-section">
+      <div class="dark mx-auto w-full max-w-4xl pb-section">
 
-      <div v-if="loading" class="text-center py-20 text-neutral-400 dark:text-neutral-600 text-sm">불러오는 중...</div>
+      <div v-if="loading" class="text-center py-20 text-fg-muted text-sm">불러오는 중...</div>
 
-      <div v-else-if="!hasAnyData" class="text-center py-20 text-neutral-400 dark:text-neutral-600 text-sm">
+      <div v-else-if="!hasAnyData" class="text-center py-20 text-fg-muted text-sm">
         {{ selectedDayLabel }}에 저장된 점유 기록이 없습니다.<br>
         <span class="text-xs">10분마다 자동으로 좌석 점유 상태가 기록됩니다.</span>
       </div>
@@ -77,43 +77,43 @@
       <template v-else>
         <!-- 요약 지표 타일 -->
         <div class="grid grid-cols-3 gap-3 mb-6">
-          <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-3.5">
-            <p class="text-[10px] font-semibold tracking-wide text-neutral-400 dark:text-neutral-500 uppercase mb-1">등록 좌석</p>
-            <p class="text-2xl font-bold font-mono tabular-nums text-neutral-900 dark:text-neutral-50">{{ allSeatIds.length }}<span class="text-xs font-normal text-neutral-400 dark:text-neutral-600 ml-1">석</span></p>
+          <div class="bg-card border border-line rounded-lg p-3.5">
+            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">등록 좌석</p>
+            <p class="text-2xl font-bold font-mono tabular-nums text-fg">{{ allSeatIds.length }}<span class="text-xs font-normal text-fg-muted ml-1">석</span></p>
           </div>
-          <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-3.5">
-            <p class="text-[10px] font-semibold tracking-wide text-neutral-400 dark:text-neutral-500 uppercase mb-1">{{ selectedHourData ? selectedHourData.time + ' 점유' : '최고 점유 시간대' }}</p>
-            <p class="text-2xl font-bold font-mono tabular-nums" :class="displayHourData ? 'text-neutral-900 dark:text-neutral-50' : 'text-neutral-300 dark:text-neutral-700'">
+          <div class="bg-card border border-line rounded-lg p-3.5">
+            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">{{ selectedHourData ? selectedHourData.time + ' 점유' : '최고 점유 시간대' }}</p>
+            <p class="text-2xl font-bold font-mono tabular-nums" :class="displayHourData ? 'text-fg' : 'text-fg-muted/50'">
               {{ displayHourData ? `${displayHourData.occupied}/${displayHourData.total}` : '—' }}
             </p>
           </div>
-          <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg p-3.5">
-            <p class="text-[10px] font-semibold tracking-wide text-neutral-400 dark:text-neutral-500 uppercase mb-1">최다 점유 좌석</p>
-            <p class="text-2xl font-bold font-mono tabular-nums" :class="topSeat && topSeat.occupiedMinutes > 0 ? 'text-red-500 dark:text-red-400' : 'text-neutral-300 dark:text-neutral-700'">
+          <div class="bg-card border border-line rounded-lg p-3.5">
+            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">최다 점유 좌석</p>
+            <p class="text-2xl font-bold font-mono tabular-nums" :class="topSeat && topSeat.occupiedMinutes > 0 ? 'text-red-500 dark:text-red-400' : 'text-fg-muted/50'">
               {{ topSeat && topSeat.occupiedMinutes > 0 ? `${topSeat.seatId}번` : '—' }}
             </p>
           </div>
         </div>
 
         <!-- 정각 기준 시간별 점유율 그래프 -->
-        <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mb-2">수업 시간인 09:00 ~ 21:00, 교실별로 설정한 시간표에 따라 정각 기준으로 확인합니다.</p>
-        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 pt-4 pb-2 mb-2">
+        <p class="text-[11px] text-fg-muted mb-2">수업 시간인 09:00 ~ 21:00, 교실별로 설정한 시간표에 따라 정각 기준으로 확인합니다.</p>
+        <div class="bg-card border border-line rounded-lg px-3 pt-4 pb-2 mb-2">
           <DitherStackedChart :hours="hourlyStats" :selected-hour="selectedHour" @select="toggleHour" />
           <div class="flex gap-1.5 mt-1.5">
             <span
               v-for="h in hourlyStats"
               :key="h.hour"
               class="flex-1 text-center text-[9px] font-mono tabular-nums"
-              :class="selectedHour === h.hour ? 'text-violet-600 dark:text-violet-400 font-bold' : 'text-neutral-300 dark:text-neutral-700'"
+              :class="selectedHour === h.hour ? 'text-violet-600 dark:text-violet-400 font-bold' : 'text-fg-muted/50'"
             >{{ h.hour }}</span>
           </div>
         </div>
 
         <!-- 선택한 정각의 점유 좌석 상세 -->
-        <div v-if="selectedHourData" class="bg-white dark:bg-neutral-900 border-l-2 border-violet-500 border-y border-r border-neutral-200 dark:border-neutral-800 rounded-r-lg px-4 py-3 mb-6 text-sm">
+        <div v-if="selectedHourData" class="bg-card border-l-2 border-violet-500 border-y border-r border-line rounded-r-lg px-4 py-3 mb-6 text-sm">
           <div class="flex items-center gap-2 mb-2">
             <span class="font-semibold text-violet-600 dark:text-violet-400 font-mono">{{ selectedHourData.time }}</span>
-            <span class="text-xs text-neutral-500 dark:text-neutral-400 font-mono tabular-nums">점유 {{ selectedHourData.occupied }}/{{ selectedHourData.total }}석</span>
+            <span class="text-xs text-fg-muted font-mono tabular-nums">점유 {{ selectedHourData.occupied }}/{{ selectedHourData.total }}석</span>
           </div>
           <div v-if="selectedHourData.seats?.length" class="flex flex-wrap gap-1.5">
             <span
@@ -122,16 +122,16 @@
               class="text-xs px-2 py-0.5 rounded font-mono font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20"
             >{{ sid }}번</span>
           </div>
-          <div v-else class="text-xs text-neutral-400 dark:text-neutral-600">이 시간에 점유된 좌석이 없습니다.</div>
+          <div v-else class="text-xs text-fg-muted">이 시간에 점유된 좌석이 없습니다.</div>
         </div>
 
         <!-- 가장 오래 점유한 좌석 순위 -->
-        <h2 class="text-sm font-bold text-neutral-700 dark:text-neutral-300 mb-1">{{ rankingTitle }}</h2>
-        <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mb-2">
+        <h2 class="text-sm font-bold text-fg mb-1">{{ rankingTitle }}</h2>
+        <p class="text-[11px] text-fg-muted mb-2">
           하루 종일 10분마다 점유 여부를 확인해 좌석마다 누적한 시간입니다. 상위 {{ Math.min(8, seatRows.length) }}석을 보여줍니다.
           <span v-if="selectedDay?.isToday" class="text-amber-600 dark:text-amber-400"> · {{ rangeDescription }}이라 하루 전체 기록보다 적을 수 있습니다.</span>
         </p>
-        <div class="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-2">
+        <div class="bg-card rounded-lg border border-line p-2">
           <DitherFunnelChart :rows="seatRows" :max-items="8" />
         </div>
       </template>
