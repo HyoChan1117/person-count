@@ -4,13 +4,13 @@
       <li
         v-for="d in visible"
         :key="d.id"
-        class="group flex items-center gap-4 rounded-lg border-l-2 bg-canvas/40 py-2 pl-3 pr-3"
+        class="group flex items-center gap-3 rounded-lg 2xl:gap-4 border-l-2 bg-canvas/40 py-2 pl-3 pr-3"
         :class="d.name == null ? 'border-state-alert' : 'border-line'"
       >
         <BlurredImage
           :src="`/api/face/detections/${d.id}/photo`"
           :alt="`${d.zone_name} 감지`"
-          class="h-[4.5rem] w-32 shrink-0"
+          class="h-14 w-24 shrink-0 2xl:h-[4.5rem] 2xl:w-32"
           @zoom="emit('zoom', d)"
         />
         <div class="min-w-0 flex-1">
@@ -21,11 +21,11 @@
           </div>
           <p class="mt-0.5 truncate text-sm text-fg-muted">{{ d.zone_name }}</p>
         </div>
-        <div class="w-28 shrink-0 text-right">
+        <div class="w-24 shrink-0 text-right 2xl:w-28">
           <p class="text-xl font-semibold tabular-nums text-fg">{{ time(d.ts) }}</p>
           <p class="text-sm tabular-nums text-fg-muted">{{ date(d.ts) }}</p>
         </div>
-        <div class="w-24 shrink-0 text-right">
+        <div class="w-16 shrink-0 text-right 2xl:w-24">
           <p class="text-label text-fg-muted">유사도</p>
           <p class="text-lg font-semibold tabular-nums text-fg">{{ d.score != null ? d.score.toFixed(2) : '–' }}</p>
         </div>

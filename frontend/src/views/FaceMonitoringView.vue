@@ -8,7 +8,8 @@
       </div>
     </header>
 
-    <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,34rem)_minmax(0,1fr)] gap-gutter">
+    <!-- 2xl(1536px) 미만에서는 좌측 패널을 줄여 감지 기록 행에 이름이 들어갈 폭을 남긴다 -->
+    <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,24rem)_minmax(0,1fr)] gap-gutter 2xl:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]">
       <!-- 좌: 순찰 라이브 + 자리별 결과 -->
       <div class="flex min-h-0 flex-col gap-gutter overflow-y-auto pr-1">
         <PatrolLivePanel
