@@ -47,7 +47,7 @@
           :key="p.id"
           class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden group"
         >
-          <img :src="mockActive ? p.photoUrl : `/api/face/people/${p.id}/photo`" class="w-full aspect-[4/3] object-cover bg-neutral-100 dark:bg-neutral-800" />
+          <BlurredImage :src="mockActive ? p.photoUrl : `/api/face/people/${p.id}/photo`" :alt="`${p.name} 등록 사진`" :rounded="false" class="w-full aspect-[4/3]" />
           <div class="p-4">
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="min-w-0">
@@ -111,7 +111,7 @@
 
           <div v-if="shots.length" class="flex gap-1.5 flex-wrap mb-2">
             <div v-for="(s, i) in shots" :key="s.url" class="relative">
-              <img :src="s.url" class="w-14 h-14 object-cover rounded-lg border border-neutral-200 dark:border-neutral-800" />
+              <BlurredImage :src="s.url" alt="촬영한 사진" class="w-14 h-14 border border-neutral-200 dark:border-neutral-800" />
               <button
                 type="button"
                 @click="removeShot(i)"
@@ -174,6 +174,7 @@ import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import api from '@/api'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
 import { useMockToggle } from '@/composables/useMockToggle'
+import BlurredImage from '@/components/ui/BlurredImage.vue'
 
 // ── 목데이터 모드 ────────────────────────────────────────────────────────────
 

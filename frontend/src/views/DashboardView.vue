@@ -75,7 +75,8 @@
               ⛶ 전체화면
             </button>
           </div>
-          <img ref="liveImgRef" :key="liveKey" :src="liveSrc" class="w-full aspect-video object-contain bg-neutral-900" />
+          <!-- 실시간 영상에는 얼굴이 나오므로 기본 블러. 스트림은 보는 동안 계속 봐야 해서 자동 재블러 없이 화면을 나가거나 카메라를 바꾸면 다시 블러 -->
+          <BlurredImage ref="liveImgRef" :key="liveKey" :src="liveSrc" alt="실시간 카메라 영상" :rounded="false" :auto-reblur-ms="0" class="w-full aspect-video" />
         </div>
         <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mt-2">부하를 줄이기 위해 한 번에 카메라 1대만 실시간으로 표시합니다.</p>
       </div>
@@ -278,6 +279,7 @@ import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import SeatPromptModal from '@/components/modals/SeatPromptModal.vue'
 import ClassroomPromptModal from '@/components/modals/ClassroomPromptModal.vue'
+import BlurredImage from '@/components/ui/BlurredImage.vue'
 import api from '@/api'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
 import { useMockToggle } from '@/composables/useMockToggle'
@@ -405,7 +407,7 @@ const liveImgRef = ref(null)
 
 function toggleFullscreen() {
   if (document.fullscreenElement) document.exitFullscreen()
-  else liveImgRef.value?.requestFullscreen?.()
+  else (liveImgRef.value?.$el ?? liveImgRef.value)?.requestFullscreen?.()
 }
 
 async function fetchMapData() {

@@ -56,7 +56,8 @@
             </span>
             <span class="text-xs text-neutral-400 dark:text-neutral-600">조준용 미리보기 (탐지 없음)</span>
           </div>
-          <img :src="previewSrc" class="w-full aspect-video object-contain bg-neutral-900" />
+          <!-- 조준용 미리보기에도 얼굴이 나올 수 있어 기본 블러. 조준하는 동안 유지되도록 자동 재블러는 끈다 -->
+          <BlurredImage :src="previewSrc" alt="PTZ 카메라 미리보기" :rounded="false" :auto-reblur-ms="0" class="w-full aspect-video" />
 
           <!-- 방향 제어 (키보드로 조작, 아래 표시는 눌린 키를 보여준다) -->
           <div class="p-5 flex flex-wrap items-center justify-center gap-6">
@@ -223,6 +224,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/api'
 import RoiEditorModal from '@/components/modals/RoiEditorModal.vue'
+import BlurredImage from '@/components/ui/BlurredImage.vue'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
 import { useMockToggle } from '@/composables/useMockToggle'
 
