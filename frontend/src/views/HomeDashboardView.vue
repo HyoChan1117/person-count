@@ -4,7 +4,7 @@
 
     <section class="grid shrink-0 grid-cols-3 gap-gutter" aria-label="핵심 지표">
       <UiCard>
-        <MetricStat label="전체 점유율" :value="store.occupancyPct" unit="%" :hint="`${store.totalOccupied} / ${store.totalSeats}석 사용 중`" size="lg" tone="occupied" />
+        <MetricStat label="전체 점유율" :value="store.occupancyPct ?? '–'" :unit="store.occupancyPct == null ? '' : '%'" :hint="occupancyHint" size="lg" tone="occupied" />
       </UiCard>
       <UiCard>
         <MetricStat label="사용 중 교실" :value="store.activeRooms" :unit="`/ ${store.rooms.length}`" :hint="idleHint" size="lg" />
@@ -43,6 +43,12 @@ import PatrolStatusPanel from '@/components/home/PatrolStatusPanel.vue'
 import RecentDetectionsList from '@/components/home/RecentDetectionsList.vue'
 
 const store = useHomeDashboardStore()
+
+// 분모는 판정 가능한 좌석. 판정 불가 좌석은 따로 보여 준다.
+const occupancyHint = computed(() => {
+  const base = `${store.totalOccupied} / ${store.totalJudgeable}석 사용 중`
+  return store.totalUnknown ? `${base} · 판정 불가 ${store.totalUnknown}석` : base
+})
 
 const idleHint = computed(() => {
   const idle = store.rooms.length - store.activeRooms

@@ -8,11 +8,11 @@
 
       <div>
         <div class="flex items-baseline gap-1">
-          <span class="text-metric-sm tabular-nums" :class="pct > 0 ? 'text-state-occupied' : 'text-fg-muted'">{{ pct }}</span>
-          <span class="text-xl text-fg-muted">%</span>
+          <span class="text-metric-sm tabular-nums" :class="pct > 0 ? 'text-state-occupied' : 'text-fg-muted'">{{ pct ?? '–' }}</span>
+          <span v-if="pct != null" class="text-xl text-fg-muted">%</span>
         </div>
         <p class="mt-1 text-sm text-fg-muted tabular-nums">
-          {{ room.occupied }} / {{ room.total }}석
+          {{ room.occupied }} / {{ room.judgeable }}석
           <span v-if="room.unknown" class="text-state-unknown"> · 판정 불가 {{ room.unknown }}</span>
         </p>
       </div>
@@ -29,14 +29,15 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SeatMiniBar from './SeatMiniBar.vue'
 
 const props = defineProps({
-  room: { type: Object, required: true }, // { id, name, total, occupied, unknown, seats[], error }
+  room: { type: Object, required: true }, // { id, name, total, occupied, judgeable, unknown, seats[], error }
 })
 
-const pct = computed(() => (props.room.total ? Math.round((props.room.occupied / props.room.total) * 100) : 0))
+// 점유율 = 점유 ÷ 판정 가능 좌석. 판정 가능한 좌석이 없으면 null("–")
+const pct = computed(() => (props.room.judgeable ? Math.round((props.room.occupied / props.room.judgeable) * 100) : null))
 
 const badge = computed(() => {
   const r = props.room
-  if (r.error || (r.total > 0 && r.unknown === r.total)) return { status: 'unknown', label: '판정 불가' }
+  if (r.error || (r.total > 0 && r.judgeable === 0)) return { status: 'unknown', label: '판정 불가' }
   if (r.occupied > 0) return { status: 'occupied', label: '사용 중' }
   return { status: 'empty', label: '비어 있음' }
 })

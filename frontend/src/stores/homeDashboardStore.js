@@ -16,6 +16,14 @@ function loadSeen() {
 
 const numSort = (a, b) => Number(a.id) - Number(b.id)
 
+// 점유율의 분모는 "판정 가능한 좌석"(점유 + 빈 좌석)이다. 판정 불가 좌석은 분모에서 빼고 따로 센다.
+function tally(seats) {
+  const count = (state) => seats.filter((s) => s.state === state).length
+  const occupied = count('occupied')
+  const empty = count('empty')
+  return { occupied, empty, unknown: count('unknown'), judgeable: occupied + empty }
+}
+
 export const useHomeDashboardStore = defineStore('homeDashboard', () => {
   const rooms = ref([])
   const places = ref([])
@@ -40,11 +48,11 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
         cam.empty.forEach((s) => emp.add(s))
       })
       const seats = ids.map((id) => ({ id, state: occ.has(id) ? 'occupied' : emp.has(id) ? 'empty' : 'unknown' })).sort(numSort)
-      return { ...base, occupied: occ.size, unknown: seats.filter((s) => s.state === 'unknown').length, seats, error: false }
+      return { ...base, ...tally(seats), seats, error: false }
     } catch {
       // 한 교실이 실패해도 나머지는 계속 보여준다(판정 불가로 표시)
       const seats = ids.map((id) => ({ id, state: 'unknown' })).sort(numSort)
-      return { ...base, occupied: 0, unknown: seats.length, seats, error: true }
+      return { ...base, ...tally(seats), seats, error: true }
     }
   }
 
@@ -100,9 +108,11 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
     localStorage.setItem(SEEN_KEY, JSON.stringify([...seen.value].slice(-500)))
   }
 
-  const totalSeats = computed(() => rooms.value.reduce((n, r) => n + r.total, 0))
+  const totalJudgeable = computed(() => rooms.value.reduce((n, r) => n + r.judgeable, 0))
+  const totalUnknown = computed(() => rooms.value.reduce((n, r) => n + r.unknown, 0))
   const totalOccupied = computed(() => rooms.value.reduce((n, r) => n + r.occupied, 0))
-  const occupancyPct = computed(() => (totalSeats.value ? Math.round((totalOccupied.value / totalSeats.value) * 100) : 0))
+  // 판정 가능한 좌석이 하나도 없으면 0%가 아니라 null(표시는 "–")
+  const occupancyPct = computed(() => (totalJudgeable.value ? Math.round((totalOccupied.value / totalJudgeable.value) * 100) : null))
   const activeRooms = computed(() => rooms.value.filter((r) => r.occupied > 0).length)
 
   const allDetections = computed(() => places.value.flatMap((p) => p.detections).sort((a, b) => (a.ts < b.ts ? 1 : -1)))
@@ -127,7 +137,7 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
 
   return {
     rooms, places, loading, error,
-    totalSeats, totalOccupied, occupancyPct, activeRooms,
+    totalJudgeable, totalUnknown, totalOccupied, occupancyPct, activeRooms,
     recentDetections, unseenAlerts, primaryPatrol, collect,
     start, stop, refresh, markSeen,
   }
