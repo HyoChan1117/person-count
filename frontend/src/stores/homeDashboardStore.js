@@ -34,6 +34,8 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
       const occ = new Set()
       const emp = new Set()
       data.cameras.forEach((cam) => {
+        // 캡처/추론에 실패한 카메라는 서버가 좌석 전부를 empty로 돌려준다. 빈 좌석이 아니라 판정 불가로 남긴다.
+        if (cam.error) return
         cam.occupied.forEach((s) => occ.add(s))
         cam.empty.forEach((s) => emp.add(s))
       })

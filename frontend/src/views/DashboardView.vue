@@ -98,14 +98,15 @@
               </div>
             </div>
             <div class="text-right shrink-0 flex items-end gap-1.5">
-              <span class="text-3xl font-bold text-violet-600 leading-none">{{ seatResult.total_occupied }}</span>
-              <span class="text-sm text-neutral-400 dark:text-neutral-600 pb-0.5">/ {{ seatResult.total_seats }}석</span>
+              <span class="text-3xl font-bold text-violet-600 leading-none">{{ seatSummary.occupied }}</span>
+              <span class="text-sm text-neutral-400 dark:text-neutral-600 pb-0.5">/ {{ seatSummary.judgeable }}석</span>
+              <span v-if="seatSummary.unknown" class="text-sm text-amber-600 pb-0.5">· 판정 불가 {{ seatSummary.unknown }}석</span>
             </div>
           </div>
           <div class="mt-4 w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
             <div
               class="h-full bg-violet-500 rounded-full transition-all duration-500"
-              :style="{ width: seatResult.total_seats ? `${Math.round(seatResult.total_occupied / seatResult.total_seats * 100)}%` : '0%' }"
+              :style="{ width: seatSummary.judgeable ? `${Math.round(seatSummary.occupied / seatSummary.judgeable * 100)}%` : '0%' }"
             />
           </div>
         </div>
@@ -136,9 +137,11 @@
             >
               <div class="flex items-center justify-between mb-3">
                 <span class="text-xs font-medium text-neutral-600 dark:text-neutral-400">{{ cam.name }}</span>
-                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">{{ cam.occupied_count }}/{{ cam.total }}석</span>
+                <span v-if="cam.error" class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">판정 불가</span>
+                <span v-else class="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">{{ cam.occupied_count }}/{{ cam.total }}석</span>
               </div>
-              <div class="flex flex-wrap gap-1.5">
+              <p v-if="cam.error" class="text-xs text-amber-700">캡처 실패로 {{ cam.total }}석을 판정하지 못했습니다. ({{ cam.error }})</p>
+              <div v-else class="flex flex-wrap gap-1.5">
                 <span
                   v-for="s in cam.occupied"
                   :key="'occ-'+s"
@@ -222,7 +225,7 @@
                   {{ cam.occupied_count }}/{{ cam.total }}석
                 </span>
               </div>
-              <div v-if="cam.total > 0" class="flex flex-wrap gap-1.5">
+              <div v-if="cam.total > 0 && !cam.error" class="flex flex-wrap gap-1.5">
                 <span
                   v-for="s in cam.occupied"
                   :key="'occ-'+s"
@@ -288,6 +291,23 @@ const yoloLlmPromptOpen = ref(false)
 
 const seatLoading = ref(false)
 const seatResult = ref(null)
+
+// 점유율은 "점유 ÷ 판정 가능 좌석". 캡처에 실패한 카메라는 서버가 좌석 전부를 empty로 돌려주므로
+// 빈 좌석이 아니라 판정 불가로 따로 센다(다른 카메라가 같은 좌석을 판정했다면 그 결과를 따른다).
+const seatSummary = computed(() => {
+  const cams = seatResult.value?.cameras ?? []
+  const occ = new Set()
+  const emp = new Set()
+  const failed = new Set()
+  for (const cam of cams) {
+    if (cam.error) { (cam.empty ?? []).forEach((s) => failed.add(s)); continue }
+    ;(cam.occupied ?? []).forEach((s) => occ.add(s))
+    ;(cam.empty ?? []).forEach((s) => emp.add(s))
+  }
+  emp.forEach((s) => { if (occ.has(s)) emp.delete(s) })
+  const unknown = [...failed].filter((s) => !occ.has(s) && !emp.has(s)).length
+  return { occupied: occ.size, judgeable: occ.size + emp.size, unknown }
+})
 
 const yoloLlmLoading = ref(false)
 const yoloLlmResult = ref(null)
@@ -478,7 +498,8 @@ async function drawMapOnCanvas(canvas, cameras, seatActivity = new Map()) {
   const allEmpty = new Set()
   for (const cam of cameras) {
     for (const s of cam.occupied ?? []) allOccupied.add(s)
-    for (const s of cam.empty ?? []) allEmpty.add(s)
+    // 캡처에 실패한 카메라는 서버가 좌석을 전부 empty로 돌려주므로 빈 좌석으로 그리지 않는다(판정 불가)
+    if (!cam.error) for (const s of cam.empty ?? []) allEmpty.add(s)
   }
   // LLM이 활동을 응답한 좌석은 점유로 확정
   for (const [sid] of seatActivity) allOccupied.add(sid)
