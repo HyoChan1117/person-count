@@ -1,95 +1,108 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 p-6 lg:p-8">
+  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
     <div class="max-w-5xl mx-auto">
 
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <router-link to="/classrooms" class="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 transition mb-2">
+          <router-link to="/classrooms" class="inline-flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 transition mb-2">
             ← 좌석 확인
           </router-link>
-          <h1 class="text-2xl font-bold text-neutral-900 tracking-tight">{{ classroom?.name }}</h1>
-          <p class="text-sm text-neutral-500 mt-0.5">실시간 인원 현황</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">{{ classroom?.name }}</h1>
+            <span v-if="mockActive" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">목데이터</span>
+          </div>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">실시간 인원 현황</p>
         </div>
 
-        <div class="flex items-center gap-1 bg-white border border-neutral-200 rounded-xl p-1.5 shadow-sm w-fit">
-          <button @click="fetchSeatOccupancy" :disabled="seatLoading" class="btn-primary">
-            🪑 {{ seatLoading ? '분석 중...' : 'YOLO 분석' }}
-          </button>
+        <div class="flex items-center gap-2">
           <button
-            v-if="classroom"
-            @click="seatPromptOpen = true"
-            title="좌석 점유 프롬프트 편집"
-            class="btn-icon-ghost"
-          >⚙️</button>
+            @click="toggleMock"
+            class="text-xs px-3 py-1.5 rounded-lg transition font-medium border shrink-0"
+            :class="mockActive
+              ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
+              : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700'"
+          >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
 
-          <div class="w-px h-6 bg-neutral-200 mx-1" />
+          <div class="flex items-center gap-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-1.5 shadow-sm w-fit">
+            <button @click="fetchSeatOccupancy" :disabled="seatLoading" class="btn-primary">
+              🪑 {{ seatLoading ? '분석 중...' : 'YOLO 분석' }}
+            </button>
+            <button
+              v-if="classroom"
+              @click="seatPromptOpen = true"
+              title="좌석 점유 프롬프트 편집"
+              class="btn-icon-ghost"
+            >⚙️</button>
 
-          <button @click="fetchYoloLlm" :disabled="yoloLlmLoading" class="btn-secondary">
-            🤖 {{ yoloLlmLoading ? '분석 중...' : 'YOLO+LLM' }}
-          </button>
-          <button
-            v-if="classroom"
-            @click="yoloLlmPromptOpen = true"
-            title="YOLO+LLM 프롬프트 편집"
-            class="btn-icon-ghost"
-          >⚙️</button>
+            <div class="w-px h-6 bg-neutral-200 mx-1" />
 
-          <div class="w-px h-6 bg-neutral-200 mx-1" />
+            <button @click="fetchYoloLlm" :disabled="yoloLlmLoading" class="btn-secondary">
+              🤖 {{ yoloLlmLoading ? '분석 중...' : 'YOLO+LLM' }}
+            </button>
+            <button
+              v-if="classroom"
+              @click="yoloLlmPromptOpen = true"
+              title="YOLO+LLM 프롬프트 편집"
+              class="btn-icon-ghost"
+            >⚙️</button>
 
-          <button @click="toggleLive" class="inline-flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg transition"
-            :class="liveOn ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-neutral-800 text-white hover:bg-neutral-900'">
-            <span class="w-1.5 h-1.5 rounded-full" :class="liveOn ? 'bg-white animate-pulse' : 'bg-neutral-400'" />
-            {{ liveOn ? '실시간 종료' : '실시간 탐지' }}
-          </button>
+            <div class="w-px h-6 bg-neutral-200 mx-1" />
+
+            <button @click="toggleLive" class="inline-flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg transition"
+              :class="liveOn ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-neutral-800 text-white hover:bg-neutral-900'">
+              <span class="w-1.5 h-1.5 rounded-full" :class="liveOn ? 'bg-white animate-pulse' : 'bg-neutral-400'" />
+              {{ liveOn ? '실시간 종료' : '실시간 탐지' }}
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- 실시간 YOLO 탐지 -->
       <div v-if="liveOn" class="mb-8">
-        <div v-if="!liveCameras.length" class="text-center py-12 text-neutral-400 text-sm bg-white rounded-2xl border border-neutral-200">
+        <div v-if="!liveCameras.length" class="text-center py-12 text-neutral-400 dark:text-neutral-600 text-sm bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
           RTSP가 설정된 카메라가 없습니다.
         </div>
-        <div v-else class="rounded-2xl border border-neutral-200 shadow-sm bg-white overflow-hidden">
-          <div class="px-4 py-2.5 flex items-center justify-between gap-2 border-b border-neutral-100 bg-neutral-50/60">
+        <div v-else class="rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 overflow-hidden">
+          <div class="px-4 py-2.5 flex items-center justify-between gap-2 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-900/60">
             <div class="flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-              <select v-model="liveCameraId" class="text-sm font-medium text-neutral-600 bg-transparent outline-none">
+              <select v-model="liveCameraId" class="text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-transparent outline-none">
                 <option v-for="cam in liveCameras" :key="cam.camera_id" :value="cam.camera_id">{{ cam.name }}</option>
               </select>
             </div>
-            <button @click="toggleFullscreen" title="전체화면" class="text-xs text-neutral-400 hover:text-neutral-700 transition px-2 py-1 rounded-lg hover:bg-neutral-100">
+            <button @click="toggleFullscreen" title="전체화면" class="text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200 transition px-2 py-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700">
               ⛶ 전체화면
             </button>
           </div>
           <img ref="liveImgRef" :key="liveKey" :src="liveSrc" class="w-full aspect-video object-contain bg-neutral-900" />
         </div>
-        <p class="text-[11px] text-neutral-400 mt-2">부하를 줄이기 위해 한 번에 카메라 1대만 실시간으로 표시합니다.</p>
+        <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mt-2">부하를 줄이기 위해 한 번에 카메라 1대만 실시간으로 표시합니다.</p>
       </div>
 
       <!-- 좌석 점유 결과 -->
-      <div v-if="seatLoading" class="flex flex-col items-center justify-center py-24 text-neutral-400 text-sm gap-3">
-        <div class="w-9 h-9 rounded-full border-2 border-neutral-200 border-t-violet-500 animate-spin" />
+      <div v-if="seatLoading" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 text-sm gap-3">
+        <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-violet-500 animate-spin" />
         <div>분석 중...</div>
       </div>
 
       <div v-else-if="seatResult">
         <!-- 요약 -->
-        <div class="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm mb-4">
+        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm mb-4">
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-lg shrink-0">🪑</div>
               <div>
                 <div class="text-[11px] font-medium text-violet-500 uppercase tracking-wide">YOLO 분석</div>
-                <div class="text-sm font-semibold text-neutral-800">좌석 점유 현황</div>
+                <div class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">좌석 점유 현황</div>
               </div>
             </div>
             <div class="text-right shrink-0 flex items-end gap-1.5">
               <span class="text-3xl font-bold text-violet-600 leading-none">{{ seatResult.total_occupied }}</span>
-              <span class="text-sm text-neutral-400 pb-0.5">/ {{ seatResult.total_seats }}석</span>
+              <span class="text-sm text-neutral-400 dark:text-neutral-600 pb-0.5">/ {{ seatResult.total_seats }}석</span>
             </div>
           </div>
-          <div class="mt-4 w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+          <div class="mt-4 w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
             <div
               class="h-full bg-violet-500 rounded-full transition-all duration-500"
               :style="{ width: seatResult.total_seats ? `${Math.round(seatResult.total_occupied / seatResult.total_seats * 100)}%` : '0%' }"
@@ -100,10 +113,10 @@
         <!-- 배치도 + 카메라별 카드 -->
         <div class="flex flex-col lg:flex-row gap-4 mb-4 items-start">
           <!-- 배치도 오버레이 (절반 크기) -->
-          <div v-if="getMapData()?.objects?.length" class="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm w-full lg:w-1/2 shrink-0">
+          <div v-if="getMapData()?.objects?.length" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm w-full lg:w-1/2 shrink-0">
             <div class="flex items-center justify-between mb-4">
-              <span class="text-sm font-semibold text-neutral-800">교실 배치도</span>
-              <div class="flex items-center gap-3 text-[11px] text-neutral-500">
+              <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">교실 배치도</span>
+              <div class="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400">
                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400" />점유</span>
                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-neutral-300" />미점유</span>
               </div>
@@ -119,10 +132,10 @@
             <div
               v-for="cam in seatResult.cameras"
               :key="cam.camera_id"
-              class="rounded-2xl border border-neutral-200 shadow-sm bg-white p-4 hover:border-violet-200 transition-colors"
+              class="rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 p-4 hover:border-violet-200 transition-colors"
             >
               <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-medium text-neutral-600">{{ cam.name }}</span>
+                <span class="text-xs font-medium text-neutral-600 dark:text-neutral-400">{{ cam.name }}</span>
                 <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">{{ cam.occupied_count }}/{{ cam.total }}석</span>
               </div>
               <div class="flex flex-wrap gap-1.5">
@@ -134,7 +147,7 @@
                 <span
                   v-for="s in cam.empty"
                   :key="'emp-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-50 text-neutral-400 border border-neutral-100"
+                  class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-50 dark:bg-neutral-950 text-neutral-400 dark:text-neutral-600 border border-neutral-100 dark:border-neutral-800"
                 >{{ s }}</span>
               </div>
             </div>
@@ -143,8 +156,8 @@
       </div>
 
       <!-- YOLO+LLM 결과 -->
-      <div v-if="yoloLlmLoading" class="flex flex-col items-center justify-center py-24 text-neutral-400 text-sm gap-3" :class="{ 'mt-6': seatResult }">
-        <div class="w-9 h-9 rounded-full border-2 border-neutral-200 border-t-blue-500 animate-spin" />
+      <div v-if="yoloLlmLoading" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 text-sm gap-3" :class="{ 'mt-6': seatResult }">
+        <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-blue-500 animate-spin" />
         <div>YOLO+LLM 분석 중...</div>
       </div>
 
@@ -152,26 +165,26 @@
         <!-- 구분선 -->
         <div v-if="seatResult" class="flex items-center gap-3 mb-6">
           <div class="h-px flex-1 bg-neutral-200" />
-          <span class="text-[11px] font-medium text-neutral-400 uppercase tracking-wide px-2">YOLO+LLM 분석</span>
+          <span class="text-[11px] font-medium text-neutral-400 dark:text-neutral-600 uppercase tracking-wide px-2">YOLO+LLM 분석</span>
           <div class="h-px flex-1 bg-neutral-200" />
         </div>
 
         <!-- 요약 -->
-        <div class="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm mb-4">
+        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm mb-4">
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-lg shrink-0">🤖</div>
               <div>
                 <div class="text-[11px] font-medium text-blue-500 uppercase tracking-wide">YOLO+LLM 분석</div>
-                <div class="text-sm font-semibold text-neutral-800">좌석 점유 현황</div>
+                <div class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">좌석 점유 현황</div>
               </div>
             </div>
             <div class="text-right shrink-0 flex items-end gap-1.5">
               <span class="text-3xl font-bold text-blue-600 leading-none">{{ yoloLlmResult.total_occupied }}</span>
-              <span class="text-sm text-neutral-400 pb-0.5">/ {{ yoloLlmResult.total_seats }}석</span>
+              <span class="text-sm text-neutral-400 dark:text-neutral-600 pb-0.5">/ {{ yoloLlmResult.total_seats }}석</span>
             </div>
           </div>
-          <div class="mt-4 w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
+          <div class="mt-4 w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
             <div
               class="h-full bg-blue-500 rounded-full transition-all duration-500"
               :style="{ width: yoloLlmResult.total_seats ? `${Math.round(yoloLlmResult.total_occupied / yoloLlmResult.total_seats * 100)}%` : '0%' }"
@@ -182,10 +195,10 @@
         <!-- YOLO+LLM 배치도 + 카메라별 카드 -->
         <div class="flex flex-col lg:flex-row gap-4 mb-4 items-start">
           <!-- 배치도 오버레이 (절반 크기) -->
-          <div v-if="getMapData()?.objects?.length" class="bg-white border border-neutral-200 rounded-2xl p-5 shadow-sm w-full lg:w-1/2 shrink-0">
+          <div v-if="getMapData()?.objects?.length" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm w-full lg:w-1/2 shrink-0">
             <div class="flex items-center justify-between mb-4">
-              <span class="text-sm font-semibold text-neutral-800">교실 배치도</span>
-              <div class="flex items-center gap-3 text-[11px] text-neutral-500">
+              <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">교실 배치도</span>
+              <div class="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400">
                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400" />점유</span>
                 <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-neutral-300" />미점유</span>
               </div>
@@ -201,10 +214,10 @@
             <div
               v-for="cam in yoloLlmResult.cameras"
               :key="cam.camera_id"
-              class="rounded-2xl border border-neutral-200 shadow-sm bg-white p-4 hover:border-blue-200 transition-colors"
+              class="rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 p-4 hover:border-blue-200 transition-colors"
             >
               <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-medium text-neutral-600">{{ cam.name }}</span>
+                <span class="text-xs font-medium text-neutral-600 dark:text-neutral-400">{{ cam.name }}</span>
                 <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
                   {{ cam.occupied_count }}/{{ cam.total }}석
                 </span>
@@ -218,7 +231,7 @@
                 <span
                   v-for="s in cam.empty"
                   :key="'emp-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-50 text-neutral-400 border border-neutral-100"
+                  class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-50 dark:bg-neutral-950 text-neutral-400 dark:text-neutral-600 border border-neutral-100 dark:border-neutral-800"
                 >{{ s }}</span>
               </div>
               <p v-if="cam.error" class="text-xs text-red-400">{{ cam.error }}</p>
@@ -228,8 +241,8 @@
       </div>
 
       <!-- 빈 상태 -->
-      <div v-if="!seatResult && !yoloLlmResult && !seatLoading && !yoloLlmLoading" class="flex flex-col items-center justify-center py-28 text-neutral-400 gap-3">
-        <div class="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center text-2xl">📊</div>
+      <div v-if="!seatResult && !yoloLlmResult && !seatLoading && !yoloLlmLoading" class="flex flex-col items-center justify-center py-28 text-neutral-400 dark:text-neutral-600 gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">📊</div>
         <div class="text-sm">버튼을 눌러 분석하세요</div>
       </div>
 
@@ -263,6 +276,8 @@ import { useClassroomStore } from '@/stores/classroomStore.js'
 import SeatPromptModal from '@/components/modals/SeatPromptModal.vue'
 import ClassroomPromptModal from '@/components/modals/ClassroomPromptModal.vue'
 import api from '@/api'
+import { generateMockImageDataUrl } from '@/utils/mockImage'
+import { useMockToggle } from '@/composables/useMockToggle'
 
 const route = useRoute()
 const cStore = useClassroomStore()
@@ -279,13 +294,69 @@ const yoloLlmResult = ref(null)
 
 const mapData = ref(null)
 
+// ── 목데이터 모드 ────────────────────────────────────────────────────────────
+
+const MOCK_SEAT_IDS = ['1', '2', '3', '4', '5', '6']
+const MOCK_CAMERAS = [
+  { camera_id: 'MOCK1', name: 'CCTV 1', ip_address: '192.168.0.101', rtsp_url: 'rtsp://mock' },
+  { camera_id: 'MOCK2', name: 'CCTV 2', ip_address: '192.168.0.102', rtsp_url: 'rtsp://mock' },
+]
+const MOCK_MAP_DATA = {
+  mapW: 480,
+  mapH: 320,
+  objects: [
+    { id: 1, type: 'cctv', x: 20, y: 20, w: 60, h: 44, label: 'CCTV 1' },
+    { id: 2, type: 'cctv', x: 400, y: 20, w: 60, h: 44, label: 'CCTV 2' },
+    { id: 3, type: 'desk', x: 60, y: 110, w: 90, h: 55, label: '1' },
+    { id: 4, type: 'desk', x: 195, y: 110, w: 90, h: 55, label: '2' },
+    { id: 5, type: 'desk', x: 330, y: 110, w: 90, h: 55, label: '3' },
+    { id: 6, type: 'desk', x: 60, y: 200, w: 90, h: 55, label: '4' },
+    { id: 7, type: 'desk', x: 195, y: 200, w: 90, h: 55, label: '5' },
+    { id: 8, type: 'desk', x: 330, y: 200, w: 90, h: 55, label: '6' },
+  ],
+}
+
+function buildMockAnalysisResult(withActivity) {
+  const occupied = MOCK_SEAT_IDS.filter(() => Math.random() > 0.45)
+  const cam1Seats = MOCK_SEAT_IDS.slice(0, 3)
+  const cam2Seats = MOCK_SEAT_IDS.slice(3)
+  const cameras = [
+    { camera_id: 'MOCK1', name: 'CCTV 1', total: cam1Seats.length, occupied_count: cam1Seats.filter(s => occupied.includes(s)).length, occupied: cam1Seats.filter(s => occupied.includes(s)), empty: cam1Seats.filter(s => !occupied.includes(s)) },
+    { camera_id: 'MOCK2', name: 'CCTV 2', total: cam2Seats.length, occupied_count: cam2Seats.filter(s => occupied.includes(s)).length, occupied: cam2Seats.filter(s => occupied.includes(s)), empty: cam2Seats.filter(s => !occupied.includes(s)) },
+  ]
+  if (withActivity && occupied.length) {
+    const activities = ['공부', '휴대폰', '노트북']
+    cameras[0].llm_response = occupied
+      .filter(s => cam1Seats.includes(s))
+      .map(s => `${s} - ${activities[Math.floor(Math.random() * activities.length)]}`)
+      .join('\n')
+  }
+  return {
+    total_occupied: occupied.length,
+    total_seats: MOCK_SEAT_IDS.length,
+    cameras,
+  }
+}
+
+function resetAnalysisResults() {
+  seatResult.value = null
+  yoloLlmResult.value = null
+  liveOn.value = false
+}
+
+const { mockActive, toggleMock } = useMockToggle(
+  () => { resetAnalysisResults(); fetchSeatOccupancy() },
+  resetAnalysisResults,
+)
+
 // ── 실시간 YOLO 탐지 ─────────────────────────────────────────────────────────
 
 const liveOn = ref(false)
 const liveKey = ref(0)
 const liveCameraId = ref(null)
+const mockLiveImg = ref('')
 
-const liveCameras = computed(() => (classroom.value?.cameras ?? []).filter(c => c.rtsp_url))
+const liveCameras = computed(() => (mockActive.value ? MOCK_CAMERAS : (classroom.value?.cameras ?? []).filter(c => c.rtsp_url)))
 
 function toggleLive() {
   liveOn.value = !liveOn.value
@@ -294,13 +365,21 @@ function toggleLive() {
       liveCameraId.value = liveCameras.value[0]?.camera_id ?? null
     }
     liveKey.value++
+    if (mockActive.value) mockLiveImg.value = generateMockImageDataUrl('MOCK LIVE FEED', 960, 540, '#18181b')
   }
 }
 
 // 카메라를 바꿀 때도 이전 스트림이 남지 않도록 <img>를 완전히 새로 만든다
-watch(liveCameraId, () => { if (liveOn.value) liveKey.value++ })
+watch(liveCameraId, () => {
+  if (!liveOn.value) return
+  liveKey.value++
+  if (mockActive.value) mockLiveImg.value = generateMockImageDataUrl('MOCK LIVE FEED', 960, 540, '#18181b')
+})
 
-const liveSrc = computed(() => `/api/analysis/${route.params.id}/live/${liveCameraId.value}?t=${liveKey.value}`)
+const liveSrc = computed(() => {
+  if (mockActive.value) return mockLiveImg.value
+  return `/api/analysis/${route.params.id}/live/${liveCameraId.value}?t=${liveKey.value}`
+})
 
 const liveImgRef = ref(null)
 
@@ -326,6 +405,14 @@ onMounted(() => {
 })
 
 async function fetchSeatOccupancy() {
+  if (mockActive.value) {
+    seatLoading.value = true
+    seatResult.value = null
+    await new Promise(r => setTimeout(r, 300))
+    seatResult.value = buildMockAnalysisResult(false)
+    seatLoading.value = false
+    return
+  }
   seatLoading.value = true
   seatResult.value = null
   try {
@@ -339,6 +426,14 @@ async function fetchSeatOccupancy() {
 }
 
 async function fetchYoloLlm() {
+  if (mockActive.value) {
+    yoloLlmLoading.value = true
+    yoloLlmResult.value = null
+    await new Promise(r => setTimeout(r, 300))
+    yoloLlmResult.value = buildMockAnalysisResult(true)
+    yoloLlmLoading.value = false
+    return
+  }
   yoloLlmLoading.value = true
   yoloLlmResult.value = null
   try {
@@ -357,7 +452,7 @@ const mapCanvasRef = ref(null)
 const yoloMapCanvasRef = ref(null)
 
 function getMapData() {
-  return mapData.value
+  return mockActive.value ? MOCK_MAP_DATA : mapData.value
 }
 
 // LLM 응답 "5 - 공부\n8 - 휴대폰" → Map { '5' → '공부', '8' → '휴대폰' }
@@ -463,6 +558,6 @@ watch(yoloLlmResult, () => { if (yoloLlmResult.value) drawYoloLlmMap() })
   @apply inline-flex items-center gap-1.5 bg-blue-600 text-white text-xs font-medium px-3.5 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed;
 }
 .btn-icon-ghost {
-  @apply w-8 h-8 flex items-center justify-center text-xs rounded-lg text-neutral-500 hover:bg-neutral-100 transition;
+  @apply w-8 h-8 flex items-center justify-center text-xs rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition;
 }
 </style>

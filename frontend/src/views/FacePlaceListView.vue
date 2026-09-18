@@ -1,12 +1,12 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 p-6 lg:p-8">
+  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
     <div class="max-w-6xl mx-auto">
 
       <!-- 헤더 -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-neutral-900 tracking-tight">얼굴 인식</h1>
-          <p class="text-sm text-neutral-500 mt-0.5">감시 장소를 등록하고 PTZ 카메라와 순찰 구역을 관리하세요</p>
+          <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">얼굴 인식</h1>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">감시 장소를 등록하고 PTZ 카메라와 순찰 구역을 관리하세요</p>
         </div>
 
         <button
@@ -15,10 +15,16 @@
         >+ 장소 추가</button>
       </div>
 
-      <div v-if="loading" class="text-center py-12 text-neutral-400">불러오는 중...</div>
+      <!-- 장소 선택 모드 배너 -->
+      <div v-if="actionMeta" class="mb-6 flex items-center justify-between bg-violet-50 border border-violet-200 rounded-xl px-4 py-3">
+        <p class="text-sm text-violet-700"><strong>{{ actionMeta.label }}</strong>을(를) 진행할 장소를 선택하세요.</p>
+        <router-link to="/face" class="text-xs text-violet-500 hover:underline shrink-0">선택 취소</router-link>
+      </div>
 
-      <div v-else-if="!places.length" class="flex flex-col items-center justify-center py-24 text-neutral-400 gap-3">
-        <div class="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center text-2xl">🙂</div>
+      <div v-if="loading" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
+
+      <div v-else-if="!places.length" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">🙂</div>
         <p class="text-sm">등록된 감시 장소가 없습니다. 장소를 추가해보세요.</p>
         <router-link to="/face/people" class="text-xs text-violet-600 hover:underline">👤 인물 등록하러 가기</router-link>
       </div>
@@ -27,67 +33,32 @@
         <div
           v-for="p in places"
           :key="p.id"
-          class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5 hover:shadow-md hover:border-violet-200 transition group flex flex-col"
+          @click="actionMeta && selectPlace(p)"
+          class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm p-5 hover:shadow-md hover:border-violet-200 transition group flex flex-col"
+          :class="actionMeta ? 'cursor-pointer hover:ring-2 hover:ring-violet-300' : ''"
         >
-          <div class="flex items-start justify-between mb-3">
-            <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-lg shrink-0">🙂</div>
-            <button
-              @click="removePlace(p)"
-              title="장소 삭제"
-              class="text-neutral-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition text-lg leading-none px-1"
-            >⋯</button>
-          </div>
-
-          <h2 class="font-semibold text-neutral-800 mb-2">{{ p.name }}</h2>
-
-          <ul class="text-xs text-neutral-500 space-y-1 mb-4">
-            <li v-if="classroomName(p)">· 교실 {{ classroomName(p) }}</li>
-            <li v-if="p.camera?.ip">· PTZ 카메라 {{ p.camera.ip }}</li>
-            <li v-else class="text-neutral-400">· PTZ 카메라 없음</li>
-            <li>· 순찰 구역 {{ p.zones?.length ?? 0 }}개</li>
-          </ul>
-
-          <div class="flex-1" />
-
-          <div class="flex gap-1.5 flex-wrap border-t border-neutral-100 pt-3">
-            <router-link
-              :to="`/face/${p.id}/camera`"
-              class="flex-1 text-center text-[11px] bg-violet-600 text-white py-1.5 rounded-lg hover:bg-violet-700 transition"
-            >카메라 설정</router-link>
-            <router-link
-              :to="`/face/${p.id}/zones`"
-              class="flex-1 flex items-center justify-center text-center text-[11px] bg-neutral-100 text-neutral-700 py-1.5 rounded-lg hover:bg-neutral-200 transition"
-            >구역 등록</router-link>
-            <router-link
-              :to="`/face/${p.id}/monitoring`"
-              class="flex-1 flex items-center justify-center text-center text-[11px] bg-neutral-100 text-neutral-700 py-1.5 rounded-lg hover:bg-neutral-200 transition"
-            >모니터링</router-link>
-            <router-link
-              to="/face/people"
-              class="w-full text-center text-[11px] bg-violet-50 text-violet-700 py-1.5 rounded-lg hover:bg-violet-100 transition border border-violet-200"
-            >👤 인물 등록</router-link>
-          </div>
+          <h2 class="font-semibold text-neutral-800 dark:text-neutral-100 text-lg">{{ p.name }}</h2>
         </div>
       </div>
     </div>
 
     <!-- 장소 추가 모달 -->
     <div v-if="showForm" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showForm = false">
-      <div class="bg-white rounded-2xl p-6 w-80 shadow-xl">
-        <h2 class="font-bold text-neutral-800 mb-4">감시 장소 추가</h2>
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-80 shadow-xl">
+        <h2 class="font-bold text-neutral-800 dark:text-neutral-100 mb-4">감시 장소 추가</h2>
         <form @submit.prevent="createPlace">
-          <label class="block text-sm text-neutral-600 mb-1">교실 선택</label>
+          <label class="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">교실 선택</label>
           <select v-model="form.classroomId" class="input w-full mb-3">
             <option v-for="c in classrooms" :key="c.id" :value="c.id">{{ c.name }}</option>
             <option :value="null">직접 입력</option>
           </select>
 
           <template v-if="form.classroomId === null">
-            <label class="block text-sm text-neutral-600 mb-1">장소 이름</label>
+            <label class="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">장소 이름</label>
             <input v-model="form.name" required placeholder="예: 창조관 301호" class="input w-full mb-2" />
           </template>
 
-          <p class="text-[11px] text-neutral-400 mb-4">추가한 뒤 카메라 설정에서 IP와 계정을 입력해주세요.</p>
+          <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mb-4">추가한 뒤 카메라 설정에서 IP와 계정을 입력해주세요.</p>
           <div class="flex gap-2">
             <button type="button" @click="showForm = false" class="flex-1 btn-ghost">취소</button>
             <button type="submit" class="flex-1 btn-primary">추가</button>
@@ -99,17 +70,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
+import { FACE_ACTIONS } from '@/constants/navActions'
 
+const route = useRoute()
+const router = useRouter()
 const places = ref([])
 const classrooms = ref([])
 const loading = ref(true)
 const showForm = ref(false)
 const form = ref({ name: '', classroomId: null })
 
-function classroomName(place) {
-  return classrooms.value.find(c => c.id === place.classroom_id)?.name
+const ACTIONS = Object.fromEntries(FACE_ACTIONS.map(a => [a.action, a]))
+const actionMeta = computed(() => ACTIONS[route.query.action] ?? null)
+
+function selectPlace(p) {
+  if (!actionMeta.value) return
+  router.push(actionMeta.value.path(p.id))
 }
 
 async function fetchPlaces() {
@@ -136,23 +115,17 @@ async function createPlace() {
   await fetchPlaces()
 }
 
-async function removePlace(place) {
-  if (!confirm(`"${place.name}" 장소를 삭제하시겠습니까? 등록된 구역도 함께 삭제됩니다.`)) return
-  await api.delete(`/face/places/${place.id}`)
-  await fetchPlaces()
-}
-
 onMounted(fetchPlaces)
 </script>
 
 <style scoped>
 .input {
-  @apply border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400;
+  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400;
 }
 .btn-primary {
   @apply bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition;
 }
 .btn-ghost {
-  @apply bg-neutral-100 text-neutral-700 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 transition;
+  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition;
 }
 </style>

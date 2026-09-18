@@ -1,0 +1,132 @@
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
+import api from '@/api'
+import { isDemoMode } from '@/demo'
+import { tickInfo } from '@/demo/state'
+
+const SEEN_KEY = 'home-seen-alerts'
+// 백엔드는 시계 기준 정각 단위(기본 600초)로 수집한다. 그 값은 서버 환경변수라 프런트에서 읽을 수 없어 설정값으로 둔다.
+const COLLECT_SEC = Number(import.meta.env.VITE_COLLECT_INTERVAL_SEC) || 600
+// seat-occupancy는 호출할 때마다 실시간 추론을 돌리므로 실서버에서는 길게 잡는다.
+const REFRESH_MS = isDemoMode ? 5000 : 120000
+
+function loadSeen() {
+  try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')) } catch { return new Set() }
+}
+
+const numSort = (a, b) => Number(a.id) - Number(b.id)
+
+export const useHomeDashboardStore = defineStore('homeDashboard', () => {
+  const rooms = ref([])
+  const places = ref([])
+  const loading = ref(true)
+  const error = ref('')
+  const now = ref(Date.now())
+  const seen = ref(loadSeen())
+  let clockTimer = null
+  let pollTimer = null
+
+  async function loadRoom(c) {
+    const ids = c.cameras.flatMap((cam) => cam.seat_ids ?? [])
+    const base = { id: c.id, name: c.name, total: ids.length }
+    try {
+      const { data } = await api.get(`/analysis/${c.id}/seat-occupancy`)
+      const occ = new Set()
+      const emp = new Set()
+      data.cameras.forEach((cam) => {
+        cam.occupied.forEach((s) => occ.add(s))
+        cam.empty.forEach((s) => emp.add(s))
+      })
+      const seats = ids.map((id) => ({ id, state: occ.has(id) ? 'occupied' : emp.has(id) ? 'empty' : 'unknown' })).sort(numSort)
+      return { ...base, occupied: occ.size, unknown: seats.filter((s) => s.state === 'unknown').length, seats, error: false }
+    } catch {
+      // 한 교실이 실패해도 나머지는 계속 보여준다(판정 불가로 표시)
+      const seats = ids.map((id) => ({ id, state: 'unknown' })).sort(numSort)
+      return { ...base, occupied: 0, unknown: seats.length, seats, error: true }
+    }
+  }
+
+  async function loadPlace(p) {
+    const [statusRes, detRes] = await Promise.all([
+      api.get(`/face/places/${p.id}/patrol/status`),
+      api.get(`/face/places/${p.id}/detections`),
+    ])
+    return {
+      id: p.id,
+      name: p.name,
+      zones: (p.zones ?? []).map((z) => ({ id: z.id, name: z.name })),
+      status: statusRes.data,
+      detections: detRes.data.detections.map((d) => ({ ...d, key: `${p.id}:${d.id}`, placeId: p.id, placeName: p.name })),
+    }
+  }
+
+  async function refresh() {
+    try {
+      const [cRes, pRes] = await Promise.all([api.get('/classrooms/'), api.get('/face/places')])
+      if (isDemoMode) {
+        rooms.value = await Promise.all(cRes.data.map(loadRoom))
+      } else {
+        const next = []
+        for (const c of cRes.data) next.push(await loadRoom(c))
+        rooms.value = next
+      }
+      places.value = await Promise.all(pRes.data.places.map(loadPlace))
+      error.value = ''
+    } catch (e) {
+      error.value = e.message
+    } finally {
+      loading.value = false
+    }
+  }
+
+  function start() {
+    refresh()
+    clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
+    pollTimer = setInterval(refresh, REFRESH_MS)
+  }
+
+  function stop() {
+    clearInterval(clockTimer)
+    clearInterval(pollTimer)
+    clockTimer = null
+    pollTimer = null
+  }
+
+  function markSeen(key) {
+    if (seen.value.has(key)) return
+    seen.value = new Set([...seen.value, key])
+    localStorage.setItem(SEEN_KEY, JSON.stringify([...seen.value].slice(-500)))
+  }
+
+  const totalSeats = computed(() => rooms.value.reduce((n, r) => n + r.total, 0))
+  const totalOccupied = computed(() => rooms.value.reduce((n, r) => n + r.occupied, 0))
+  const occupancyPct = computed(() => (totalSeats.value ? Math.round((totalOccupied.value / totalSeats.value) * 100) : 0))
+  const activeRooms = computed(() => rooms.value.filter((r) => r.occupied > 0).length)
+
+  const allDetections = computed(() => places.value.flatMap((p) => p.detections).sort((a, b) => (a.ts < b.ts ? 1 : -1)))
+  const recentDetections = computed(() => allDetections.value.slice(0, 5))
+  // 미등록 인물 감지 중 화면에서 사진을 열어보지 않은 것
+  const unseenAlerts = computed(() => allDetections.value.filter((d) => d.name == null && !seen.value.has(d.key)).length)
+  const primaryPatrol = computed(() => places.value.find((p) => p.status.running) ?? places.value[0] ?? null)
+
+  // 마지막 수집 시각 / 다음 수집까지 남은 시간
+  const collect = computed(() => {
+    const t = now.value
+    if (isDemoMode) {
+      const intervalSec = Math.round(tickInfo.intervalMs / 1000)
+      const nextInSec = Math.max(0, Math.ceil((tickInfo.last + tickInfo.intervalMs - t) / 1000))
+      return { lastAt: new Date(tickInfo.last), nextInSec, intervalSec }
+    }
+    const d = new Date(t)
+    const sinceMidnight = d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds()
+    const remainder = sinceMidnight % COLLECT_SEC
+    return { lastAt: new Date(t - remainder * 1000), nextInSec: COLLECT_SEC - remainder, intervalSec: COLLECT_SEC }
+  })
+
+  return {
+    rooms, places, loading, error,
+    totalSeats, totalOccupied, occupancyPct, activeRooms,
+    recentDetections, unseenAlerts, primaryPatrol, collect,
+    start, stop, refresh, markSeen,
+  }
+})

@@ -1,21 +1,31 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 p-6 lg:p-8">
+  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
     <div class="max-w-6xl mx-auto">
 
       <!-- 헤더 -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <router-link to="/face" class="inline-flex items-center gap-1 text-xs text-neutral-400 hover:text-neutral-600 transition mb-2">
+          <router-link to="/face" class="inline-flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 transition mb-2">
             ← 얼굴 인식
           </router-link>
-          <h1 class="text-2xl font-bold text-neutral-900 tracking-tight">인물 등록</h1>
-          <p class="text-sm text-neutral-500 mt-0.5">얼굴을 등록해두면 순찰 중 허가된 사람인지 구분합니다</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">인물 등록</h1>
+            <span v-if="mockActive" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">목데이터</span>
+          </div>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">얼굴을 등록해두면 순찰 중 허가된 사람인지 구분합니다</p>
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
           <button
+            @click="toggleMock"
+            class="text-xs px-3 py-2 rounded-lg transition font-medium border"
+            :class="mockActive
+              ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
+              : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700'"
+          >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
+          <button
             @click="openForm('recognize')"
-            class="inline-flex items-center gap-1.5 bg-white border border-neutral-200 text-neutral-700 text-sm font-medium px-4 py-2 rounded-lg hover:bg-neutral-50 transition"
+            class="inline-flex items-center gap-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm font-medium px-4 py-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition"
           >인식 테스트</button>
           <button
             @click="openForm('enroll')"
@@ -24,10 +34,10 @@
         </div>
       </div>
 
-      <div v-if="loading" class="text-center py-12 text-neutral-400">불러오는 중...</div>
+      <div v-if="loading" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
 
-      <div v-else-if="!people.length" class="flex flex-col items-center justify-center py-24 text-neutral-400 gap-3 text-center">
-        <div class="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center text-2xl">👤</div>
+      <div v-else-if="!people.length" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 gap-3 text-center">
+        <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">👤</div>
         <p class="text-sm">등록된 인물이 없습니다.<br>사진을 올려 등록해보세요.</p>
       </div>
 
@@ -35,19 +45,19 @@
         <div
           v-for="p in people"
           :key="p.id"
-          class="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden group"
+          class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden group"
         >
-          <img :src="`/api/face/people/${p.id}/photo`" class="w-full aspect-[4/3] object-cover bg-neutral-100" />
+          <img :src="mockActive ? p.photoUrl : `/api/face/people/${p.id}/photo`" class="w-full aspect-[4/3] object-cover bg-neutral-100 dark:bg-neutral-800" />
           <div class="p-4">
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="min-w-0">
-                <div class="font-semibold text-neutral-800 truncate">{{ p.name }}</div>
-                <div class="text-[11px] text-neutral-400">사진 {{ p.samples }}장 · {{ p.enrolled_at?.slice(0, 10) }}</div>
+                <div class="font-semibold text-neutral-800 dark:text-neutral-100 truncate">{{ p.name }}</div>
+                <div class="text-[11px] text-neutral-400 dark:text-neutral-600">사진 {{ p.samples }}장 · {{ p.enrolled_at?.slice(0, 10) }}</div>
               </div>
               <button
                 @click="removePerson(p)"
                 title="삭제"
-                class="text-neutral-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition shrink-0"
+                class="text-neutral-300 dark:text-neutral-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition shrink-0"
               >✕</button>
             </div>
 
@@ -65,14 +75,14 @@
 
     <!-- 등록 모달 -->
     <div v-if="showForm" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showForm = false">
-      <div class="bg-white rounded-2xl p-6 w-96 shadow-xl">
-        <h2 class="font-bold text-neutral-800 mb-4">{{ purpose === 'enroll' ? '인물 등록' : '인식 테스트' }}</h2>
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-96 shadow-xl">
+        <h2 class="font-bold text-neutral-800 dark:text-neutral-100 mb-4">{{ purpose === 'enroll' ? '인물 등록' : '인식 테스트' }}</h2>
 
         <template v-if="purpose === 'enroll'">
-          <label class="block text-sm text-neutral-600 mb-1">이름</label>
+          <label class="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">이름</label>
           <input v-model="form.name" placeholder="예: 김민석" class="input w-full mb-4" />
         </template>
-        <p v-else class="text-xs text-neutral-500 mb-4">
+        <p v-else class="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
           촬영한 얼굴이 등록된 인물과 얼마나 일치하는지 확인합니다. 등록되지는 않습니다.
         </p>
 
@@ -101,7 +111,7 @@
 
           <div v-if="shots.length" class="flex gap-1.5 flex-wrap mb-2">
             <div v-for="(s, i) in shots" :key="s.url" class="relative">
-              <img :src="s.url" class="w-14 h-14 object-cover rounded-lg border border-neutral-200" />
+              <img :src="s.url" class="w-14 h-14 object-cover rounded-lg border border-neutral-200 dark:border-neutral-800" />
               <button
                 type="button"
                 @click="removeShot(i)"
@@ -110,14 +120,14 @@
             </div>
           </div>
 
-          <p class="text-[11px] text-neutral-400 mb-4">
+          <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mb-4">
             정면을 보고 3장 정도 촬영해주세요. 고개 각도를 조금씩 바꾸면 인식률이 올라갑니다.
           </p>
         </template>
 
         <template v-else>
           <input type="file" accept="image/*" multiple @change="onFiles" class="w-full text-sm mb-1" />
-          <p class="text-[11px] text-neutral-400 mb-4">
+          <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mb-4">
             여러 장을 올리면 평균을 내어 더 정확해집니다. 각 사진에서 가장 큰 얼굴을 사용합니다.
           </p>
         </template>
@@ -137,7 +147,7 @@
             class="rounded-lg border px-3 py-2 text-xs"
             :class="f.name
               ? (f.authorized ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700')
-              : 'border-neutral-200 bg-neutral-50 text-neutral-600'"
+              : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400'"
           >
             <span class="font-semibold">{{ f.name ?? '미등록 인물' }}</span>
             <span v-if="f.name"> · {{ f.authorized ? '허가됨' : '미허가' }}</span>
@@ -162,6 +172,25 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import api from '@/api'
+import { generateMockImageDataUrl } from '@/utils/mockImage'
+import { useMockToggle } from '@/composables/useMockToggle'
+
+// ── 목데이터 모드 ────────────────────────────────────────────────────────────
+
+let mockPersonId = 1
+
+function buildMockPeople() {
+  return [
+    { id: mockPersonId++, name: '김민석', samples: 3, enrolled_at: new Date().toISOString(), authorized: true, photoUrl: generateMockImageDataUrl('김민석', 480, 360, '#334155') },
+    { id: mockPersonId++, name: '이서연', samples: 4, enrolled_at: new Date().toISOString(), authorized: true, photoUrl: generateMockImageDataUrl('이서연', 480, 360, '#334155') },
+    { id: mockPersonId++, name: '박도윤', samples: 2, enrolled_at: new Date().toISOString(), authorized: false, photoUrl: generateMockImageDataUrl('박도윤', 480, 360, '#334155') },
+  ]
+}
+
+const { mockActive, toggleMock } = useMockToggle(
+  () => { people.value = buildMockPeople(); loading.value = false },
+  fetchPeople,
+)
 
 const people = ref([])
 const loading = ref(true)
@@ -284,6 +313,24 @@ async function submit() {
   submitting.value = true
   error.value = ''
   matchResult.value = null
+
+  if (mockActive.value) {
+    await new Promise(r => setTimeout(r, 300))
+    const photoUrl = mode.value === 'webcam' ? shots.value[0]?.url : URL.createObjectURL(form.value.files[0])
+    if (purpose.value === 'recognize') {
+      const known = Math.random() > 0.4
+      matchResult.value = known
+        ? { faces: [{ name: '김민석', authorized: true, score: Number((0.5 + Math.random() * 0.4).toFixed(2)) }], threshold: 0.45 }
+        : { faces: [], threshold: 0.45 }
+      submitting.value = false
+      return
+    }
+    people.value = [{ id: mockPersonId++, name: form.value.name.trim(), samples: imageCount.value, enrolled_at: new Date().toISOString(), authorized: true, photoUrl }, ...people.value]
+    showForm.value = false
+    submitting.value = false
+    return
+  }
+
   const body = new FormData()
   if (purpose.value === 'enroll') body.append('name', form.value.name.trim())
   if (mode.value === 'webcam') {
@@ -312,12 +359,20 @@ async function submit() {
 }
 
 async function toggleAuthorized(person) {
+  if (mockActive.value) {
+    person.authorized = !person.authorized
+    return
+  }
   const { data } = await api.put(`/face/people/${person.id}/authorized`, { authorized: !person.authorized })
   person.authorized = data.authorized
 }
 
 async function removePerson(person) {
   if (!confirm(`"${person.name}" 등록을 삭제하시겠습니까?`)) return
+  if (mockActive.value) {
+    people.value = people.value.filter(p => p.id !== person.id)
+    return
+  }
   await api.delete(`/face/people/${person.id}`)
   await fetchPeople()
 }
@@ -332,16 +387,16 @@ onUnmounted(() => {
 
 <style scoped>
 .input {
-  @apply border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400;
+  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400;
 }
 .btn-primary {
   @apply bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50;
 }
 .btn-ghost {
-  @apply bg-neutral-100 text-neutral-700 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 transition;
+  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition;
 }
 .tab {
-  @apply flex-1 text-sm py-1.5 rounded-lg border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 transition;
+  @apply flex-1 text-sm py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition;
 }
 .tab-on {
   @apply !bg-violet-600 !text-white !border-violet-600;

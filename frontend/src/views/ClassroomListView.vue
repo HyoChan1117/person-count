@@ -1,22 +1,23 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 p-6 lg:p-8">
+  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
     <div class="max-w-6xl mx-auto">
 
       <!-- 헤더 -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-neutral-900 tracking-tight">좌석 확인</h1>
-          <p class="text-sm text-neutral-500 mt-0.5">카메라와 좌석 배치를 관리하세요</p>
+          <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">좌석 확인</h1>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">카메라와 좌석 배치를 관리하세요</p>
         </div>
+
 
         <div class="flex items-center gap-2">
           <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-300 text-sm">⌕</span>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-300 dark:text-neutral-700 text-sm">⌕</span>
             <input
               v-model="search"
               type="text"
               placeholder="교실 이름으로 검색"
-              class="pl-8 pr-3 py-2 text-sm bg-white border border-neutral-200 rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+              class="pl-8 pr-3 py-2 text-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
             />
           </div>
           <button
@@ -27,14 +28,20 @@
         </div>
       </div>
 
-      <div v-if="store.loading" class="text-center py-12 text-neutral-400">불러오는 중...</div>
+      <!-- 교실 선택 모드 배너 -->
+      <div v-if="actionMeta" class="mb-6 flex items-center justify-between bg-violet-50 border border-violet-200 rounded-xl px-4 py-3">
+        <p class="text-sm text-violet-700"><strong>{{ actionMeta.label }}</strong>을(를) 진행할 교실을 선택하세요.</p>
+        <router-link to="/classrooms" class="text-xs text-violet-500 hover:underline shrink-0">선택 취소</router-link>
+      </div>
 
-      <div v-else-if="store.classrooms.length === 0" class="flex flex-col items-center justify-center py-24 text-neutral-400 gap-3">
-        <div class="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center text-2xl">🏫</div>
+      <div v-if="store.loading" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
+
+      <div v-else-if="store.classrooms.length === 0" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">🏫</div>
         <p class="text-sm">등록된 교실이 없습니다. 새 교실을 추가해보세요.</p>
       </div>
 
-      <div v-else-if="filteredClassrooms.length === 0" class="text-center py-16 text-neutral-400">
+      <div v-else-if="filteredClassrooms.length === 0" class="text-center py-16 text-neutral-400 dark:text-neutral-600">
         <p class="text-sm">"{{ search }}"에 해당하는 교실이 없습니다.</p>
       </div>
 
@@ -42,7 +49,9 @@
         <div
           v-for="c in filteredClassrooms"
           :key="c.id"
-          class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5 hover:shadow-md hover:border-violet-200 transition group flex flex-col"
+          @click="actionMeta && selectClassroom(c)"
+          class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm p-5 hover:shadow-md hover:border-violet-200 transition group flex flex-col"
+          :class="actionMeta ? 'cursor-pointer hover:ring-2 hover:ring-violet-300' : ''"
         >
           <!-- 아이콘 배지 + 메뉴 -->
           <div class="flex items-start justify-between mb-3">
@@ -54,25 +63,23 @@
               v-if="auth.isAdmin"
               @click.stop="deleteClassroom(c.id)"
               title="교실 삭제"
-              class="text-neutral-300 hover:text-red-400 opacity-0 group-hover:opacity-100 transition text-lg leading-none px-1"
+              class="text-neutral-300 dark:text-neutral-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition text-lg leading-none px-1"
             >⋯</button>
           </div>
 
-          <h2 class="font-semibold text-neutral-800 mb-2">{{ c.name }}</h2>
+          <h2 class="font-semibold text-neutral-800 dark:text-neutral-100 mb-2">{{ c.name }}</h2>
 
-          <ul class="text-xs text-neutral-500 space-y-1 mb-3">
+          <ul class="text-xs text-neutral-500 dark:text-neutral-400 space-y-1 mb-3">
             <li>· CCTV {{ c.cameras.length }}대<span v-if="seatLineCount(c)"> · 좌석 설정 {{ seatLineCount(c) }}대</span></li>
-            <li v-if="c.prompt" class="text-violet-600">· 💬 커스텀 프롬프트 설정됨</li>
-            <li v-else>· 💬 기본 프롬프트 사용</li>
           </ul>
 
           <!-- 설정 진행률 -->
-          <div class="mb-3">
-            <div class="flex items-center justify-between text-[10px] text-neutral-400 mb-1">
+          <div v-if="progressPct(c) !== 100" class="mb-3">
+            <div class="flex items-center justify-between text-[10px] text-neutral-400 dark:text-neutral-600 mb-1">
               <span>설정 진행률</span>
-              <span class="font-semibold text-neutral-500">{{ progressPct(c) }}%</span>
+              <span class="font-semibold text-neutral-500 dark:text-neutral-400">{{ progressPct(c) }}%</span>
             </div>
-            <div class="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+            <div class="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
               <div
                 class="h-full rounded-full transition-all duration-500"
                 :class="progressPct(c) > 0 ? 'bg-violet-500' : 'bg-neutral-200'"
@@ -83,40 +90,28 @@
 
           <div class="flex-1" />
 
-          <!-- 카메라 아바타 스택 -->
-          <div class="flex items-center -space-x-1.5 mb-3">
-            <div
-              v-for="(cam, i) in c.cameras.slice(0, 4)"
-              :key="cam.camera_id"
-              class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold text-white ring-2 ring-white"
-              :class="badgeColor(c.id + i + 1)"
-              :title="cam.name"
-            >{{ cam.name?.slice(-1) ?? '?' }}</div>
-            <div
-              v-if="c.cameras.length > 4"
-              class="w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-semibold bg-neutral-100 text-neutral-500 ring-2 ring-white"
-            >+{{ c.cameras.length - 4 }}</div>
-            <span v-if="c.cameras.length === 0" class="text-[10px] text-neutral-300 pl-1">등록된 카메라 없음</span>
-          </div>
-
           <!-- 액션 버튼 -->
-          <div class="flex gap-1.5 flex-wrap border-t border-neutral-100 pt-3">
+          <div v-if="!actionMeta" class="flex gap-1.5 flex-wrap border-t border-neutral-100 dark:border-neutral-800 pt-3">
             <router-link
               v-if="auth.isAdmin"
               :to="`/classrooms/${c.id}/setup`"
+              @click.stop
               class="flex-1 text-center text-[11px] bg-violet-600 text-white py-1.5 rounded-lg hover:bg-violet-700 transition"
             >카메라 설정</router-link>
             <router-link
               :to="`/dashboard/${c.id}`"
-              class="flex-1 flex items-center justify-center text-center text-[11px] bg-neutral-100 text-neutral-700 py-1.5 rounded-lg hover:bg-neutral-200 transition"
+              @click.stop
+              class="flex-1 flex items-center justify-center text-center text-[11px] bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
             >대시보드</router-link>
             <router-link
               :to="`/monitoring/${c.id}`"
-              class="flex-1 flex items-center justify-center text-center text-[11px] bg-neutral-100 text-neutral-700 py-1.5 rounded-lg hover:bg-neutral-200 transition"
+              @click.stop
+              class="flex-1 flex items-center justify-center text-center text-[11px] bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
             >모니터링</router-link>
             <router-link
               v-if="auth.isAdmin"
               :to="`/classrooms/${c.id}/map`"
+              @click.stop
               class="w-full text-center text-[11px] bg-emerald-50 text-emerald-700 py-1.5 rounded-lg hover:bg-emerald-100 transition border border-emerald-200"
             >🗺 맵 에디터</router-link>
           </div>
@@ -126,10 +121,10 @@
 
     <!-- 새 교실 추가 모달 -->
     <div v-if="showForm" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showForm = false">
-      <div class="bg-white rounded-2xl p-6 w-80 shadow-xl">
-        <h2 class="font-bold text-neutral-800 mb-4">새 교실 추가</h2>
+      <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-80 shadow-xl">
+        <h2 class="font-bold text-neutral-800 dark:text-neutral-100 mb-4">새 교실 추가</h2>
         <form @submit.prevent="createClassroom">
-          <label class="block text-sm text-neutral-600 mb-1">교실 이름</label>
+          <label class="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">교실 이름</label>
           <input v-model="form.name" required class="input w-full mb-4" placeholder="예: 101호" />
           <div class="flex gap-2">
             <button type="button" @click="showForm = false" class="flex-1 btn-ghost">취소</button>
@@ -144,14 +139,30 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import { useAuthStore } from '@/stores/authStore'
+import { SEAT_ACTIONS } from '@/constants/navActions'
 
 const auth = useAuthStore()
 const store = useClassroomStore()
+const route = useRoute()
+const router = useRouter()
 const showForm = ref(false)
 const form = ref({ name: '' })
 const search = ref('')
+
+const ACTIONS = Object.fromEntries(SEAT_ACTIONS.map(a => [a.action, a]))
+const actionMeta = computed(() => ACTIONS[route.query.action] ?? null)
+
+function selectClassroom(c) {
+  if (!actionMeta.value) return
+  if (actionMeta.value.adminOnly && !auth.isAdmin) {
+    alert('관리자만 이용할 수 있습니다.')
+    return
+  }
+  router.push(actionMeta.value.path(c.id))
+}
 
 onMounted(() => {
   store.fetchAll()
@@ -199,12 +210,12 @@ async function deleteClassroom(id) {
 
 <style scoped>
 .input {
-  @apply border border-neutral-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400;
+  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400;
 }
 .btn-primary {
   @apply bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition;
 }
 .btn-ghost {
-  @apply bg-neutral-100 text-neutral-700 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 transition;
+  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition;
 }
 </style>

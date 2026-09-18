@@ -11,3 +11,30 @@ html, body, #app {
   margin: 0;
   padding: 0;
 }
+
+/* ── 디자인 토큰 (CLAUDE.md 지침) ───────────────────────────────────────────────
+   RGB 채널로 정의해 Tailwind의 `bg-card/50` 같은 투명도가 동작하게 한다.
+   hex는 이 파일에서만 주석으로 남기고, 컴포넌트/캔버스는 토큰이나
+   utils/cssColor.js로만 색을 읽는다. */
+:root {
+  --color-canvas: 11 18 32;          /* #0B1220 배경 */
+  --color-card: 17 26 43;            /* #111A2B 카드 */
+  --color-line: 31 42 63;            /* #1F2A3F 경계선 */
+  --color-fg: 230 237 247;           /* #E6EDF7 텍스트 */
+  --color-fg-muted: 143 160 186;     /* #8FA0BA 보조 텍스트 */
+
+  /* 상태색 4가지(고정, 다른 용도 사용 금지) */
+  --color-state-occupied: 43 181 163;  /* #2BB5A3 점유 */
+  --color-state-empty: 100 116 139;    /* #64748B 빈 좌석 */
+  --color-state-unknown: 224 169 59;   /* #E0A93B 판정 불가 */
+  --color-state-alert: 239 111 108;    /* #EF6F6C 경고(미등록 인물) */
+}
+
+/* 새 디자인 시스템을 쓰는 화면의 루트. 기존 화면의 폰트/배경은 바뀌지 않는다. */
+.ds-root {
+  background-color: rgb(var(--color-canvas));
+  color: rgb(var(--color-fg));
+  font-family: 'Inter Variable', 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}

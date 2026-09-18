@@ -1,19 +1,19 @@
 <template>
-  <div class="flex h-full overflow-hidden bg-slate-100">
+  <div class="flex h-full overflow-hidden bg-neutral-100 dark:bg-neutral-950">
 
     <!-- Sidebar -->
-    <aside class="w-44 bg-white border-r border-slate-200 flex flex-col p-3 shrink-0">
-      <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">객체 배치</div>
+    <aside class="w-48 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col p-3 shrink-0">
+      <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-2">객체 배치</div>
 
       <button
         v-for="tool in TOOLS"
         :key="tool.type"
         @click="activeTool = activeTool === tool.type ? null : tool.type"
         :class="[
-          'flex items-center gap-2 text-sm px-3 py-2 rounded-lg mb-1 transition text-left',
+          'flex items-center gap-2 text-sm px-3 py-2 rounded-lg mb-1 transition text-left font-medium',
           activeTool === tool.type
-            ? 'bg-blue-600 text-white'
-            : 'bg-slate-50 text-slate-700 hover:bg-slate-100'
+            ? 'bg-violet-600 text-white'
+            : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
         ]"
       >
         <span>{{ tool.icon }}</span>{{ tool.label }}
@@ -21,31 +21,31 @@
 
       <!-- 책상 이름 (책상 선택 시) -->
       <template v-if="selectedDesk">
-        <div class="border-t border-slate-100 my-3" />
-        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">책상 이름</div>
+        <div class="border-t border-neutral-100 dark:border-neutral-800 my-3" />
+        <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-2">책상 이름</div>
         <input
           v-model="selectedDesk.label"
           placeholder="예: A1, 앞줄 1번"
-          class="text-xs border border-slate-200 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-blue-400"
+          class="text-xs border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-violet-400 dark:focus:ring-violet-500"
           @keydown.stop
         />
-        <div class="text-[10px] text-slate-400 mt-1">이름을 입력하면 캔버스에 표시됩니다</div>
+        <div class="text-[10px] text-neutral-400 dark:text-neutral-600 mt-1">이름을 입력하면 캔버스에 표시됩니다</div>
       </template>
 
       <!-- CCTV 설정 (CCTV 선택 시) -->
       <template v-if="selectedCCTV">
-        <div class="border-t border-slate-100 my-3" />
-        <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">CCTV 설정</div>
-        <label class="text-[10px] text-slate-500 mb-0.5 block">이름</label>
+        <div class="border-t border-neutral-100 dark:border-neutral-800 my-3" />
+        <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-2">CCTV 설정</div>
+        <label class="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5 block">이름</label>
         <input
           v-model="selectedCCTV.label"
           placeholder="예: CCTV 1"
-          class="text-xs border border-slate-200 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-blue-400 mb-3"
+          class="text-xs border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-violet-400 dark:focus:ring-violet-500 mb-3"
           @keydown.stop
         />
-        <div class="border-t border-slate-100 mt-3 mb-2" />
+        <div class="border-t border-neutral-100 dark:border-neutral-800 mt-3 mb-2" />
         <div class="flex items-center justify-between mb-2">
-          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">담당 자리</div>
+          <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">담당 자리</div>
           <div class="flex items-center gap-1.5">
             <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ background: getCctvColor(selectedCCTV.id) }" />
             <span class="text-[11px] font-bold" :style="{ color: getCctvColor(selectedCCTV.id) }">
@@ -59,7 +59,7 @@
             'text-xs px-3 py-1.5 rounded-lg w-full transition font-medium',
             seatAssignMode && assigningCctvId === selectedCCTV.id
               ? 'text-white'
-              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700'
           ]"
           :style="seatAssignMode && assigningCctvId === selectedCCTV.id ? { background: getCctvColor(selectedCCTV.id) } : {}"
         >
@@ -67,30 +67,30 @@
         </button>
       </template>
 
-      <div class="border-t border-slate-100 my-3" />
+      <div class="border-t border-neutral-100 dark:border-neutral-800 my-3" />
 
-      <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">맵 크기</div>
-      <label class="text-xs text-slate-500 mb-0.5">가로 (px)</label>
+      <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-2">맵 크기</div>
+      <label class="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">가로 (px)</label>
       <input type="number" v-model.number="mapW" min="400" max="2400" step="50"
-        class="text-xs border border-slate-200 rounded px-2 py-1 mb-2 focus:outline-none focus:ring-1 focus:ring-blue-400" />
-      <label class="text-xs text-slate-500 mb-0.5">세로 (px)</label>
+        class="text-xs border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded px-2 py-1 mb-2 focus:outline-none focus:ring-1 focus:ring-violet-400 dark:focus:ring-violet-500" />
+      <label class="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">세로 (px)</label>
       <input type="number" v-model.number="mapH" min="300" max="1600" step="50"
-        class="text-xs border border-slate-200 rounded px-2 py-1 mb-1 focus:outline-none focus:ring-1 focus:ring-blue-400" />
+        class="text-xs border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded px-2 py-1 mb-1 focus:outline-none focus:ring-1 focus:ring-violet-400 dark:focus:ring-violet-500" />
 
       <div class="flex-1" />
 
       <button
         @click="deleteSelected"
         :disabled="!selectedIds.length"
-        class="text-sm text-red-500 bg-red-50 hover:bg-red-100 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 mb-1 transition"
+        class="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 mb-1 transition"
       >🗑 삭제{{ selectedIds.length > 1 ? ` (${selectedIds.length})` : '' }}</button>
       <button
         @click="clearAll"
-        class="text-sm text-slate-500 bg-slate-50 hover:bg-slate-100 rounded-lg px-3 py-1.5 mb-2 transition"
+        class="text-sm text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg px-3 py-1.5 mb-2 transition"
       >전체 지우기</button>
       <button
         @click="exportImage"
-        class="text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2 transition font-medium"
+        class="text-sm text-white bg-violet-600 hover:bg-violet-700 rounded-lg px-3 py-2 transition font-medium"
       >📥 이미지 저장</button>
     </aside>
 
@@ -98,17 +98,17 @@
     <div class="flex-1 flex flex-col min-w-0">
 
       <!-- Top bar -->
-      <div class="flex items-center justify-between px-4 py-2.5 bg-white border-b border-slate-200 shrink-0">
-        <router-link to="/classrooms" class="text-sm text-slate-500 hover:text-slate-700">← 목록</router-link>
-        <span class="text-sm font-semibold text-slate-700">{{ classroom?.name }} — 맵 에디터</span>
-        <span class="text-xs text-slate-400 flex items-center gap-3">
+      <div class="flex items-center justify-between px-4 py-2.5 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
+        <router-link to="/classrooms" class="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition">← 목록</router-link>
+        <span class="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{{ classroom?.name }} — 맵 에디터</span>
+        <span class="text-xs text-neutral-400 dark:text-neutral-500 flex items-center gap-3">
           <template v-if="seatAssignMode">
             <span class="w-2 h-2 rounded-full inline-block mr-1" :style="{ background: getCctvColor(assigningCctvId) }" />
-            <span class="text-amber-600 font-medium">자리 선택 모드</span>
+            <span class="text-amber-600 dark:text-amber-400 font-medium">자리 선택 모드</span>
             — 책상을 클릭하여 배정 / 다시 클릭하면 해제 | ESC 종료
           </template>
           <template v-else-if="activeTool">
-            <span class="text-blue-600 font-medium">{{ TOOLS.find(t => t.type === activeTool)?.label }}</span>
+            <span class="text-violet-600 dark:text-violet-400 font-medium">{{ TOOLS.find(t => t.type === activeTool)?.label }}</span>
             선택됨 — 캔버스를 클릭해 배치
           </template>
           <template v-else-if="selectedIds.length > 1">
@@ -120,9 +120,9 @@
           <template v-else>
             클릭으로 선택 또는 빈 곳에서 드래그로 다중 선택
           </template>
-          <span class="text-slate-300">|</span>
-          <button @click="undo" :disabled="historyIdx <= 0" class="hover:text-slate-600 disabled:opacity-30" title="되돌리기 (Ctrl+Z)">↩ 되돌리기</button>
-          <button @click="redo" :disabled="historyIdx >= history.length - 1" class="hover:text-slate-600 disabled:opacity-30" title="다시실행 (Ctrl+Y)">↪ 다시실행</button>
+          <span class="text-neutral-200 dark:text-neutral-700">|</span>
+          <button @click="undo" :disabled="historyIdx <= 0" class="hover:text-neutral-600 dark:hover:text-neutral-300 disabled:opacity-30" title="되돌리기 (Ctrl+Z)">↩ 되돌리기</button>
+          <button @click="redo" :disabled="historyIdx >= history.length - 1" class="hover:text-neutral-600 dark:hover:text-neutral-300 disabled:opacity-30" title="다시실행 (Ctrl+Y)">↪ 다시실행</button>
         </span>
       </div>
 
@@ -144,7 +144,7 @@
             @mouseleave="onMouseUp"
           />
           <div
-            class="absolute -right-1.5 -bottom-1.5 w-4 h-4 rounded-sm bg-white border-2 border-blue-500 cursor-nwse-resize"
+            class="absolute -right-1.5 -bottom-1.5 w-4 h-4 rounded-sm bg-white border-2 border-violet-500 cursor-nwse-resize"
             title="드래그해서 맵 크기 조절"
             @mousedown="onMapResizeMouseDown"
           />
@@ -455,9 +455,9 @@ function redraw() {
     const rw = Math.abs(rubberBand.endX - rubberBand.startX)
     const rh = Math.abs(rubberBand.endY - rubberBand.startY)
     ctx.save()
-    ctx.fillStyle = 'rgba(59,130,246,0.08)'
+    ctx.fillStyle = 'rgba(124,58,237,0.08)'
     ctx.fillRect(rx, ry, rw, rh)
-    ctx.strokeStyle = '#3b82f6'
+    ctx.strokeStyle = '#7c3aed'
     ctx.lineWidth = 1
     ctx.setLineDash([4, 3])
     ctx.strokeRect(rx, ry, rw, rh)
@@ -484,7 +484,7 @@ function drawObject(ctx, obj, isSelected) {
 
   if (isSelected) {
     ctx.save()
-    ctx.strokeStyle = '#3b82f6'
+    ctx.strokeStyle = '#7c3aed'
     ctx.lineWidth = 1.5
     ctx.setLineDash([5, 4])
     ctx.strokeRect(obj.x - 4, obj.y - 4, obj.w + 8, obj.h + 8)
@@ -495,7 +495,7 @@ function drawObject(ctx, obj, isSelected) {
     if (selectedIds.value.length === 1) {
       for (const h of getHandles(obj)) {
         ctx.fillStyle = '#fff'
-        ctx.strokeStyle = '#3b82f6'
+        ctx.strokeStyle = '#7c3aed'
         ctx.lineWidth = 1.5
         ctx.beginPath()
         ctx.rect(h.hx - HANDLE_R, h.hy - HANDLE_R, HANDLE_R * 2, HANDLE_R * 2)
@@ -511,8 +511,8 @@ function drawDesk(ctx, obj, isSelected) {
   // Body - tint if assigned in assign mode (다중 CCTV 지원, 구버전 cctvId 마이그레이션)
   const cctvIds = obj.cctvIds ?? (obj.cctvId != null ? [obj.cctvId] : [])
   const isAssignedToActive = seatAssignMode.value && cctvIds.includes(assigningCctvId.value)
-  ctx.fillStyle = isAssignedToActive ? '#dbeafe' : '#f8fafc'
-  ctx.strokeStyle = isSelected ? '#3b82f6' : (cctvIds.length > 0 ? getCctvColor(cctvIds[0]) : '#cbd5e1')
+  ctx.fillStyle = isAssignedToActive ? '#ede9fe' : '#f8fafc'
+  ctx.strokeStyle = isSelected ? '#7c3aed' : (cctvIds.length > 0 ? getCctvColor(cctvIds[0]) : '#cbd5e1')
   ctx.lineWidth = isSelected ? 2.5 : 2
   ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke()
   // Label
@@ -539,7 +539,7 @@ function drawDesk(ctx, obj, isSelected) {
 function drawChair(ctx, obj, isSelected) {
   const { x, y, w, h } = obj
   ctx.fillStyle = '#e0f2fe'
-  ctx.strokeStyle = isSelected ? '#3b82f6' : '#8fd4f0'
+  ctx.strokeStyle = isSelected ? '#7c3aed' : '#8fd4f0'
   ctx.lineWidth = isSelected ? 2.5 : 2
   ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
 }
@@ -550,7 +550,7 @@ function drawCCTV(ctx, obj, isSelected) {
 
   // Body (단순 사각형 + 렌즈 점)
   ctx.fillStyle = '#e2e8f0'
-  ctx.strokeStyle = isSelected ? '#3b82f6' : '#94a3b8'
+  ctx.strokeStyle = isSelected ? '#7c3aed' : '#94a3b8'
   ctx.lineWidth = isSelected ? 2.5 : 2
   ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
   ctx.fillStyle = '#64748b'
