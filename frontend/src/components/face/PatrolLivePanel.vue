@@ -24,7 +24,7 @@
       <div class="grid grid-cols-2 gap-gutter">
         <div>
           <p class="text-label text-fg-muted">현재 구역</p>
-          <p class="mt-1 truncate text-2xl font-semibold text-fg">{{ status.running ? status.zone : '–' }}</p>
+          <p class="mt-1 truncate text-2xl font-semibold text-fg">{{ status.running ? zoneText : '–' }}</p>
         </div>
         <div>
           <p class="text-label text-fg-muted">다음 구역</p>
@@ -57,7 +57,7 @@
       </div>
 
       <p v-if="status.error" class="rounded-lg border border-line px-3 py-2 text-sm text-fg">순찰이 중단되었습니다 — {{ status.error }}</p>
-      <p v-else-if="status.completed && !status.running" class="text-sm text-fg-muted">한 바퀴를 모두 돌았습니다. 카메라는 마지막 구역({{ status.zone }})에 멈춰 있습니다.</p>
+      <p v-else-if="status.completed && !status.running" class="text-sm text-fg-muted">한 바퀴를 모두 돌았습니다. 카메라는 마지막 구역({{ zoneText }})에 멈춰 있습니다.</p>
     </template>
   </UiCard>
 </template>
@@ -68,6 +68,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import PatrolStepper from './PatrolStepper.vue'
 import { PHASE_STEPS } from '@/composables/usePatrolPhase'
+import { zoneLabel } from '@/utils/patrolZone'
 
 const props = defineProps({
   place: { type: Object, default: null }, // { name, zones[{id,name,rois}] }
@@ -82,6 +83,7 @@ const props = defineProps({
 const emit = defineEmits(['toggle', 'update:recordAll'])
 
 const stateText = computed(() => (props.status.running ? '순찰 중' : props.status.completed ? '순찰 완료' : '대기'))
+const zoneText = computed(() => zoneLabel(props.status, props.place?.zones))
 const nextText = computed(() => {
   if (!props.status.running) return '–'
   return props.nextZone ? props.nextZone.name : '종료 (마지막 구역)'

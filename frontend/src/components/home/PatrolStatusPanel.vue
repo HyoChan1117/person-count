@@ -32,6 +32,7 @@
 import { computed } from 'vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
+import { zoneLabel } from '@/utils/patrolZone'
 
 const PHASES = { move: '이동', settle: '대기', shoot: '촬영', analyze: '분석' }
 
@@ -41,7 +42,7 @@ const props = defineProps({
 
 const status = computed(() => props.place?.status ?? {})
 const total = computed(() => status.value.total_zones || props.place?.zones.length || 0)
-const current = computed(() => status.value.zone)
+const current = computed(() => zoneLabel(status.value, props.place?.zones))
 const phaseText = computed(() => (status.value.running ? PHASES[status.value.phase] ?? '' : ''))
 
 const stateText = computed(() => (status.value.running ? '순찰 중' : status.value.completed ? '순찰 완료' : '대기'))
