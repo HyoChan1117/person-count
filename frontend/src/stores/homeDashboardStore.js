@@ -5,6 +5,7 @@ import { isDemoMode } from '@/demo'
 import { tickInfo } from '@/demo/state'
 
 const SEEN_KEY = 'home-seen-alerts'
+const ALERT_WINDOW_MS = 24 * 3600 * 1000
 // 백엔드는 시계 기준 정각 단위(기본 600초)로 수집한다. 그 값은 서버 환경변수라 프런트에서 읽을 수 없어 설정값으로 둔다.
 const COLLECT_SEC = Number(import.meta.env.VITE_COLLECT_INTERVAL_SEC) || 600
 // seat-occupancy는 호출할 때마다 실시간 추론을 돌리므로 실서버에서는 길게 잡는다.
@@ -117,8 +118,18 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
 
   const allDetections = computed(() => places.value.flatMap((p) => p.detections).sort((a, b) => (a.ts < b.ts ? 1 : -1)))
   const recentDetections = computed(() => allDetections.value.slice(0, 5))
-  // 미등록 인물 감지 중 화면에서 사진을 열어보지 않은 것
-  const unseenAlerts = computed(() => allDetections.value.filter((d) => d.name == null && !seen.value.has(d.key)).length)
+  // 미확인 경고 = 최근 24시간의 미등록 인물 감지 중 사진을 열어보지 않은 것.
+  // 화면에서 사진을 열 수 있는 건 최근 5건뿐이라, 기간 제한과 "모두 확인"이 없으면 오래된 감지가 영원히 남아 숫자가 줄지 않는다.
+  const unseenList = computed(() =>
+    allDetections.value.filter((d) => d.name == null && !seen.value.has(d.key) && now.value - new Date(d.ts).getTime() <= ALERT_WINDOW_MS),
+  )
+  const unseenAlerts = computed(() => unseenList.value.length)
+
+  function markAllSeen() {
+    if (!unseenList.value.length) return
+    seen.value = new Set([...seen.value, ...unseenList.value.map((d) => d.key)])
+    try { localStorage.setItem(SEEN_KEY, JSON.stringify([...seen.value].slice(-500))) } catch { /* 저장 실패해도 화면 상태는 유지 */ }
+  }
   const primaryPatrol = computed(() => places.value.find((p) => p.status.running) ?? places.value[0] ?? null)
 
   // 마지막 수집 시각 / 다음 수집까지 남은 시간
@@ -139,6 +150,6 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
     rooms, places, loading, error,
     totalJudgeable, totalUnknown, totalOccupied, occupancyPct, activeRooms,
     recentDetections, unseenAlerts, primaryPatrol, collect,
-    start, stop, refresh, markSeen,
+    start, stop, refresh, markSeen, markAllSeen,
   }
 })

@@ -9,8 +9,14 @@
       <UiCard>
         <MetricStat label="사용 중 교실" :value="store.activeRooms" :unit="`/ ${store.rooms.length}`" :hint="idleHint" size="lg" />
       </UiCard>
-      <UiCard>
-        <MetricStat label="미확인 경고" :value="store.unseenAlerts" unit="건" hint="열어보지 않은 미등록 인물 감지" size="lg" :tone="store.unseenAlerts > 0 ? 'alert' : 'default'" />
+      <UiCard class="relative">
+        <MetricStat label="미확인 경고" :value="store.unseenAlerts" unit="건" hint="최근 24시간 · 열어보지 않은 미등록 인물 감지" size="lg" :tone="store.unseenAlerts > 0 ? 'alert' : 'default'" />
+        <button
+          v-if="store.unseenAlerts > 0"
+          type="button"
+          class="absolute right-card top-card rounded-lg border border-line px-3 py-1.5 text-sm text-fg-muted transition-colors hover:border-fg-muted/60 hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted"
+          @click="store.markAllSeen()"
+        >모두 확인</button>
       </UiCard>
     </section>
 
