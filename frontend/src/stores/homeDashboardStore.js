@@ -36,7 +36,8 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
   let pollTimer = null
 
   async function loadRoom(c) {
-    const ids = c.cameras.flatMap((cam) => cam.seat_ids ?? [])
+    // 한 좌석이 카메라 두 대의 seat_ids에 함께 들어 있을 수 있다(실제 301호: 4석). 좌석은 한 번만 센다.
+    const ids = [...new Set(c.cameras.flatMap((cam) => cam.seat_ids ?? []))]
     const base = { id: c.id, name: c.name, total: ids.length }
     try {
       const { data } = await api.get(`/analysis/${c.id}/seat-occupancy`)
