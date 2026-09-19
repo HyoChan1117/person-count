@@ -1,7 +1,7 @@
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex h-screen bg-neutral-50 dark:bg-neutral-950">
     <template v-if="auth.isAdmin">
-      <NavBar />
+      <Sidebar />
       <main class="flex-1 overflow-hidden">
         <router-view />
       </main>
@@ -11,9 +11,11 @@
 </template>
 
 <script setup>
-import NavBar from '@/components/layout/NavBar.vue'
+import Sidebar from '@/components/layout/Sidebar.vue'
 import AdminLoginModal from '@/components/modals/AdminLoginModal.vue'
 import { useAuthStore } from '@/stores/authStore'
+import { useThemeStore } from '@/stores/themeStore'
 
 const auth = useAuthStore()
+useThemeStore()
 </script>

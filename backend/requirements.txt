@@ -1,3 +1,8 @@
+# torch/torchvision은 ultralytics 의존성으로 함께 설치되지만, PyPI 기본 휠은 CPU 전용이다.
+# GPU(로컬 개발)에서 돌릴 때는 이 파일을 설치하기 "전에" CUDA 빌드를 먼저 넣어야 한다:
+#   pip install --index-url https://download.pytorch.org/whl/cu130 torch==2.12.0+cu130 torchvision==0.27.0+cu130
+# (CPU 전용 컨테이너 빌드는 이 파일만 설치하면 되므로 여기에 CUDA 버전을 고정하지 않는다)
+
 fastapi==0.111.0
 uvicorn[standard]==0.29.0
 pydantic==2.7.1
@@ -9,5 +14,7 @@ ultralytics>=8.2.0
 anthropic>=0.107.0
 Pillow>=10.0.0
 slack_sdk>=3.19.0
+insightface>=2.0
+# onnxruntime-gpu>=1.24.4
 httpx>=0.27.0
 PyJWT>=2.8.0

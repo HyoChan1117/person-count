@@ -1,0 +1,27 @@
+# 개발용 설정. `docker compose up` 시 자동으로 함께 적용된다.
+#
+# 소스를 컨테이너에 직접 물려서, 코드를 고칠 때마다 이미지를 다시 빌드하지 않아도 되게 한다.
+#   - 백엔드: 파일을 저장하면 uvicorn이 알아서 재시작한다
+#   - 프론트엔드: `npm run build`(약 1초)만 하면 새로고침으로 반영된다
+#
+# 배포처럼 이미지에 담긴 코드로만 띄우려면 이 파일을 건너뛴다:
+#   docker compose -f docker-compose.yml up -d
+services:
+  backend:
+    volumes:
+      - ./backend/app:/app/app
+      - ./backend/main.py:/app/main.py
+    # --reload-dir: 감시 대상을 app 폴더로 한정한다. /app 전체를 보면 data/에 계속 쌓이는
+    #   점유 스냅샷과 감지 사진 때문에 서버가 끝없이 재시작된다.
+    #   (main.py를 고친 경우엔 docker compose restart backend)
+    # --timeout-graceful-shutdown: 실시간 미리보기(MJPEG)는 연결을 계속 붙잡고 있어서,
+    #   이 값이 없으면 리로드할 때 "연결이 닫히기를" 무한정 기다리며 멈춘다.
+    command: >
+      uvicorn main:app --host 0.0.0.0 --port 8000
+      --reload --reload-dir /app/app --timeout-graceful-shutdown 3
+    # gpus는 여기에 다시 쓰지 않는다 — docker-compose.yml의 `gpus: all`이 그대로 적용되며,
+    # 양쪽에 같이 적으면 compose가 병합하지 못해 "cannot override services.backend.gpus"로 실패한다.
+
+  frontend:
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro

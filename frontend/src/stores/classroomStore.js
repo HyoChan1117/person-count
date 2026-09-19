@@ -22,11 +22,14 @@ export const useClassroomStore = defineStore('classroom', () => {
 
   async function fetchOne(id) {
     loading.value = true
+    error.value = null
     try {
       const { data } = await api.get(`/classrooms/${id}`)
       current.value = data
     } catch (e) {
-      error.value = e.message
+      // 이전 교실의 이름·좌석이 새 교실 화면에 남지 않도록 비운다
+      current.value = null
+      error.value = e.response?.data?.detail ?? e.message
     } finally {
       loading.value = false
     }
