@@ -1,21 +1,21 @@
 <template>
-  <div class="h-full flex flex-col bg-neutral-100 dark:bg-neutral-950">
+  <div class="ds-root flex h-full flex-col overflow-hidden">
 
     <!-- Top bar -->
-    <div class="h-11 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 flex items-center px-4 gap-3 shrink-0">
-      <router-link to="/classrooms" class="text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 transition">← 목록</router-link>
-      <span class="text-neutral-200 dark:text-neutral-800">|</span>
-      <span class="font-medium text-neutral-700 dark:text-neutral-200 text-sm">{{ classroom?.name }}</span>
-      <span v-if="mockActive" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">목데이터</span>
+    <div class="flex shrink-0 items-center gap-gutter border-b border-line bg-card px-card py-3">
+      <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
+      <span class="text-line">|</span>
+      <span class="text-sm font-semibold text-fg">{{ classroom?.name }}</span>
+      <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
       <div class="ml-auto flex items-center gap-2">
         <button
           @click="toggleMock"
-          class="text-xs px-3 py-1 rounded-md transition font-medium border"
+          class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted"
           :class="mockActive
-            ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-            : 'bg-neutral-100 dark:bg-neutral-800 border-transparent text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'"
-        >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
-        <router-link :to="`/dashboard/${classroomId}`" class="text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-3 py-1 rounded-md hover:bg-neutral-200 dark:hover:bg-neutral-700 transition">
+            ? 'border-state-unknown/40 bg-state-unknown/10 text-state-unknown hover:bg-state-unknown/15'
+            : 'border-line text-fg-muted hover:bg-line/40 hover:text-fg'"
+        >{{ mockActive ? '목데이터 끄기' : '목데이터로 보기' }}</button>
+        <router-link :to="`/dashboard/${classroomId}`" class="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg">
           대시보드
         </router-link>
       </div>
@@ -27,13 +27,13 @@
     <div class="flex-1 flex min-h-0">
 
       <!-- Left: camera list -->
-      <div class="w-64 border-r border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 flex flex-col shrink-0">
-        <div class="p-3 border-b border-neutral-100 dark:border-neutral-800">
-          <button @click="showAddForm = true" class="w-full text-xs bg-violet-600 text-white py-2 rounded-md hover:bg-violet-700 transition font-medium">
+      <div class="flex w-60 shrink-0 flex-col border-r border-line bg-card">
+        <div class="border-b border-line p-4">
+          <button @click="showAddForm = true" class="w-full rounded-lg bg-fg px-3 py-2.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted">
             + 카메라 추가
           </button>
         </div>
-        <div class="flex-1 overflow-y-auto p-2 space-y-1">
+        <div class="flex-1 space-y-1 overflow-y-auto p-3">
           <div
             v-for="(cam, i) in cameras"
             :key="cam.camera_id"
@@ -42,41 +42,46 @@
             @dragover.prevent="onDragOver(i)"
             @drop.prevent="onDrop"
             @dragend="onDragEnd"
-            :class="['rounded-lg transition', dragOverIndex === i && dragIndex !== i ? 'ring-2 ring-violet-400 dark:ring-violet-500 ring-offset-1 dark:ring-offset-neutral-900' : '']"
+            :class="['rounded-lg transition', dragOverIndex === i && dragIndex !== i ? 'ring-2 ring-fg-muted ring-offset-2 ring-offset-card' : '']"
           >
             <button
               @click="selectCamera(cam)"
-              :class="['w-full text-left px-2.5 py-2 rounded-lg text-sm transition flex items-start gap-2 border-l-2',
+              :class="['relative flex w-full items-start gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted',
                 selectedCam?.camera_id === cam.camera_id
-                  ? 'bg-violet-50 dark:bg-violet-500/10 border-violet-500 text-violet-700 dark:text-violet-300 font-medium'
-                  : 'border-transparent hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300']"
+                  ? 'bg-line/60 font-medium text-fg'
+                  : 'text-fg-muted hover:bg-line/40 hover:text-fg']"
             >
-              <span class="text-neutral-300 dark:text-neutral-700 text-base mt-1 cursor-grab select-none leading-none">≡</span>
-              <span class="w-8 h-8 rounded-md bg-neutral-100 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 flex items-center justify-center text-sm shrink-0 mt-0.5">📷</span>
+              <span v-if="selectedCam?.camera_id === cam.camera_id" class="absolute inset-y-2 left-0 w-0.5 rounded-full bg-fg" />
+              <span class="mt-1 cursor-grab select-none text-base leading-none text-fg-muted/40">≡</span>
+              <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-fg-muted">
+                <NavIcon name="camera" :size="17" />
+              </span>
               <span class="flex-1 min-w-0">
                 <span class="flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="cam.rtsp_url ? 'bg-emerald-400' : 'bg-neutral-300 dark:bg-neutral-700'" />
+                  <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="cam.rtsp_url ? 'bg-state-occupied' : 'bg-state-empty'" />
                   <span class="block font-medium truncate">{{ cam.name }}</span>
                 </span>
-                <span class="block text-[11px] text-neutral-400 dark:text-neutral-500 font-mono font-normal mt-0.5 truncate">{{ cam.ip_address || '미설정' }}</span>
-                <span v-if="Object.keys(cam.seat_lines ?? {}).length" class="block text-[10px] text-amber-600 dark:text-amber-400 mt-0.5">선 {{ Object.keys(cam.seat_lines).length }}개</span>
-                <span v-if="cam.view_group" class="block text-[10px] text-violet-500 dark:text-violet-400 mt-0.5">뷰 그룹 {{ cam.view_group }}</span>
+                <span class="mt-0.5 block truncate font-mono text-xs font-normal text-fg-muted">{{ cam.ip_address || '미설정' }}</span>
+                <span v-if="Object.keys(cam.seat_lines ?? {}).length" class="mt-1 block text-xs text-state-unknown">선 {{ Object.keys(cam.seat_lines).length }}개</span>
+                <span v-if="cam.view_group" class="mt-1 block text-xs text-fg-muted">뷰 그룹 {{ cam.view_group }}</span>
               </span>
             </button>
           </div>
-          <div v-if="!cameras.length" class="text-xs text-neutral-400 dark:text-neutral-600 text-center py-8">
+          <div v-if="!cameras.length" class="py-8 text-center text-sm text-fg-muted">
             카메라가 없습니다
           </div>
         </div>
       </div>
 
       <!-- Right: snapshot + seat line editor -->
-      <div class="flex-1 flex flex-col bg-black min-w-0">
+      <div class="flex min-w-0 flex-1 flex-col bg-canvas">
 
         <!-- No camera selected -->
-        <div v-if="!selectedCam" class="flex-1 flex items-center justify-center text-neutral-600">
+        <div v-if="!selectedCam" class="flex flex-1 items-center justify-center text-fg-muted">
           <div class="text-center">
-            <div class="text-5xl mb-3 opacity-40">📷</div>
+            <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg border border-line bg-card">
+              <NavIcon name="camera" :size="24" />
+            </div>
             <div class="text-sm">카메라를 선택하거나 추가하세요</div>
           </div>
         </div>
@@ -84,66 +89,65 @@
         <!-- Camera selected -->
         <template v-else>
           <!-- Toolbar -->
-          <div class="bg-neutral-900 border-b border-neutral-800 px-4 py-2 flex items-center gap-3 shrink-0 flex-wrap">
+          <div class="flex shrink-0 flex-wrap items-center gap-3 border-b border-line bg-card px-card py-3">
             <div class="flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="frameImage ? 'bg-emerald-400' : 'bg-neutral-600'" />
-              <span class="font-medium text-neutral-100 text-sm">{{ selectedCam.name }}</span>
-              <span class="text-xs text-neutral-500 font-mono ml-1">{{ selectedCam.ip_address }}</span>
+              <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="frameImage ? 'bg-state-occupied' : 'bg-state-empty'" />
+              <span class="text-sm font-semibold text-fg">{{ selectedCam.name }}</span>
+              <span class="ml-1 font-mono text-xs text-fg-muted">{{ selectedCam.ip_address }}</span>
             </div>
 
             <!-- 로그인 정보 입력 및 저장 -->
-            <div class="flex items-center gap-1 text-xs text-neutral-400">
-              <span class="text-neutral-500">아이디</span>
-              <input v-model="editCreds.username" placeholder="없음" class="w-20 bg-neutral-950 border border-neutral-800 text-neutral-200 placeholder-neutral-600 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500" />
-              <span class="text-neutral-500">비밀번호:</span>
-              <input v-model="editCreds.password" type="password" placeholder="없음" class="w-20 bg-neutral-950 border border-neutral-800 text-neutral-200 placeholder-neutral-600 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500" />
+            <div class="flex items-center gap-1.5 text-xs text-fg-muted">
+              <span>아이디</span>
+              <input v-model="editCreds.username" placeholder="없음" class="w-20 rounded-md border border-line bg-canvas px-2 py-1 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted" />
+              <span>비밀번호</span>
+              <input v-model="editCreds.password" type="password" placeholder="없음" class="w-24 rounded-md border border-line bg-canvas px-2 py-1 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted" />
               <button
                 @click="applyCredentials"
                 :disabled="savingCreds"
-                class="text-[10px] bg-violet-600 text-white px-2 py-0.5 rounded hover:bg-violet-700 disabled:opacity-50 transition font-medium"
+                class="rounded-md border border-line px-2 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg disabled:opacity-50"
               >적용</button>
             </div>
 
             <!-- 뷰 그룹 입력 및 저장 -->
-            <div class="flex items-center gap-1 text-xs text-neutral-400">
-              <span class="text-neutral-500">뷰 그룹:</span>
+            <div class="flex items-center gap-1.5 text-xs text-fg-muted">
+              <span>뷰 그룹</span>
               <input
                 v-model="editingGroup"
                 placeholder="없음"
-                class="w-16 bg-neutral-950 border border-neutral-800 text-neutral-200 placeholder-neutral-600 rounded px-1.5 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500"
+                class="w-16 rounded-md border border-line bg-canvas px-2 py-1 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted"
               />
               <button
                 @click="saveViewGroup"
                 :disabled="savingGroup"
-                class="text-[10px] bg-neutral-700 text-white px-2 py-0.5 rounded hover:bg-neutral-600 disabled:opacity-50 transition font-medium"
+                class="rounded-md border border-line px-2 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg disabled:opacity-50"
               >저장</button>
             </div>
 
-            <div class="flex items-center gap-2 ml-auto flex-wrap">
+            <div class="ml-auto flex flex-wrap items-center gap-2">
               <!-- 좌석 선 모드 토글 -->
-              <div class="w-px h-4 bg-neutral-800 mx-1" />
+              <div class="mx-1 h-4 w-px bg-line" />
               <button
                 v-if="frameImage"
                 @click="seatRoiMode ? exitSeatRoiMode() : enterSeatRoiMode()"
-                :class="['text-xs px-3 py-1 rounded-md transition font-medium',
+                :class="['rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
                   seatRoiMode
-                    ? 'bg-amber-500 text-white'
-                    : 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 border border-amber-500/30']"
+                    ? 'border-state-unknown bg-state-unknown text-canvas'
+                    : 'border-state-unknown/30 text-state-unknown hover:bg-state-unknown/10']"
               >좌석 선{{ seatRoiMode ? ' 종료' : '' }}</button>
 
               <!-- 배경 저장 버튼 -->
-              <div class="w-px h-4 bg-neutral-800 mx-1" />
+              <div class="mx-1 h-4 w-px bg-line" />
               <button
                 v-if="frameImage"
                 @click="saveBgReference"
                 :disabled="savingBg"
-                class="text-xs bg-amber-500 text-white px-3 py-1 rounded-md hover:bg-amber-600 disabled:opacity-50 transition font-medium"
+                class="rounded-lg bg-state-unknown px-3 py-1.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-50"
                 title="현재 프레임을 빈 강의실 기준으로 저장"
               >{{ savingBg ? '저장 중..' : '빈 교실 저장' }}</button>
               <label
-                :class="['text-xs px-3 py-1 rounded-md transition cursor-pointer select-none font-medium',
-                  savingBg ? 'opacity-50 pointer-events-none' : 'hover:bg-amber-600',
-                  'bg-amber-500 text-white']"
+                :class="['cursor-pointer select-none rounded-lg bg-state-unknown px-3 py-1.5 text-sm font-semibold text-canvas transition-opacity',
+                  savingBg ? 'opacity-50 pointer-events-none' : 'hover:opacity-90']"
                 title="이미지 파일로 빈 교실 기준 업로드"
               >
                 빈 이미지 업로드
@@ -153,23 +157,23 @@
                 v-if="bgHasReference"
                 @click="runBgDetect"
                 :disabled="detectingBg"
-                class="text-xs bg-violet-600 text-white px-3 py-1 rounded-md hover:bg-violet-700 disabled:opacity-50 transition font-medium"
+                class="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg disabled:opacity-50"
                 title="저장된 기준과 현재 프레임을 비교"
-              >{{ detectingBg ? '분석 중..' : '⚫ 배경 감지' }}</button>
+              >{{ detectingBg ? '분석 중..' : '배경 감지' }}</button>
 
               <button
                 @click="captureSnapshot"
                 :disabled="capturing"
-                class="text-xs bg-neutral-700 text-white px-3 py-1 rounded-md hover:bg-neutral-600 disabled:opacity-50 transition font-medium"
-              >{{ capturing ? '캡처 중..' : '📷 스냅샷' }}</button>
-              <button @click="deleteCamera(selectedCam.camera_id)" class="text-xs text-red-400/80 hover:text-red-400 transition">삭제</button>
+                class="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg disabled:opacity-50"
+              ><NavIcon name="camera" :size="15" />{{ capturing ? '캡처 중..' : '스냅샷' }}</button>
+              <button @click="deleteCamera(selectedCam.camera_id)" class="rounded-md px-2 py-1 text-sm text-state-alert transition-colors hover:bg-state-alert/10">삭제</button>
             </div>
           </div>
 
           <!-- 좌석 선 설정 헤더 -->
-          <div v-if="seatRoiMode && frameImage" class="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 shrink-0 flex items-center gap-3 flex-wrap">
-            <span class="text-xs font-semibold text-amber-400">📍 좌석 선 설정</span>
-            <span class="text-xs text-amber-500/80">좌석 선택 → 앞쪽 선 2클릭(주황) → 뒤쪽 선 2클릭(초록) → 자동 완료</span>
+          <div v-if="seatRoiMode && frameImage" class="flex shrink-0 flex-wrap items-center gap-3 border-b border-state-unknown/20 bg-state-unknown/10 px-card py-2">
+            <span class="text-sm font-semibold text-state-unknown">좌석 선 설정</span>
+            <span class="text-xs text-state-unknown/80">좌석 선택 → 앞쪽 선 2클릭(주황) → 뒤쪽 선 2클릭(초록) → 자동 완료</span>
 
             <!-- 좌석 ID 목록 -->
             <div class="flex flex-wrap gap-1">
@@ -179,10 +183,10 @@
                 @click="selectSeatId(seatId)"
                 :class="['text-[10px] px-2 py-0.5 rounded-full border font-medium transition',
                   activeSeatId === seatId
-                    ? 'bg-amber-500 text-white border-amber-500'
+                    ? 'bg-state-unknown text-canvas border-state-unknown'
                     : seatLines[seatId]
-                    ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                    : 'bg-neutral-900 text-neutral-400 border-neutral-700 hover:border-amber-500/50']"
+                    ? 'bg-state-occupied/15 text-state-occupied border-state-occupied/30'
+                    : 'bg-card text-fg-muted border-line hover:border-state-unknown/50']"
               >{{ seatId }}{{ seatLines[seatId] ? ' ✓' : '' }}</button>
             </div>
 
@@ -191,18 +195,18 @@
               <input
                 v-model="manualSeatId"
                 placeholder="좌석 번호 입력 (예: A1)"
-                class="text-xs border border-amber-500/30 rounded px-2 py-0.5 bg-neutral-900 text-neutral-200 placeholder-neutral-600 w-32"
+                class="w-32 rounded border border-state-unknown/30 bg-card px-2 py-1 text-xs text-fg placeholder:text-fg-muted"
                 @keydown.enter="selectSeatId(manualSeatId)"
               />
               <button
                 @click="selectSeatId(manualSeatId)"
                 :disabled="!manualSeatId.trim()"
-                class="text-xs bg-amber-500 text-white px-2 py-0.5 rounded disabled:opacity-50"
+                class="rounded bg-state-unknown px-2 py-1 text-xs text-canvas disabled:opacity-50"
               >선택</button>
             </template>
 
             <div class="ml-auto flex gap-2 items-center">
-              <span v-if="activeSeatId" class="text-xs text-amber-400 font-medium">선택: {{ activeSeatId }}</span>
+              <span v-if="activeSeatId" class="text-xs font-medium text-state-unknown">선택: {{ activeSeatId }}</span>
               <span v-if="seatLinePoints.length" class="text-[10px]" :class="seatLinePoints.length <= 2 ? 'text-orange-400' : 'text-emerald-400'">
                 {{ seatLinePoints.length <= 2 ? `앞선 ${seatLinePoints.length}/2` : `뒷선 ${seatLinePoints.length - 2}/2` }}
               </span>
@@ -230,18 +234,21 @@
           </div>
 
           <!-- Canvas area -->
-          <div class="flex-1 flex items-center justify-center overflow-hidden p-4" ref="canvasContainer">
-            <div v-if="capturing" class="text-neutral-500 text-sm">스냅샷 캡처 중..</div>
-            <div v-else-if="captureError" class="text-red-400 text-sm">{{ captureError }}</div>
-            <div v-else-if="!frameImage" class="text-neutral-600 text-sm text-center">
-              <div>📷 스냅샷 버튼을 눌러 프레임을 캡처하세요</div>
+          <div class="flex flex-1 items-center justify-center overflow-hidden bg-canvas p-section" ref="canvasContainer">
+            <div v-if="capturing" class="text-sm text-fg-muted">스냅샷 캡처 중..</div>
+            <div v-else-if="captureError" class="text-sm text-state-alert">{{ captureError }}</div>
+            <div v-else-if="!frameImage" class="text-center text-sm text-fg-muted">
+              <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-lg border border-line bg-card">
+                <NavIcon name="camera" :size="24" />
+              </div>
+              <div>스냅샷 버튼을 눌러 프레임을 캡처하세요</div>
             </div>
             <canvas
               v-show="frameImage"
               ref="canvasRef"
               :width="canvasW"
               :height="canvasH"
-              class="rounded border border-neutral-800 shadow-2xl cursor-crosshair"
+              class="cursor-crosshair rounded-card border border-line shadow-xl"
               @click="onCanvasClick"
               @contextmenu.prevent="undoLastPoint"
               @mousemove="onCanvasMouseMove"
@@ -250,7 +257,7 @@
           </div>
 
           <!-- Instructions -->
-          <div v-if="frameImage && seatRoiMode" class="shrink-0 bg-amber-500/10 border-t border-amber-500/20 px-4 py-1.5 text-xs text-amber-400 flex gap-6">
+          <div v-if="frameImage && seatRoiMode" class="flex shrink-0 gap-6 border-t border-state-unknown/20 bg-state-unknown/10 px-card py-2 text-xs text-state-unknown">
             <span v-if="!activeSeatId">좌석을 먼저 선택하세요</span>
             <template v-else-if="seatLinePoints.length < 2">
               <span class="text-orange-400 font-medium">① 앞쪽 선:</span>
@@ -285,30 +292,30 @@
         class="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
         @click.self="showAddForm = false"
       >
-        <div class="bg-white dark:bg-neutral-900 border border-transparent dark:border-neutral-800 rounded-2xl p-6 w-96 shadow-xl">
-          <h2 class="font-bold text-neutral-800 dark:text-neutral-100 mb-4">카메라 추가</h2>
+        <div class="ds-text w-96 rounded-card border border-line bg-card p-card shadow-xl">
+          <h2 class="mb-4 text-xl font-semibold text-fg">카메라 추가</h2>
           <form @submit.prevent="addCamera">
-            <label class="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">카메라 이름</label>
+            <label class="mb-1 block text-sm text-fg-muted">카메라 이름</label>
             <input v-model="form.name" required placeholder="예: CCTV 1" class="input w-full mb-3" />
 
-            <label class="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">IP 주소</label>
+            <label class="mb-1 block text-sm text-fg-muted">IP 주소</label>
             <input v-model="form.ip" placeholder="예: 192.168.0.100" class="input w-full mb-3" @input="autoFillRtsp" />
 
             <div class="flex gap-2 mb-3">
               <div class="flex-1">
-                <label class="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">아이디</label>
+                <label class="mb-1 block text-sm text-fg-muted">아이디</label>
                 <input v-model="form.username" placeholder="예: admin" class="input w-full" @input="autoFillRtsp" />
               </div>
               <div class="flex-1">
-                <label class="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">비밀번호</label>
+                <label class="mb-1 block text-sm text-fg-muted">비밀번호</label>
                 <input v-model="form.password" type="password" placeholder="비밀번호" class="input w-full" @input="autoFillRtsp" />
               </div>
             </div>
 
-            <label class="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">RTSP URL <span class="text-neutral-300 dark:text-neutral-600">(자동 생성)</span></label>
+            <label class="mb-1 block text-sm text-fg-muted">RTSP URL <span class="text-fg-muted/70">(자동 생성)</span></label>
             <input v-model="form.rtsp_url" placeholder="rtsp://..." class="input w-full text-xs mb-3" />
 
-            <label class="block text-xs text-neutral-500 dark:text-neutral-400 mb-1">뷰 그룹 <span class="text-neutral-300 dark:text-neutral-600">(같은 공간을 여러 카메라로 찍으면 동일한 이름 입력)</span></label>
+            <label class="mb-1 block text-sm text-fg-muted">뷰 그룹 <span class="text-fg-muted/70">(같은 공간을 여러 카메라로 찍으면 동일한 이름 입력)</span></label>
             <input v-model="form.viewGroup" placeholder="예: A (선택사항)" class="input w-full mb-4" />
 
             <div class="flex gap-2">
@@ -328,6 +335,7 @@ import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import { useMockToggle } from '@/composables/useMockToggle'
 import ErrorNotice from '@/components/ui/ErrorNotice.vue'
+import NavIcon from '@/components/ui/NavIcon.vue'
 import api from '@/api'
 
 const SEAT_ROI_COLORS = ['#ef4444','#3b82f6','#22c55e','#f97316','#a855f7','#06b6d4','#ec4899','#84cc16']
@@ -989,12 +997,12 @@ onMounted(() => cStore.fetchOne(classroomId.value))
 
 <style scoped>
 .input {
-  @apply border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 dark:focus:ring-violet-500;
+  @apply rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted;
 }
 .btn-primary {
-  @apply bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition;
+  @apply rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-canvas transition-opacity hover:opacity-90;
 }
 .btn-ghost {
-  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition;
+  @apply rounded-lg border border-line px-4 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg;
 }
 </style>

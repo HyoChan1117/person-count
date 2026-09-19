@@ -1,54 +1,70 @@
 <template>
-  <div class="flex h-full overflow-hidden bg-neutral-100 dark:bg-neutral-950">
+  <div class="ds-root flex h-full overflow-hidden">
 
     <!-- Sidebar -->
-    <aside class="w-48 bg-white dark:bg-neutral-900 border-r border-neutral-200 dark:border-neutral-800 flex flex-col p-3 shrink-0">
-      <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-2">객체 배치</div>
+    <aside class="flex w-60 shrink-0 flex-col border-r border-line bg-card">
+      <div class="flex-1 overflow-y-auto p-3">
+      <section class="space-y-1">
+        <h2 class="px-3 pb-2 pt-1 text-sm font-semibold text-fg">객체 배치</h2>
 
       <button
         v-for="tool in TOOLS"
         :key="tool.type"
         @click="activeTool = activeTool === tool.type ? null : tool.type"
         :class="[
-          'flex items-center gap-2 text-sm px-3 py-2 rounded-lg mb-1 transition text-left font-medium',
+          'relative flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-base transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted',
           activeTool === tool.type
-            ? 'bg-violet-600 text-white'
-            : 'bg-neutral-50 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700'
+            ? 'bg-line/60 font-medium text-fg'
+            : 'text-fg-muted hover:bg-line/40 hover:text-fg'
         ]"
       >
-        <span>{{ tool.icon }}</span>{{ tool.label }}
+        <span v-if="activeTool === tool.type" class="absolute inset-y-2 left-0 w-0.5 rounded-full bg-fg" />
+        <span
+          :class="[
+            'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border transition-colors',
+            activeTool === tool.type
+              ? 'border-fg/15 bg-card text-fg'
+              : 'border-line bg-canvas text-fg-muted'
+          ]"
+        >
+          <NavIcon :name="tool.icon" :size="18" />
+        </span>
+        <span>{{ tool.label }}</span>
       </button>
+      </section>
 
       <!-- 책상 이름 (책상 선택 시) -->
       <template v-if="selectedDesk">
-        <div class="border-t border-neutral-100 dark:border-neutral-800 my-3" />
-        <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-2">책상 이름</div>
+        <div class="my-4 border-t border-line" />
+        <section class="space-y-2 px-3">
+        <h2 class="text-sm font-semibold text-fg">책상 이름</h2>
         <input
           v-model="selectedDesk.label"
           placeholder="예: A1, 앞줄 1번"
-          class="text-xs border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-violet-400 dark:focus:ring-violet-500"
+          class="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted"
           @keydown.stop
         />
-        <div class="text-[10px] text-neutral-400 dark:text-neutral-600 mt-1">이름을 입력하면 캔버스에 표시됩니다</div>
+        <p class="text-xs text-fg-muted">이름을 입력하면 캔버스에 표시됩니다.</p>
+        </section>
       </template>
 
       <!-- CCTV 설정 (CCTV 선택 시) -->
       <template v-if="selectedCCTV">
-        <div class="border-t border-neutral-100 dark:border-neutral-800 my-3" />
-        <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-2">CCTV 설정</div>
-        <label class="text-[10px] text-neutral-500 dark:text-neutral-400 mb-0.5 block">이름</label>
+        <div class="my-4 border-t border-line" />
+        <section class="space-y-2 px-3">
+        <h2 class="text-sm font-semibold text-fg">CCTV 설정</h2>
+        <label class="block text-sm text-fg-muted">이름</label>
         <input
           v-model="selectedCCTV.label"
           placeholder="예: CCTV 1"
-          class="text-xs border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded px-2 py-1.5 w-full focus:outline-none focus:ring-1 focus:ring-violet-400 dark:focus:ring-violet-500 mb-3"
+          class="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted"
           @keydown.stop
         />
-        <div class="border-t border-neutral-100 dark:border-neutral-800 mt-3 mb-2" />
-        <div class="flex items-center justify-between mb-2">
-          <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide">담당 자리</div>
+        <div class="flex items-center justify-between pt-2">
+          <div class="text-sm text-fg-muted">담당 자리</div>
           <div class="flex items-center gap-1.5">
             <div class="w-2.5 h-2.5 rounded-full flex-shrink-0" :style="{ background: getCctvColor(selectedCCTV.id) }" />
-            <span class="text-[11px] font-bold" :style="{ color: getCctvColor(selectedCCTV.id) }">
+            <span class="text-sm font-semibold" :style="{ color: getCctvColor(selectedCCTV.id) }">
               {{ objects.filter(o => o.type === 'desk' && (o.cctvIds ?? (o.cctvId != null ? [o.cctvId] : [])).includes(selectedCCTV.id)).length }}자리
             </span>
           </div>
@@ -56,59 +72,88 @@
         <button
           @click="seatAssignMode && assigningCctvId === selectedCCTV.id ? exitSeatAssignMode() : enterSeatAssignMode()"
           :class="[
-            'text-xs px-3 py-1.5 rounded-lg w-full transition font-medium',
+            'w-full rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted',
             seatAssignMode && assigningCctvId === selectedCCTV.id
               ? 'text-white'
-              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700'
+              : 'border border-line text-fg-muted hover:bg-line/40 hover:text-fg'
           ]"
           :style="seatAssignMode && assigningCctvId === selectedCCTV.id ? { background: getCctvColor(selectedCCTV.id) } : {}"
         >
-          {{ seatAssignMode && assigningCctvId === selectedCCTV.id ? '✓ 선택 완료' : '📍 자리 선택 모드' }}
+          <span class="inline-flex items-center justify-center gap-1.5">
+            <NavIcon :name="seatAssignMode && assigningCctvId === selectedCCTV.id ? 'seats' : 'pin'" :size="16" />
+            {{ seatAssignMode && assigningCctvId === selectedCCTV.id ? '선택 완료' : '자리 선택 모드' }}
+          </span>
         </button>
+        </section>
       </template>
 
-      <div class="border-t border-neutral-100 dark:border-neutral-800 my-3" />
+      <template v-if="selectedRotatable">
+        <div class="my-4 border-t border-line" />
+        <section class="space-y-2 px-3">
+        <div class="flex items-center justify-between">
+          <h2 class="text-sm font-semibold text-fg">각도</h2>
+          <span class="text-sm font-medium text-fg-muted">{{ selectedRotatable.angle ?? 0 }}°</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            class="rounded-lg border border-line px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted"
+            @click="rotateSelected(-15)"
+          >-15°</button>
+          <button
+            type="button"
+            class="rounded-lg border border-line px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted"
+            @click="rotateSelected(15)"
+          >+15°</button>
+        </div>
+        </section>
+      </template>
 
-      <div class="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wide mb-2">맵 크기</div>
-      <label class="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">가로 (px)</label>
-      <input type="number" v-model.number="mapW" min="400" max="2400" step="50"
-        class="text-xs border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded px-2 py-1 mb-2 focus:outline-none focus:ring-1 focus:ring-violet-400 dark:focus:ring-violet-500" />
-      <label class="text-xs text-neutral-500 dark:text-neutral-400 mb-0.5">세로 (px)</label>
-      <input type="number" v-model.number="mapH" min="300" max="1600" step="50"
-        class="text-xs border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded px-2 py-1 mb-1 focus:outline-none focus:ring-1 focus:ring-violet-400 dark:focus:ring-violet-500" />
+      <div class="my-4 border-t border-line" />
 
-      <div class="flex-1" />
+      <section class="space-y-2 px-3">
+      <h2 class="text-sm font-semibold text-fg">맵 크기</h2>
+      <label class="block text-sm text-fg-muted">가로 (px)</label>
+      <input type="number" v-model.number="mapW" min="900" max="2400" step="50"
+        class="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg focus:outline-none focus-visible:border-fg-muted" />
+      <label class="block text-sm text-fg-muted">세로 (px)</label>
+      <input type="number" v-model.number="mapH" min="840" max="1600" step="50"
+        class="w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg focus:outline-none focus-visible:border-fg-muted" />
+      </section>
+      </div>
 
+      <div class="shrink-0 space-y-2 border-t border-line p-4">
       <button
         @click="deleteSelected"
         :disabled="!selectedIds.length"
-        class="text-sm text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg px-3 py-1.5 mb-1 transition"
-      >🗑 삭제{{ selectedIds.length > 1 ? ` (${selectedIds.length})` : '' }}</button>
+        class="flex w-full items-center justify-center gap-2 rounded-lg border border-state-alert/30 px-3 py-2.5 text-sm font-medium text-state-alert transition-colors hover:bg-state-alert/10 disabled:cursor-not-allowed disabled:opacity-30"
+      ><NavIcon name="trash" :size="16" /> 삭제{{ selectedIds.length > 1 ? ` (${selectedIds.length})` : '' }}</button>
       <button
         @click="clearAll"
-        class="text-sm text-neutral-500 dark:text-neutral-400 bg-neutral-50 dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-lg px-3 py-1.5 mb-2 transition"
+        class="w-full rounded-lg border border-line px-3 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg"
       >전체 지우기</button>
       <button
         @click="exportImage"
-        class="text-sm text-white bg-violet-600 hover:bg-violet-700 rounded-lg px-3 py-2 transition font-medium"
-      >📥 이미지 저장</button>
+        class="flex w-full items-center justify-center gap-2 rounded-lg bg-fg px-3 py-3 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted"
+      ><NavIcon name="image" :size="17" /> 이미지 저장</button>
+      </div>
     </aside>
 
     <!-- Main area -->
-    <div class="flex-1 flex flex-col min-w-0">
+    <div class="flex min-w-0 flex-1 flex-col">
 
       <!-- Top bar -->
-      <div class="flex items-center justify-between px-4 py-2.5 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
-        <router-link to="/classrooms" class="text-sm text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition">← 목록</router-link>
-        <span class="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{{ classroom?.name }} — 맵 에디터</span>
-        <span class="text-xs text-neutral-400 dark:text-neutral-500 flex items-center gap-3">
+      <div class="flex shrink-0 items-center justify-between gap-gutter border-b border-line bg-card px-card py-3">
+        <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
+        <span class="min-w-0 truncate text-sm font-semibold text-fg">{{ classroom?.name }} — 맵 에디터</span>
+        <span class="flex items-center gap-3 text-xs text-fg-muted">
           <template v-if="seatAssignMode">
-            <span class="w-2 h-2 rounded-full inline-block mr-1" :style="{ background: getCctvColor(assigningCctvId) }" />
-            <span class="text-amber-600 dark:text-amber-400 font-medium">자리 선택 모드</span>
+            <span class="mr-1 inline-block h-2 w-2 rounded-full" :style="{ background: getCctvColor(assigningCctvId) }" />
+            <span class="font-medium text-state-unknown">자리 선택 모드</span>
             — 책상을 클릭하여 배정 / 다시 클릭하면 해제 | ESC 종료
           </template>
           <template v-else-if="activeTool">
-            <span class="text-violet-600 dark:text-violet-400 font-medium">{{ TOOLS.find(t => t.type === activeTool)?.label }}</span>
+            <span class="font-medium text-fg">{{ TOOLS.find(t => t.type === activeTool)?.label }}</span>
             선택됨 — 캔버스를 클릭해 배치
           </template>
           <template v-else-if="selectedIds.length > 1">
@@ -120,23 +165,23 @@
           <template v-else>
             클릭으로 선택 또는 빈 곳에서 드래그로 다중 선택
           </template>
-          <span class="text-neutral-200 dark:text-neutral-700">|</span>
-          <button @click="undo" :disabled="historyIdx <= 0" class="hover:text-neutral-600 dark:hover:text-neutral-300 disabled:opacity-30" title="되돌리기 (Ctrl+Z)">↩ 되돌리기</button>
-          <button @click="redo" :disabled="historyIdx >= history.length - 1" class="hover:text-neutral-600 dark:hover:text-neutral-300 disabled:opacity-30" title="다시실행 (Ctrl+Y)">↪ 다시실행</button>
+          <span class="text-line">|</span>
+          <button @click="undo" :disabled="historyIdx <= 0" class="rounded-md px-2 py-1 transition-colors hover:text-fg disabled:opacity-30" title="되돌리기 (Ctrl+Z)">↩ 되돌리기</button>
+          <button @click="redo" :disabled="historyIdx >= history.length - 1" class="rounded-md px-2 py-1 transition-colors hover:text-fg disabled:opacity-30" title="다시실행 (Ctrl+Y)">↪ 다시실행</button>
         </span>
       </div>
 
       <!-- Canvas scroll area -->
       <div
         ref="scrollEl"
-        class="flex-1 overflow-auto p-6 flex items-start justify-start"
+        class="flex flex-1 items-start justify-start overflow-auto bg-canvas p-section"
       >
         <div class="relative inline-block">
           <canvas
             ref="canvasEl"
             :width="mapW"
             :height="mapH"
-            class="shadow-xl rounded-lg bg-white block"
+            class="block rounded-card border border-line bg-white shadow-xl"
             :style="{ cursor: cursorStyle }"
             @mousedown="onMouseDown"
             @mousemove="onMouseMove"
@@ -144,7 +189,7 @@
             @mouseleave="onMouseUp"
           />
           <div
-            class="absolute -right-1.5 -bottom-1.5 w-4 h-4 rounded-sm bg-white border-2 border-violet-500 cursor-nwse-resize"
+            class="absolute -bottom-1.5 -right-1.5 h-4 w-4 cursor-nwse-resize rounded-sm border-2 border-fg-muted bg-card"
             title="드래그해서 맵 크기 조절"
             @mousedown="onMapResizeMouseDown"
           />
@@ -172,16 +217,27 @@ import { ref, computed, watch, onMounted, onBeforeUnmount, onUnmounted, nextTick
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import ErrorNotice from '@/components/ui/ErrorNotice.vue'
+import NavIcon from '@/components/ui/NavIcon.vue'
 import api from '@/api'
 
 const TOOLS = [
-  { type: 'cctv',  label: 'CCTV', icon: '📷', defaultW: 90,  defaultH: 70  },
-  { type: 'desk',  label: '책상',  icon: '🪑', defaultW: 130, defaultH: 75  },
-  { type: 'chair', label: '의자',  icon: '💺', defaultW: 55,  defaultH: 55  },
+  { type: 'cctv',  label: 'CCTV', icon: 'camera', defaultW: 72, defaultH: 63 },
+  { type: 'desk',  label: '책상',  icon: 'desk',   defaultW: 87, defaultH: 59 },
+  { type: 'chair', label: '의자',  icon: 'chair',  defaultW: 51, defaultH: 45 },
 ]
 
 const HANDLE_R = 6
 const CCTV_COLORS = ['#3b82f6', '#22c55e', '#ef4444', '#a855f7', '#f97316', '#06b6d4', '#ec4899', '#84cc16']
+const MAP_STYLES = {
+  border: '#a9b3c2',
+  chair: '#e2e8f1',
+  text: '#061735',
+  mutedText: '#53647f',
+  empty: '#5b6b82',
+  occupied: '#147b70',
+  unknown: '#9a6a0e',
+  selected: '#2563eb',
+}
 
 function getCctvColor(cctvId) {
   const cctvs = objects.value.filter(o => o.type === 'cctv')
@@ -194,8 +250,10 @@ const cStore = useClassroomStore()
 const classroom = computed(() => cStore.current)
 
 const canvasEl = ref(null)
-const mapW = ref(900)
-const mapH = ref(600)
+const DEFAULT_MAP_W = 900
+const DEFAULT_MAP_H = 840
+const mapW = ref(DEFAULT_MAP_W)
+const mapH = ref(DEFAULT_MAP_H)
 const objects = ref([])
 const selectedIds = ref([])          // 다중 선택 ID 배열
 const activeTool = ref(null)
@@ -204,8 +262,8 @@ const seatAssignMode = ref(false)
 const assigningCctvId = ref(null)
 
 // ── 맵 크기 드래그 조절 ──────────────────────────────────────────────────────
-const MAP_W_MIN = 400, MAP_W_MAX = 2400
-const MAP_H_MIN = 300, MAP_H_MAX = 1600
+const MAP_W_MIN = DEFAULT_MAP_W, MAP_W_MAX = 2400
+const MAP_H_MIN = DEFAULT_MAP_H, MAP_H_MAX = 1600
 let mapResizeStart = null
 
 function onMapResizeMouseDown(e) {
@@ -239,6 +297,12 @@ const selectedCCTV = computed(() => {
   if (selectedIds.value.length !== 1) return null
   const obj = objects.value.find(o => o.id === selectedIds.value[0])
   return obj?.type === 'cctv' ? obj : null
+})
+
+const selectedRotatable = computed(() => {
+  if (selectedIds.value.length !== 1) return null
+  const obj = objects.value.find(o => o.id === selectedIds.value[0])
+  return obj && ['desk', 'chair'].includes(obj.type) ? obj : null
 })
 
 let nextId = 1
@@ -323,6 +387,19 @@ function exitSeatAssignMode() {
   assigningCctvId.value = null
 }
 
+function normalizeAngle(angle) {
+  return ((angle % 360) + 360) % 360
+}
+
+function rotateSelected(delta) {
+  const obj = selectedRotatable.value
+  if (!obj) return
+  pushHistory()
+  obj.angle = normalizeAngle((obj.angle ?? 0) + delta)
+  save()
+  redraw()
+}
+
 // ── Persistence ───────────────────────────────────────────────────────────────
 const storageKey = computed(() => `map_${route.params.id}`)
 
@@ -399,9 +476,22 @@ function retryBackendSave() {
 }
 
 function applyMapData(data) {
-  objects.value = data.objects ?? []
-  mapW.value = data.mapW ?? 900
-  mapH.value = data.mapH ?? 600
+  const sourceW = data.mapW ?? DEFAULT_MAP_W
+  const sourceH = data.mapH ?? DEFAULT_MAP_H
+  const targetW = Math.max(DEFAULT_MAP_W, sourceW)
+  const targetH = Math.max(DEFAULT_MAP_H, sourceH)
+  const scaleX = targetW / sourceW
+  const scaleY = targetH / sourceH
+
+  objects.value = (data.objects ?? []).map(o => ({
+    ...o,
+    x: Math.round(o.x * scaleX),
+    y: Math.round(o.y * scaleY),
+    w: Math.round(o.w * scaleX),
+    h: Math.round(o.h * scaleY),
+  }))
+  mapW.value = targetW
+  mapH.value = targetH
   nextId = (objects.value.reduce((m, o) => Math.max(m, o.id), 0) ?? 0) + 1
 }
 
@@ -492,8 +582,9 @@ function redraw() {
   const canvas = canvasEl.value
   if (!canvas) return
   const ctx = canvas.getContext('2d')
-  ctx.clearRect(0, 0, mapW.value, mapH.value)
-  drawGrid(ctx)
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, mapW.value, mapH.value)
+  drawCanvasFrame(ctx)
   for (const obj of objects.value) {
     drawObject(ctx, obj, selectedIds.value.includes(obj.id))
   }
@@ -516,7 +607,7 @@ function redraw() {
 }
 
 function drawGrid(ctx) {
-  ctx.strokeStyle = '#e2e8f0'
+  ctx.strokeStyle = '#eef2f7'
   ctx.lineWidth = 1
   for (let x = 0; x <= mapW.value; x += 40) {
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, mapH.value); ctx.stroke()
@@ -526,33 +617,68 @@ function drawGrid(ctx) {
   }
 }
 
+function drawCanvasFrame(ctx) {
+  ctx.save()
+  ctx.strokeStyle = '#d8dfea'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.roundRect(1, 1, mapW.value - 2, mapH.value - 2, 14)
+  ctx.stroke()
+
+  ctx.restore()
+}
+
 function drawObject(ctx, obj, isSelected) {
+  if (isRotatable(obj) && obj.angle) {
+    drawRotatedObject(ctx, obj, isSelected)
+    return
+  }
+
   if (obj.type === 'cctv') drawCCTV(ctx, obj, isSelected)
   else if (obj.type === 'desk') drawDesk(ctx, obj, isSelected)
   else if (obj.type === 'chair') drawChair(ctx, obj, isSelected)
 
   if (isSelected) {
-    ctx.save()
-    ctx.strokeStyle = '#7c3aed'
-    ctx.lineWidth = 1.5
-    ctx.setLineDash([5, 4])
-    ctx.strokeRect(obj.x - 4, obj.y - 4, obj.w + 8, obj.h + 8)
-    ctx.setLineDash([])
-    ctx.restore()
+    drawSelection(ctx, obj)
+  }
+}
 
-    // 리사이즈 핸들은 단일 선택일 때만
-    if (selectedIds.value.length === 1) {
-      for (const h of getHandles(obj)) {
-        ctx.fillStyle = '#fff'
-        ctx.strokeStyle = '#7c3aed'
-        ctx.lineWidth = 1.5
-        ctx.beginPath()
-        ctx.rect(h.hx - HANDLE_R, h.hy - HANDLE_R, HANDLE_R * 2, HANDLE_R * 2)
-        ctx.fill()
-        ctx.stroke()
-      }
+function isRotatable(obj) {
+  return obj && ['desk', 'chair'].includes(obj.type)
+}
+
+function drawRotatedObject(ctx, obj, isSelected) {
+  const localObj = { ...obj, x: -obj.w / 2, y: -obj.h / 2 }
+  ctx.save()
+  ctx.translate(obj.x + obj.w / 2, obj.y + obj.h / 2)
+  ctx.rotate((obj.angle ?? 0) * Math.PI / 180)
+  if (obj.type === 'desk') drawDesk(ctx, localObj, isSelected)
+  else if (obj.type === 'chair') drawChair(ctx, localObj, isSelected)
+  if (isSelected) drawSelection(ctx, localObj)
+  ctx.restore()
+}
+
+function drawSelection(ctx, obj) {
+  ctx.save()
+  ctx.strokeStyle = '#7c3aed'
+  ctx.lineWidth = 1.5
+  ctx.setLineDash([5, 4])
+  ctx.strokeRect(obj.x - 4, obj.y - 4, obj.w + 8, obj.h + 8)
+  ctx.setLineDash([])
+
+  // 리사이즈 핸들은 단일 선택일 때만
+  if (selectedIds.value.length === 1) {
+    for (const h of getLocalHandles(obj)) {
+      ctx.fillStyle = '#fff'
+      ctx.strokeStyle = '#7c3aed'
+      ctx.lineWidth = 1.5
+      ctx.beginPath()
+      ctx.rect(h.hx - HANDLE_R, h.hy - HANDLE_R, HANDLE_R * 2, HANDLE_R * 2)
+      ctx.fill()
+      ctx.stroke()
     }
   }
+  ctx.restore()
 }
 
 function drawDesk(ctx, obj, isSelected) {
@@ -560,70 +686,48 @@ function drawDesk(ctx, obj, isSelected) {
   // Body - tint if assigned in assign mode (다중 CCTV 지원, 구버전 cctvId 마이그레이션)
   const cctvIds = obj.cctvIds ?? (obj.cctvId != null ? [obj.cctvId] : [])
   const isAssignedToActive = seatAssignMode.value && cctvIds.includes(assigningCctvId.value)
-  ctx.fillStyle = isAssignedToActive ? '#ede9fe' : '#f8fafc'
-  ctx.strokeStyle = isSelected ? '#7c3aed' : (cctvIds.length > 0 ? getCctvColor(cctvIds[0]) : '#cbd5e1')
-  ctx.lineWidth = isSelected ? 2.5 : 2
-  ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke()
+  ctx.fillStyle = isAssignedToActive ? '#f1f8f6' : '#ffffff'
+  ctx.strokeStyle = isSelected ? MAP_STYLES.selected : MAP_STYLES.border
+  ctx.lineWidth = 4
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 14); ctx.fill(); ctx.stroke()
   // Label
-  ctx.font = `bold ${Math.min(h * 0.36, 16)}px sans-serif`
-  ctx.fillStyle = '#1e293b'
+  ctx.font = `700 ${Math.min(h * 0.42, 34)}px sans-serif`
+  ctx.fillStyle = MAP_STYLES.text
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-  ctx.fillText(obj.label?.trim() || '책상', x + w / 2, y + h / 2)
-  // CCTV 배정 색상 도트 (다중 지원)
-  if (cctvIds.length > 0) {
-    const dotR = 5
-    const gap = 13
-    cctvIds.forEach((cid, i) => {
-      ctx.fillStyle = getCctvColor(cid)
-      ctx.beginPath()
-      ctx.arc(x + w - 8 - i * gap, y + 8, dotR, 0, Math.PI * 2)
-      ctx.fill()
-      ctx.strokeStyle = 'white'
-      ctx.lineWidth = 1.5
-      ctx.stroke()
-    })
-  }
+  ctx.fillText(obj.label?.trim() || '책상', x + w / 2, y + h / 2 + 1)
 }
 
 function drawChair(ctx, obj, isSelected) {
   const { x, y, w, h } = obj
-  ctx.fillStyle = '#e0f2fe'
-  ctx.strokeStyle = isSelected ? '#7c3aed' : '#8fd4f0'
-  ctx.lineWidth = isSelected ? 2.5 : 2
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
+  ctx.fillStyle = MAP_STYLES.chair
+  ctx.strokeStyle = isSelected ? MAP_STYLES.selected : MAP_STYLES.chair
+  ctx.lineWidth = isSelected ? 3 : 1
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 9); ctx.fill(); ctx.stroke()
 }
 
 function drawCCTV(ctx, obj, isSelected) {
   const { x, y, w, h } = obj
-  const cx = x + w / 2, cy = y + h / 2
-
-  // Body (단순 사각형 + 렌즈 점)
-  ctx.fillStyle = '#e2e8f0'
-  ctx.strokeStyle = isSelected ? '#7c3aed' : '#94a3b8'
-  ctx.lineWidth = isSelected ? 2.5 : 2
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
-  ctx.fillStyle = '#64748b'
-  ctx.beginPath(); ctx.arc(cx, cy, Math.min(w, h) * 0.22, 0, Math.PI * 2); ctx.fill()
-
-  // CCTV 색상 도트
-  ctx.fillStyle = getCctvColor(obj.id)
-  ctx.beginPath()
-  ctx.arc(x + w - 7, y + 7, 5, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.strokeStyle = 'white'
-  ctx.lineWidth = 1.2
-  ctx.stroke()
-
   // Label (이름이 설정되면 이름 표시, 아니면 CCTV)
   const label = obj.label?.trim()
-  ctx.fillStyle = '#334155'
-  ctx.font = `bold ${Math.min(h * 0.2, 12)}px sans-serif`
-  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'
-  ctx.fillText(label || 'CCTV', x + w / 2, y + h * 0.98)
+  ctx.fillStyle = '#ffffff'
+  ctx.strokeStyle = isSelected ? MAP_STYLES.selected : MAP_STYLES.border
+  ctx.lineWidth = 4
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 14); ctx.fill(); ctx.stroke()
+
+  ctx.fillStyle = MAP_STYLES.mutedText
+  ctx.font = `700 ${Math.min(h * 0.24, 26)}px sans-serif`
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+  ctx.fillText(label || 'CCTV', x + w / 2, y + h / 2)
   ctx.textAlign = 'left'
 }
 
 function getHandles(obj) {
+  const handles = getLocalHandles(obj)
+  if (!isRotatable(obj) || !obj.angle) return handles
+  return handles.map(h => ({ ...h, ...rotatePoint(obj, h.hx, h.hy) }))
+}
+
+function getLocalHandles(obj) {
   const { x, y, w, h } = obj
   return [
     { name: 'nw', hx: x,       hy: y       },
@@ -635,6 +739,34 @@ function getHandles(obj) {
     { name: 'sw', hx: x,       hy: y + h   },
     { name: 'w',  hx: x,       hy: y + h/2 },
   ]
+}
+
+function rotatePoint(obj, px, py) {
+  const cx = obj.x + obj.w / 2
+  const cy = obj.y + obj.h / 2
+  const rad = (obj.angle ?? 0) * Math.PI / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+  const dx = px - cx
+  const dy = py - cy
+  return {
+    hx: cx + dx * cos - dy * sin,
+    hy: cy + dx * sin + dy * cos,
+  }
+}
+
+function unrotatePoint(obj, px, py) {
+  const cx = obj.x + obj.w / 2
+  const cy = obj.y + obj.h / 2
+  const rad = -(obj.angle ?? 0) * Math.PI / 180
+  const cos = Math.cos(rad)
+  const sin = Math.sin(rad)
+  const dx = px - cx
+  const dy = py - cy
+  return {
+    x: cx + dx * cos - dy * sin,
+    y: cy + dx * sin + dy * cos,
+  }
 }
 
 // ── Mouse helpers ─────────────────────────────────────────────────────────────
@@ -657,7 +789,8 @@ function hitHandle(obj, px, py) {
 function hitObject(px, py) {
   for (let i = objects.value.length - 1; i >= 0; i--) {
     const o = objects.value[i]
-    if (px >= o.x && px <= o.x + o.w && py >= o.y && py <= o.y + o.h) return o
+    const p = isRotatable(o) && o.angle ? unrotatePoint(o, px, py) : { x: px, y: py }
+    if (p.x >= o.x && p.x <= o.x + o.w && p.y >= o.y && p.y <= o.y + o.h) return o
   }
   return null
 }
@@ -711,6 +844,7 @@ function onMouseDown(e) {
       w: tool.defaultW,
       h: tool.defaultH,
     }
+    if (['desk', 'chair'].includes(activeTool.value)) newObj.angle = 0
     if (activeTool.value === 'desk') newObj.label = ''
     if (activeTool.value === 'cctv') newObj.label = ''
     objects.value.push(newObj)

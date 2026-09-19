@@ -32,5 +32,11 @@ const PATHS = {
   moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
+  camera: '<rect x="3" y="7" width="13" height="10" rx="2.5"/><path d="m16 11 5-3v8l-5-3"/>',
+  desk: '<path d="M5 10h14"/><path d="M7 10v8M17 10v8"/><path d="M8 6h8a2 2 0 0 1 2 2v2H6V8a2 2 0 0 1 2-2z"/><path d="M6 18h2M16 18h2"/>',
+  chair: '<path d="M8 4v8h8V4"/><path d="M7 12h10a2 2 0 0 1 2 2v2H5v-2a2 2 0 0 1 2-2z"/><path d="M7 16v4M17 16v4"/>',
+  trash: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 14h10l1-14"/><path d="M9 7V4h6v3"/>',
+  image: '<rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m7 17 4-4 3 3 2-2 3 3"/>',
+  pin: '<path d="M12 21s6-5.2 6-11a6 6 0 0 0-12 0c0 5.8 6 11 6 11z"/><circle cx="12" cy="10" r="2"/>',
 }
 </script>

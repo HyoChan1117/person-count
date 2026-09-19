@@ -64,3 +64,4 @@ backend/data/insightface/
 # Local tooling and large model weights (ecc/ is its own git repository)
 ecc/
 backend/*.pt
+/*.pt

@@ -97,31 +97,71 @@ def compute_hourly_occupancy(classroom_id: int, date_str: str, schedule: dict | 
     day = datetime.strptime(date_str, "%Y-%m-%d")
     since = day.isoformat(timespec="seconds")
     until = (day + timedelta(days=1)).isoformat(timespec="seconds")
-    snapshots = storage.get_occupancy_history(classroom_id, since=since, until=until)
+    snapshots = sorted(
+        storage.get_occupancy_history(classroom_id, since=since, until=until),
+        key=lambda s: s.get("ts", ""),
+    )
     now = datetime.now()
+    interval_min = int(os.getenv("OCCUPANCY_MONITOR_INTERVAL", "600")) / 60
 
-    day_key = WEEKDAY_KEYS[day.weekday()]
-    scheduled_hours = set(schedule.get(day_key, [])) if schedule else None
+    def parse_ts(snap: dict) -> datetime | None:
+        try:
+            return datetime.fromisoformat(str(snap.get("ts", "")))
+        except ValueError:
+            return None
+
+    parsed = [(ts, snap) for snap in snapshots if (ts := parse_ts(snap)) is not None]
+    occupied_times = [
+        ts
+        for ts, snap in parsed
+        if any(state == "occupied" for state in snap.get("seats", {}).values())
+    ]
+    if occupied_times:
+        first_hour = occupied_times[0].hour
+        last_hour = occupied_times[-1].hour
+    elif parsed:
+        first_hour = parsed[0][0].hour
+        last_hour = parsed[-1][0].hour
+    else:
+        return []
+
+    all_seat_ids = sorted(
+        {sid for _, snap in parsed for sid in snap.get("seats", {}).keys()},
+        key=lambda sid: (not str(sid).isdigit(), int(sid) if str(sid).isdigit() else 0, str(sid)),
+    )
 
     result = []
-    for hour in range(HOURLY_START_HOUR, HOURLY_END_HOUR + 1):
-        is_scheduled = True if scheduled_hours is None else (hour in scheduled_hours)
+    for hour in range(first_hour, last_hour + 1):
         mark = day.replace(hour=hour, minute=0, second=0, microsecond=0)
         entry = {
-            "hour": hour, "time": f"{hour:02d}:00", "scheduled": is_scheduled,
+            "hour": hour, "time": f"{hour:02d}:00", "scheduled": True,
             "occupied": None, "total": None, "seats": None,
         }
-        if is_scheduled and mark <= now:
-            window_end_iso = (mark + timedelta(minutes=9, seconds=59)).isoformat(timespec="seconds")
-            mark_iso = mark.isoformat(timespec="seconds")
-            snap = next((s for s in snapshots if mark_iso <= s.get("ts", "") < window_end_iso), None)
-            if snap:
-                seats = snap.get("seats", {})
-                occupied_seats = [sid for sid, v in seats.items() if v == "occupied"]
-                occupied_seats.sort(key=lambda sid: (not sid.isdigit(), int(sid) if sid.isdigit() else 0, sid))
-                entry["occupied"] = len(occupied_seats)
-                entry["total"] = len(seats)
-                entry["seats"] = occupied_seats
+        if mark > now:
+            result.append(entry)
+            continue
+
+        window_end = min(mark + timedelta(hours=1), now)
+        occupied_minutes = {sid: 0.0 for sid in all_seat_ids}
+        saw_record = False
+        for idx, (ts, snap) in enumerate(parsed):
+            next_ts = parsed[idx + 1][0] if idx + 1 < len(parsed) else ts + timedelta(minutes=interval_min)
+            start = max(ts, mark)
+            end = min(next_ts, window_end)
+            if end <= start:
+                continue
+            saw_record = True
+            minutes = (end - start).total_seconds() / 60
+            for sid, state in snap.get("seats", {}).items():
+                if state == "occupied":
+                    occupied_minutes[sid] = occupied_minutes.get(sid, 0.0) + minutes
+
+        if saw_record:
+            occupied_seats = [sid for sid, minutes in occupied_minutes.items() if minutes >= 30]
+            occupied_seats.sort(key=lambda sid: (not str(sid).isdigit(), int(sid) if str(sid).isdigit() else 0, str(sid)))
+            entry["occupied"] = len(occupied_seats)
+            entry["total"] = len(all_seat_ids)
+            entry["seats"] = occupied_seats
         result.append(entry)
 
     return result

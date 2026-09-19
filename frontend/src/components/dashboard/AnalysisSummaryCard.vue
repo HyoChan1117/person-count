@@ -11,8 +11,6 @@
       </p>
     </div>
 
-    <p v-if="unknown" class="mt-2 text-right text-sm text-state-unknown">판정 불가 {{ unknown }}석</p>
-
     <div
       class="mt-4 h-2 overflow-hidden rounded-full bg-line"
       role="progressbar"

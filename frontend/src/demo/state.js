@@ -279,19 +279,31 @@ export function hourlyFor(id, date) {
   const room = roomOf(id)
   if (!room) return null
   const max = maxSlotFor(date)
-  const day = new Date(`${date}T00:00:00`)
-  const key = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'][(day.getDay() + 6) % 7]
-  const scheduled = room.classroom.schedule?.[key] ? new Set(room.classroom.schedule[key]) : null
+  const occupiedSlots = []
+  for (let s = 0; s <= max; s++) {
+    if (Object.values(seatsAt(room, date, s)).some((v) => v === 'occupied')) occupiedSlots.push(s)
+  }
+  if (!occupiedSlots.length) return { date, hours: [] }
+  const firstHour = Math.floor((FIRST_MIN + occupiedSlots[0] * SLOT_MIN) / 60)
+  const lastHour = Math.floor((FIRST_MIN + occupiedSlots[occupiedSlots.length - 1] * SLOT_MIN) / 60)
   const hours = []
-  for (let h = 9; h <= 21; h++) {
-    const slot = (h - 9) * 6
-    const isScheduled = scheduled === null ? true : scheduled.has(h)
-    const entry = { hour: h, time: `${pad(h)}:00`, scheduled: isScheduled, occupied: null, total: null, seats: null }
-    if (isScheduled && slot <= max) {
-      const seats = seatsAt(room, date, slot)
-      const occ = Object.keys(seats).filter((s) => seats[s] === 'occupied').sort(numSort)
+  for (let h = firstHour; h <= lastHour; h++) {
+    const entry = { hour: h, time: `${pad(h)}:00`, scheduled: true, occupied: null, total: null, seats: null }
+    const from = Math.max(0, Math.ceil((h * 60 - FIRST_MIN) / SLOT_MIN))
+    const to = Math.min(max, Math.ceil(((h + 1) * 60 - FIRST_MIN) / SLOT_MIN) - 1)
+    if (from <= to) {
+      const minutes = {}
+      let totalSeats = 0
+      for (let s = from; s <= to; s++) {
+        const seats = seatsAt(room, date, s)
+        totalSeats = Math.max(totalSeats, Object.keys(seats).length)
+        for (const [sid, state] of Object.entries(seats)) {
+          if (state === 'occupied') minutes[sid] = (minutes[sid] || 0) + SLOT_MIN
+        }
+      }
+      const occ = Object.entries(minutes).filter(([, min]) => min >= 30).map(([sid]) => sid).sort(numSort)
       entry.occupied = occ.length
-      entry.total = Object.keys(seats).length
+      entry.total = totalSeats
       entry.seats = occ
     }
     hours.push(entry)

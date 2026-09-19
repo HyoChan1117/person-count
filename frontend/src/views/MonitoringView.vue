@@ -62,6 +62,7 @@
             :is-latest="isLatest"
             :camera="selectedCamera"
             :stat="selectedSeat ? seatStats[selectedSeat] ?? null : null"
+            :participation="selectedSeatParticipation"
           />
         </div>
 
@@ -231,6 +232,58 @@ const peakHourData = computed(() => {
 })
 
 const displayHourData = computed(() => selectedHourData.value ?? peakHourData.value)
+
+const selectedDateWeekdayKey = computed(() => {
+  const date = new Date(`${selectedDateStr.value}T00:00:00`)
+  return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][date.getDay()]
+})
+
+function normalizeScheduleEntry(entry) {
+  if (typeof entry === 'number') return { hour: entry, title: '', professor: '' }
+  return {
+    hour: Number(entry?.hour),
+    title: entry?.title ?? entry?.name ?? '',
+    professor: entry?.professor ?? '',
+  }
+}
+
+const selectedSeatParticipation = computed(() => {
+  if (!selectedSeat.value) return null
+  const lessons = (classroom.value?.schedule?.[selectedDateWeekdayKey.value] ?? [])
+    .map(normalizeScheduleEntry)
+    .filter((lesson) => Number.isFinite(lesson.hour))
+  const scheduledHours = new Set(lessons.map((lesson) => lesson.hour))
+  if (!scheduledHours.size) {
+    return { status: 'none', label: '수업 시간표 없음', detail: '선택한 날짜에 등록된 수업 시간이 없습니다.' }
+  }
+
+  const occupiedHours = hourlyStats.value
+    .filter((h) => scheduledHours.has(h.hour) && (h.seats ?? []).includes(selectedSeat.value))
+    .map((h) => h.hour)
+
+  if (occupiedHours.length === 0) {
+    return {
+      status: 'absent',
+      label: '미참여',
+      detail: `등록된 수업 ${lessons.length}개 중 점유된 시간이 없습니다.`,
+    }
+  }
+
+  const occupied = new Set(occupiedHours)
+  const occupiedLessons = lessons.filter((lesson) => occupied.has(lesson.hour))
+  const status = occupiedLessons.length >= lessons.length ? 'present' : 'partial'
+  return {
+    status,
+    label: status === 'present' ? '참여' : '부분 참여',
+    detail: `수업 ${lessons.length}개 중 ${occupiedLessons.length}개 시간에 점유`,
+    hours: occupiedLessons.map((lesson) => {
+      const time = `${String(lesson.hour).padStart(2, '0')}:00`
+      const title = lesson.title ? ` ${lesson.title}` : ''
+      const professor = lesson.professor ? ` · ${lesson.professor}` : ''
+      return `${time}${title}${professor}`
+    }),
+  }
+})
 
 async function fetchStats() {
   selectedHour.value = null

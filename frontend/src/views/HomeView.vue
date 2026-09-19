@@ -368,32 +368,54 @@ async function drawOccupancyMap() {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
   const personMarks = []   // 의자에 그릴 사람 표시 (도형을 다 그린 뒤 마지막에 얹는다)
+  const MAP = {
+    border: '#a9b3c2',
+    chair: '#e2e8f1',
+    text: '#061735',
+    muted: '#53647f',
+    occupied: '#147b70',
+    occupiedFill: 'rgba(20,123,112,0.18)',
+  }
+
+  function withRotation(obj, draw) {
+    if (!obj.angle) return draw(obj.x * scale, obj.y * scale, obj.w * scale, obj.h * scale)
+    const cx = (obj.x + obj.w / 2) * scale
+    const cy = (obj.y + obj.h / 2) * scale
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.rotate(obj.angle * Math.PI / 180)
+    draw(-obj.w * scale / 2, -obj.h * scale / 2, obj.w * scale, obj.h * scale)
+    ctx.restore()
+  }
 
   for (const obj of objects) {
-    const x = obj.x * scale, y = obj.y * scale
-    const w = obj.w * scale, h = obj.h * scale
-
     if (obj.type === 'chair') {
-      ctx.fillStyle = '#e2e8f0'
-      ctx.beginPath(); ctx.roundRect(x, y, w, h, 3); ctx.fill()
+      withRotation(obj, (x, y, w, h) => {
+        ctx.fillStyle = MAP.chair
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 8 * scale); ctx.fill()
+      })
     } else if (obj.type === 'cctv') {
-      ctx.fillStyle = '#e2e8f0'
-      ctx.strokeStyle = '#94a3b8'
-      ctx.lineWidth = 1.5
-      ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
-      ctx.fillStyle = '#334155'
-      ctx.font = `bold ${Math.min(h * 0.28, 11)}px sans-serif`
+      const x = obj.x * scale, y = obj.y * scale
+      const w = obj.w * scale, h = obj.h * scale
+      ctx.fillStyle = '#ffffff'
+      ctx.strokeStyle = MAP.border
+      ctx.lineWidth = 3 * scale
+      ctx.beginPath(); ctx.roundRect(x, y, w, h, 12 * scale); ctx.fill(); ctx.stroke()
+      ctx.fillStyle = MAP.muted
+      const label = obj.label || 'CCTV'
+      ctx.font = `700 ${Math.max(10, Math.min(h * 0.24, 22, (w * 0.78) / (label.length * 0.7)))}px sans-serif`
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-      ctx.fillText(obj.label || 'CAM', x + w / 2, y + h / 2)
+      ctx.fillText(label, x + w / 2, y + h / 2)
     } else if (obj.type === 'desk') {
       const label = obj.label?.trim()
       const isOcc = label && allOccupied.has(label)
       const isEmpty = label && !isOcc && allEmpty.has(label)
-      ctx.fillStyle = isOcc ? '#fee2e2' : isEmpty ? '#f1f5f9' : '#f8fafc'
-      ctx.strokeStyle = isOcc ? '#ef4444' : isEmpty ? '#94a3b8' : '#cbd5e1'
-      ctx.lineWidth = isOcc || isEmpty ? 2.5 : 1.5
-      ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke()
-      if (label) {
+      withRotation(obj, (x, y, w, h) => {
+        ctx.fillStyle = isOcc ? MAP.occupiedFill : '#ffffff'
+        ctx.strokeStyle = isOcc ? MAP.occupied : MAP.border
+        ctx.lineWidth = 3 * scale
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 10 * scale); ctx.fill(); ctx.stroke()
+        if (!label) return
         // 좌석 점유가 '점유'로 판정한 자리에만 표시한다. 서 있는 사람의 얼굴이 뒷자리 영역에
         // 잡히는 경우가 있어, 몸통을 보는 좌석 점유로 교차 검증해 걸러낸다.
         const face = isOcc ? seatFaces.value?.[label] : null
@@ -402,11 +424,11 @@ async function drawOccupancyMap() {
         const chair = face ? nearestChair(objects, obj) : null
         if (chair) personMarks.push({ chair, verified: face.verified })
 
-        ctx.font = `bold ${Math.min(h * 0.36, 15)}px sans-serif`
-        ctx.fillStyle = isOcc ? '#dc2626' : isEmpty ? '#64748b' : '#1e293b'
+        ctx.font = `700 ${Math.max(11, Math.min(h * 0.42, 30))}px sans-serif`
+        ctx.fillStyle = MAP.text
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
         ctx.fillText(label, x + w / 2, y + h / 2)
-      }
+      })
     }
   }
 

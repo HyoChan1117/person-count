@@ -2,7 +2,7 @@ import { ref, computed, watch } from 'vue'
 import api from '@/api'
 import { seatStatesFor, hasSnapshotRecord } from '@/utils/seatSnapshot'
 
-const STEP_MS = 1000 // 자동 재생: 1초에 한 칸
+const STEP_MS = 1500 // 자동 재생: 1.5초에 한 칸
 const IDLE_RESUME_MS = 15000 // 슬라이더를 직접 움직인 뒤 이 시간 동안 조작이 없으면 자동 재생 재개
 
 // 실서버 백엔드에는 10분 단위 스냅샷 엔드포인트가 없다(정각 스냅샷만 제공). 한 번 404를 받으면 다시 묻지 않는다.

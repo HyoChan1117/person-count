@@ -191,8 +191,6 @@ const LINK_QUIET = `shrink-0 rounded-md px-2 py-1 text-sm text-fg-muted transiti
 
 const LEGEND = [
   { label: '점유', dot: 'bg-state-occupied' },
-  { label: '빈 좌석', dot: 'bg-state-empty' },
-  { label: '판정 불가', dot: 'bg-state-unknown' },
 ]
 
 const route = useRoute()
@@ -442,59 +440,68 @@ async function drawMapOnCanvas(canvas, cameras, seatActivity = new Map()) {
   const C = {
     fg: cssColor('fg'),
     muted: cssColor('fg-muted'),
-    mutedLine: cssColor('fg-muted', 0.5),
-    card: cssColor('card'),
-    line: cssColor('line'),
-    chair: cssColor('line', 0.7),
+    mapText: '#061735',
+    mapMuted: '#53647f',
+    mapBorder: '#a9b3c2',
+    chair: '#e2e8f1',
     occ: cssColor('state-occupied'),
-    occFill: cssColor('state-occupied', 0.25),
-    emp: cssColor('state-empty'),
-    empFill: cssColor('state-empty', 0.1),
+    occFill: cssColor('state-occupied', 0.18),
     unk: cssColor('state-unknown'),
-    unkFill: cssColor('state-unknown', 0.15),
+    unkFill: cssColor('state-unknown', 0.16),
+  }
+
+  function withRotation(obj, draw) {
+    if (!obj.angle) return draw(obj.x * scale, obj.y * scale, obj.w * scale, obj.h * scale)
+    const cx = (obj.x + obj.w / 2) * scale
+    const cy = (obj.y + obj.h / 2) * scale
+    ctx.save()
+    ctx.translate(cx, cy)
+    ctx.rotate(obj.angle * Math.PI / 180)
+    draw(-obj.w * scale / 2, -obj.h * scale / 2, obj.w * scale, obj.h * scale)
+    ctx.restore()
   }
 
   for (const obj of objects) {
-    const x = obj.x * scale, y = obj.y * scale
-    const w = obj.w * scale, h = obj.h * scale
-
     if (obj.type === 'chair') {
-      ctx.fillStyle = C.chair
-      ctx.beginPath(); ctx.roundRect(x, y, w, h, 3); ctx.fill()
+      withRotation(obj, (x, y, w, h) => {
+        ctx.fillStyle = C.chair
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 8 * scale); ctx.fill()
+      })
     } else if (obj.type === 'cctv') {
-      ctx.fillStyle = C.card
-      ctx.strokeStyle = C.mutedLine
-      ctx.lineWidth = 1.5
-      ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
-      ctx.fillStyle = C.muted
-      // 라벨이 박스보다 넓으면 글자 크기를 줄여 안에 담는다(글자 폭은 크기의 약 0.7배로 어림)
-      const cctvLabel = obj.label || 'CAM'
-      ctx.font = `600 ${Math.min(h * 0.28, 16, (w * 0.86) / (cctvLabel.length * 0.7))}px ${CANVAS_FONT}`
+      const x = obj.x * scale, y = obj.y * scale
+      const w = obj.w * scale, h = obj.h * scale
+      ctx.fillStyle = '#ffffff'
+      ctx.strokeStyle = C.mapBorder
+      ctx.lineWidth = 3 * scale
+      ctx.beginPath(); ctx.roundRect(x, y, w, h, 12 * scale); ctx.fill(); ctx.stroke()
+      ctx.fillStyle = C.mapMuted
+      const cctvLabel = obj.label || 'CCTV'
+      ctx.font = `700 ${Math.max(10, Math.min(h * 0.24, 22, (w * 0.78) / (cctvLabel.length * 0.7)))}px ${CANVAS_FONT}`
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
       ctx.fillText(cctvLabel, x + w / 2, y + h / 2)
     } else if (obj.type === 'desk') {
       const label = obj.label?.trim()
       const activity = label ? seatActivity.get(label) : undefined
       const isOcc = label && allOccupied.has(label)
-      const isEmpty = label && !isOcc && allEmpty.has(label)
-      const isUnknown = label && !isOcc && !isEmpty && allFailed.has(label)
-      ctx.fillStyle = isOcc ? C.occFill : isEmpty ? C.empFill : isUnknown ? C.unkFill : 'transparent'
-      ctx.strokeStyle = isOcc ? C.occ : isEmpty ? C.emp : isUnknown ? C.unk : C.line
-      ctx.lineWidth = isOcc || isEmpty || isUnknown ? 2.5 : 1.5
-      ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke()
-      if (label) {
-        const hasActivity = !!activity
-        const labelY = hasActivity ? y + h * 0.38 : y + h / 2
-        ctx.font = `600 ${Math.min(h * 0.36, 24)}px ${CANVAS_FONT}`
-        ctx.fillStyle = C.fg
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-        ctx.fillText(label, x + w / 2, labelY)
-        if (hasActivity) {
-          ctx.font = `${Math.min(h * 0.26, 16)}px ${CANVAS_FONT}`
-          ctx.fillStyle = C.muted
-          ctx.fillText(activity, x + w / 2, y + h * 0.68)
+      withRotation(obj, (x, y, w, h) => {
+        ctx.fillStyle = isOcc ? C.occFill : '#ffffff'
+        ctx.strokeStyle = isOcc ? C.occ : C.mapBorder
+        ctx.lineWidth = 3 * scale
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 10 * scale); ctx.fill(); ctx.stroke()
+        if (label) {
+          const hasActivity = !!activity
+          const labelY = hasActivity ? y + h * 0.38 : y + h / 2
+          ctx.font = `700 ${Math.max(11, Math.min(h * 0.42, 30))}px ${CANVAS_FONT}`
+          ctx.fillStyle = C.mapText
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+          ctx.fillText(label, x + w / 2, labelY)
+          if (hasActivity) {
+            ctx.font = `${Math.min(h * 0.22, 14)}px ${CANVAS_FONT}`
+            ctx.fillStyle = C.muted
+            ctx.fillText(activity, x + w / 2, y + h * 0.7)
+          }
         }
-      }
+      })
     }
   }
   ctx.textAlign = 'left'
