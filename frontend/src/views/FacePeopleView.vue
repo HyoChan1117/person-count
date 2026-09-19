@@ -36,6 +36,8 @@
 
       <div v-if="loading" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
 
+      <ErrorNotice v-else-if="loadError" legacy class="my-6" title="인물 목록을 불러오지 못했습니다" :message="loadError" @retry="retryPeople" />
+
       <div v-else-if="!people.length" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 gap-3 text-center">
         <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">👤</div>
         <p class="text-sm">등록된 인물이 없습니다.<br>사진을 올려 등록해보세요.</p>
@@ -175,6 +177,7 @@ import api from '@/api'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
 import { useMockToggle } from '@/composables/useMockToggle'
 import BlurredImage from '@/components/ui/BlurredImage.vue'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 
 // ── 목데이터 모드 ────────────────────────────────────────────────────────────
 
@@ -295,10 +298,23 @@ function onFiles(e) {
   form.value.files = Array.from(e.target.files)
 }
 
+// 실패해도 loading을 반드시 끄고 오류를 화면에 보여준다(호출부가 여러 곳이라 여기서 예외를 삼킨다)
+const loadError = ref('')
 async function fetchPeople() {
-  const { data } = await api.get('/face/people')
-  people.value = data.people
-  loading.value = false
+  loadError.value = ''
+  try {
+    const { data } = await api.get('/face/people')
+    people.value = data.people
+  } catch (e) {
+    loadError.value = e.response?.data?.detail ?? e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+function retryPeople() {
+  loading.value = true
+  fetchPeople()
 }
 
 async function submit() {

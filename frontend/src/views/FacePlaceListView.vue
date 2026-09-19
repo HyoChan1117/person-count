@@ -23,6 +23,8 @@
 
       <div v-if="loading" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
 
+      <ErrorNotice v-else-if="loadError" legacy class="my-6" title="감시 장소를 불러오지 못했습니다" :message="loadError" @retry="retryPlaces" />
+
       <div v-else-if="!places.length" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 gap-3">
         <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">🙂</div>
         <p class="text-sm">등록된 감시 장소가 없습니다. 장소를 추가해보세요.</p>
@@ -74,6 +76,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
 import { FACE_ACTIONS } from '@/constants/navActions'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -91,18 +94,31 @@ function selectPlace(p) {
   router.push(actionMeta.value.path(p.id))
 }
 
+// 실패해도 loading을 반드시 끄고 오류를 화면에 보여준다(장소 등록 뒤 목록 갱신에서도 쓰이므로 여기서 예외를 삼킨다)
+const loadError = ref('')
 async function fetchPlaces() {
-  const [placeRes, classroomRes] = await Promise.all([
-    api.get('/face/places'),
-    api.get('/classrooms/'),
-  ])
-  places.value = placeRes.data.places
-  classrooms.value = classroomRes.data
-  // 등록된 교실이 있으면 첫 교실을 기본 선택해 둔다
-  if (form.value.classroomId === null && classrooms.value.length) {
-    form.value.classroomId = classrooms.value[0].id
+  loadError.value = ''
+  try {
+    const [placeRes, classroomRes] = await Promise.all([
+      api.get('/face/places'),
+      api.get('/classrooms/'),
+    ])
+    places.value = placeRes.data.places
+    classrooms.value = classroomRes.data
+    // 등록된 교실이 있으면 첫 교실을 기본 선택해 둔다
+    if (form.value.classroomId === null && classrooms.value.length) {
+      form.value.classroomId = classrooms.value[0].id
+    }
+  } catch (e) {
+    loadError.value = e.response?.data?.detail ?? e.message
+  } finally {
+    loading.value = false
   }
-  loading.value = false
+}
+
+function retryPlaces() {
+  loading.value = true
+  fetchPlaces()
 }
 
 async function createPlace() {

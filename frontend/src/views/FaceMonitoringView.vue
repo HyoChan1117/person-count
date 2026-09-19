@@ -9,7 +9,10 @@
     </header>
 
     <!-- 2xl(1536px) 미만에서는 좌측 패널을 줄여 감지 기록 행에 이름이 들어갈 폭을 남긴다 -->
-    <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,24rem)_minmax(0,1fr)] gap-gutter 2xl:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]">
+    <!-- 불러오기에 실패하면 "등록된 장소 없음"처럼 보이는 빈 패널 대신 오류와 재시도만 보여준다 -->
+    <ErrorNotice v-if="loadError" class="shrink-0" title="모니터링 정보를 불러오지 못했습니다" :message="loadError" @retry="load" />
+
+    <div v-else class="grid min-h-0 flex-1 grid-cols-[minmax(0,24rem)_minmax(0,1fr)] gap-gutter 2xl:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]">
       <!-- 좌: 순찰 라이브 + 자리별 결과 -->
       <div class="flex min-h-0 flex-col gap-gutter overflow-y-auto pr-1">
         <PatrolLivePanel
@@ -85,6 +88,7 @@ import SectionHeader from '@/components/ui/SectionHeader.vue'
 import PatrolLivePanel from '@/components/face/PatrolLivePanel.vue'
 import DetectionFilters from '@/components/face/DetectionFilters.vue'
 import DetectionFeed from '@/components/face/DetectionFeed.vue'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import { usePatrolPhase } from '@/composables/usePatrolPhase'
 import { useDetectionFilters } from '@/composables/useDetectionFilters'
 
@@ -198,6 +202,20 @@ async function clearAll() {
   detections.value = []
 }
 
-onMounted(fetchAll)
+// 첫 로딩. 실패해도 loading을 반드시 끄고 오류를 보여준다(순찰 시작/종료·폴링에서 쓰는 fetchAll은 호출부가 처리한다)
+const loadError = ref('')
+async function load() {
+  loading.value = true
+  loadError.value = ''
+  try {
+    await fetchAll()
+  } catch (e) {
+    loadError.value = e.response?.data?.detail ?? e.message
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(load)
 onUnmounted(() => clearInterval(timer))
 </script>

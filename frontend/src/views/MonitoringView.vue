@@ -276,12 +276,20 @@ const selectedSeat = ref(null)
 const selectSeat = (id) => { selectedSeat.value = selectedSeat.value === id ? null : id }
 const selectedCamera = computed(() => classroom.value?.cameras.find((c) => (c.seat_ids ?? []).includes(selectedSeat.value)) ?? null)
 
+// 마운트 중 await가 끝나기 전에 화면을 떠나면 onUnmounted(stopTimeline)이 먼저 실행된다. 그 뒤에 startTimeline()이
+// 호출되면 1초 타이머가 정리되지 않고 남으므로, 떠난 뒤에는 시작하지 않는다.
+let unmounted = false
 onMounted(async () => {
   await cStore.fetchOne(classroomId.value)
+  if (unmounted) return
   await Promise.all([fetchStats(), loadMap(), loadTimeline()])
+  if (unmounted) return
   startTimeline()
 })
-onUnmounted(stopTimeline)
+onUnmounted(() => {
+  unmounted = true
+  stopTimeline()
+})
 
 watch(selectedDateStr, fetchStats)
 
