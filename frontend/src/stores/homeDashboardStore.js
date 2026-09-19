@@ -10,6 +10,9 @@ const ALERT_WINDOW_MS = 24 * 3600 * 1000
 const COLLECT_SEC = Number(import.meta.env.VITE_COLLECT_INTERVAL_SEC) || 600
 // seat-occupancy는 호출할 때마다 실시간 추론을 돌리므로 실서버에서는 길게 잡는다.
 const REFRESH_MS = isDemoMode ? 5000 : 120000
+// 응답이 오지 않는 요청 하나가 갱신 전체를 붙잡지 않게 요청별로 제한한다(api.js 전역 timeout은 긴 분석 화면을 끊을 수 있어 쓰지 않는다).
+// 카메라가 응답하지 않을 때 seat-occupancy 한 번이 약 15초 걸린 실측이 있어 그보다 넉넉하게 잡는다.
+const TIMEOUT = { list: 10000, status: 10000, occupancy: 40000 }
 
 function loadSeen() {
   try { return new Set(JSON.parse(localStorage.getItem(SEEN_KEY) || '[]')) } catch { return new Set() }
@@ -30,6 +33,10 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
   const places = ref([])
   const loading = ref(true)
   const error = ref('')
+  // 마지막으로 모든 요청이 성공한 시각(ms)과 직전 갱신의 실패 여부. 첫 성공 이후 갱신이 실패하면 stale.
+  const lastSuccessAt = ref(null)
+  const refreshFailed = ref(false)
+  const stale = computed(() => refreshFailed.value && lastSuccessAt.value != null)
   const now = ref(Date.now())
   const seen = ref(loadSeen())
   let clockTimer = null
@@ -40,7 +47,7 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
     const ids = [...new Set(c.cameras.flatMap((cam) => cam.seat_ids ?? []))]
     const base = { id: c.id, name: c.name, total: ids.length }
     try {
-      const { data } = await api.get(`/analysis/${c.id}/seat-occupancy`)
+      const { data } = await api.get(`/analysis/${c.id}/seat-occupancy`, { timeout: TIMEOUT.occupancy })
       const occ = new Set()
       const emp = new Set()
       data.cameras.forEach((cam) => {
@@ -60,8 +67,8 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
 
   async function loadPlace(p) {
     const [statusRes, detRes] = await Promise.all([
-      api.get(`/face/places/${p.id}/patrol/status`),
-      api.get(`/face/places/${p.id}/detections`),
+      api.get(`/face/places/${p.id}/patrol/status`, { timeout: TIMEOUT.status }),
+      api.get(`/face/places/${p.id}/detections`, { timeout: TIMEOUT.status }),
     ])
     return {
       id: p.id,
@@ -72,21 +79,54 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
     }
   }
 
+  // 갱신은 겹치지 않는다: 실서버는 교실을 차례로 추론하느라 한 번이 오래 걸릴 수 있어, 진행 중이면 다음 주기를 건너뛴다.
+  // 일부 요청이 실패해도 나머지는 갱신하고, 실패한 부분은 이전 값을 유지한 채 stale로 표시한다.
+  let refreshing = false
   async function refresh() {
+    if (refreshing) return
+    refreshing = true
+    let failed = false
+    let firstError = ''
+    const fail = (reason) => { failed = true; firstError ||= reason?.response?.data?.detail ?? reason?.message ?? '알 수 없는 오류' }
     try {
-      const [cRes, pRes] = await Promise.all([api.get('/classrooms/'), api.get('/face/places')])
-      if (isDemoMode) {
-        rooms.value = await Promise.all(cRes.data.map(loadRoom))
+      const [cRes, pRes] = await Promise.allSettled([
+        api.get('/classrooms/', { timeout: TIMEOUT.list }),
+        api.get('/face/places', { timeout: TIMEOUT.list }),
+      ])
+
+      if (cRes.status === 'fulfilled') {
+        if (isDemoMode) {
+          rooms.value = await Promise.all(cRes.value.data.map(loadRoom))
+        } else {
+          const next = []
+          for (const c of cRes.value.data) next.push(await loadRoom(c))
+          rooms.value = next
+        }
       } else {
-        const next = []
-        for (const c of cRes.data) next.push(await loadRoom(c))
-        rooms.value = next
+        fail(cRes.reason)
       }
-      places.value = await Promise.all(pRes.data.places.map(loadPlace))
-      error.value = ''
-    } catch (e) {
-      error.value = e.message
+
+      if (pRes.status === 'fulfilled') {
+        const list = pRes.value.data.places
+        const settled = await Promise.allSettled(list.map(loadPlace))
+        const previous = new Map(places.value.map((p) => [p.id, p]))
+        const next = []
+        settled.forEach((r, i) => {
+          if (r.status === 'fulfilled') { next.push(r.value); return }
+          fail(r.reason)
+          const old = previous.get(list[i].id)
+          if (old) next.push(old)   // 이 장소만 이전 값을 유지한다
+        })
+        places.value = next
+      } else {
+        fail(pRes.reason)
+      }
+
+      error.value = failed ? firstError : ''
+      refreshFailed.value = failed
+      if (!failed) lastSuccessAt.value = Date.now()
     } finally {
+      refreshing = false
       loading.value = false
     }
   }
@@ -148,7 +188,7 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
   })
 
   return {
-    rooms, places, loading, error,
+    rooms, places, loading, error, stale, lastSuccessAt,
     totalJudgeable, totalUnknown, totalOccupied, occupancyPct, activeRooms,
     recentDetections, unseenAlerts, primaryPatrol, collect,
     start, stop, refresh, markSeen, markAllSeen,

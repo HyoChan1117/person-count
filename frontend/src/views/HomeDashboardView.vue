@@ -1,6 +1,13 @@
 <template>
   <div class="ds-root flex h-full min-h-0 flex-col gap-section overflow-y-auto p-section 2xl:overflow-hidden">
-    <DashboardHeader :last-at="store.collect.lastAt" :next-in-sec="store.collect.nextInSec" :interval-sec="store.collect.intervalSec" />
+    <DashboardHeader
+      :last-at="store.collect.lastAt"
+      :next-in-sec="store.collect.nextInSec"
+      :interval-sec="store.collect.intervalSec"
+      :stale="store.stale"
+      :last-ok-text="lastOkText"
+      @refresh="store.refresh()"
+    />
 
     <section class="grid shrink-0 grid-cols-3 gap-gutter" aria-label="핵심 지표">
       <UiCard>
@@ -56,6 +63,13 @@ const store = useHomeDashboardStore()
 const occupancyHint = computed(() => {
   const base = `${store.totalOccupied} / ${store.totalJudgeable}석 사용 중`
   return store.totalUnknown ? `${base} · 판정 불가 ${store.totalUnknown}석` : base
+})
+
+// 마지막으로 모든 요청이 성공한 시각(낡은 데이터 안내용)
+const lastOkText = computed(() => {
+  if (!store.lastSuccessAt) return ''
+  const d = new Date(store.lastSuccessAt)
+  return [d.getHours(), d.getMinutes(), d.getSeconds()].map((n) => String(n).padStart(2, '0')).join(':')
 })
 
 // 판정 불가 교실(조회 오류, 좌석 0개 등)은 "비어 있음"에 세지 않고 따로 적는다
