@@ -151,11 +151,22 @@
         </div>
       </div>
     </div>
+
+    <!-- 서버 저장 실패 알림: 로컬 캐시에는 저장돼 있지만 서버에는 반영되지 않았다는 뜻 -->
+    <div
+      v-if="saveError"
+      role="alert"
+      class="fixed bottom-4 right-4 z-40 max-w-md flex items-start gap-3 rounded-xl border border-red-200 dark:border-red-500/30 bg-red-50 dark:bg-red-500/10 px-4 py-3 text-sm text-red-700 dark:text-red-300 shadow-lg"
+    >
+      <p class="flex-1">{{ saveError }}<br><span class="text-xs opacity-80">이 브라우저에는 저장됐지만 서버에는 아직 반영되지 않았습니다.</span></p>
+      <button type="button" class="shrink-0 rounded-lg border border-red-300 dark:border-red-500/40 px-3 py-1 text-xs font-medium hover:bg-red-100 dark:hover:bg-red-500/20" @click="retryBackendSave">다시 저장</button>
+      <button type="button" class="shrink-0 text-red-400 hover:text-red-600 leading-none" aria-label="닫기" @click="saveError = ''">✕</button>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import api from '@/api'
@@ -312,52 +323,76 @@ function exitSeatAssignMode() {
 // ── Persistence ───────────────────────────────────────────────────────────────
 const storageKey = computed(() => `map_${route.params.id}`)
 
+// 화면을 열면서 서버 배치도를 불러오는 것도 objects 변경이라 watch가 save()를 부른다. 서버 저장(seat-counts)은
+// 카메라의 seat_ids를 덮어쓰고 맵에 없는 좌석의 seat_lines를 지우므로, 사용자가 편집하기 전에는 서버로 보내지 않는다.
+let _userMayEdit = false
+
 function save() {
   localStorage.setItem(storageKey.value, JSON.stringify({
     objects: objects.value, mapW: mapW.value, mapH: mapH.value,
   }))
-  scheduleBackendSave()
+  if (_userMayEdit) scheduleBackendSave()
 }
 
+// 서버 저장은 편집이 멈춘 1.5초 뒤에 한 번만 보낸다. 세 요청 모두 관리자 전용이라 axios(api)로 보내
+// 인터셉터가 Authorization을 붙이게 하고, 실패하면 saveError로 화면에 알린다.
+const saveError = ref('')
 let _backendSaveTimer = null
+let _savePendingId = null   // 아직 서버에 보내지 않은 편집이 있으면 그 교실 id
+let _unmounted = false
+
 function scheduleBackendSave() {
+  // 화면을 떠나는 중에는 route.params가 다음 화면 값일 수 있어 예약 시점의 교실 id를 붙들어 둔다
+  _savePendingId = route.params.id
   clearTimeout(_backendSaveTimer)
-  _backendSaveTimer = setTimeout(() => {
-    if (!canvasEl.value) return
+  _backendSaveTimer = setTimeout(syncToBackend, 1500)
+}
+
+async function syncToBackend() {
+  clearTimeout(_backendSaveTimer)
+  _backendSaveTimer = null
+  const id = _savePendingId ?? route.params.id
+  _savePendingId = null
+
+  const jobs = []   // [이름, Promise]
+
+  if (canvasEl.value) {
     const b64 = canvasEl.value.toDataURL('image/png').replace('data:image/png;base64,', '')
-    fetch(`/api/analysis/${route.params.id}/map-image`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: b64 }),
-    }).catch(e => console.warn('[map] 백엔드 저장 실패:', e))
+    jobs.push(['배치도 이미지', api.post(`/analysis/${id}/map-image`, { image: b64 })])
+  }
 
-    // 카메라별 담당 자리 수/번호 백엔드 자동 동기화 (라벨 → 카메라명 매칭)
-    const cctvObjs = objects.value.filter(o => o.type === 'cctv')
-    const seatCounts = {}
-    const seatIds = {}
-    for (const cctv of cctvObjs) {
-      const label = cctv.label?.trim() || 'CCTV'
-      const desks = objects.value.filter(o =>
-        o.type === 'desk' && (o.cctvIds ?? (o.cctvId != null ? [o.cctvId] : [])).includes(cctv.id)
-      )
-      seatCounts[label] = desks.length
-      seatIds[label] = desks.map(o => o.label).filter(l => l != null && l !== '')
-    }
-    if (cctvObjs.length > 0) {
-      fetch(`/api/analysis/${route.params.id}/seat-counts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ seat_counts: seatCounts, seat_ids: seatIds }),
-      }).catch(e => console.warn('[map] 자리 배정 저장 실패:', e))
-    }
+  // 카메라별 담당 자리 수/번호 백엔드 자동 동기화 (라벨 → 카메라명 매칭)
+  const cctvObjs = objects.value.filter(o => o.type === 'cctv')
+  const seatCounts = {}
+  const seatIds = {}
+  for (const cctv of cctvObjs) {
+    const label = cctv.label?.trim() || 'CCTV'
+    const desks = objects.value.filter(o =>
+      o.type === 'desk' && (o.cctvIds ?? (o.cctvId != null ? [o.cctvId] : [])).includes(cctv.id)
+    )
+    seatCounts[label] = desks.length
+    seatIds[label] = desks.map(o => o.label).filter(l => l != null && l !== '')
+  }
+  if (cctvObjs.length > 0) {
+    jobs.push(['자리 배정', api.post(`/analysis/${id}/seat-counts`, { seat_counts: seatCounts, seat_ids: seatIds })])
+  }
 
-    // 배치도 JSON 백엔드 동기화 (Slack 전송용)
-    fetch(`/api/classrooms/${route.params.id}/map-data`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ objects: objects.value, mapW: mapW.value, mapH: mapH.value }),
-    }).catch(e => console.warn('[map] 배치도 데이터 저장 실패:', e))
-  }, 1500)
+  // 배치도 JSON 백엔드 동기화 (Slack 전송용)
+  jobs.push(['배치도 데이터', api.put(`/classrooms/${id}/map-data`, { objects: objects.value, mapW: mapW.value, mapH: mapH.value })])
+
+  const results = await Promise.allSettled(jobs.map(([, p]) => p))
+  const failed = results.flatMap((r, i) => (r.status === 'rejected' ? [{ name: jobs[i][0], reason: r.reason }] : []))
+  if (!failed.length) { saveError.value = ''; return }
+
+  const first = failed[0].reason
+  const detail = first?.response?.data?.detail ?? first?.message ?? '알 수 없는 오류'
+  saveError.value = `서버 저장 실패 (${failed.map(f => f.name).join(', ')}): ${detail}`
+  if (_unmounted) console.warn('[map] 화면을 떠나며 저장하지 못했습니다:', saveError.value)
+}
+
+function retryBackendSave() {
+  _savePendingId = route.params.id
+  return syncToBackend()
 }
 
 function applyMapData(data) {
@@ -384,8 +419,19 @@ async function load() {
 onMounted(async () => {
   cStore.fetchOne(Number(route.params.id))
   await load()
-  nextTick(() => { pushHistory(); redraw() })
+  // 불러오기로 인한 watch 실행이 끝난 뒤부터의 변경만 사용자 편집으로 본다
+  nextTick(() => { pushHistory(); redraw(); _userMayEdit = true })
   window.addEventListener('keydown', onKeyDown)
+})
+
+// 편집 직후(1.5초 안)에 화면을 떠나도 서버 저장이 사라지지 않도록, 대기 중인 저장이 있으면 캔버스가
+// 아직 있는 지금 바로 보내고 타이머는 정리한다. 이 화면은 서버 데이터를 우선 불러오므로 버리면 편집이 사라진다.
+onBeforeUnmount(() => {
+  _unmounted = true
+  const pending = _savePendingId != null
+  clearTimeout(_backendSaveTimer)
+  _backendSaveTimer = null
+  if (pending) syncToBackend()
 })
 
 onUnmounted(() => {

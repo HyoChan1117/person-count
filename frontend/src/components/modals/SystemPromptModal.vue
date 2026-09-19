@@ -11,8 +11,15 @@
       </div>
 
       <!-- 본문 -->
-      <div v-if="store.loading" class="flex-1 flex items-center justify-center py-12 text-neutral-400 dark:text-neutral-600 text-sm">
+      <div v-if="loadState === 'loading'" class="flex-1 flex items-center justify-center py-12 text-neutral-400 dark:text-neutral-600 text-sm">
         불러오는 중...
+      </div>
+
+      <!-- 조회에 실패한 채 저장하면 서버의 프롬프트가 빈 값으로 덮어써지므로, 실패하면 폼을 열지 않는다 -->
+      <div v-else-if="loadState === 'error'" role="alert" class="flex-1 flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+        <p class="text-sm text-red-600 dark:text-red-400">프롬프트를 불러오지 못했습니다.</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400 break-all">{{ loadError }}</p>
+        <button type="button" class="btn-ghost" @click="load">다시 불러오기</button>
       </div>
 
       <div v-else class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
@@ -47,9 +54,10 @@
       </div>
 
       <!-- 푸터 -->
+      <p v-if="saveError" role="alert" class="px-6 pb-2 text-sm text-red-600 dark:text-red-400">저장하지 못했습니다: {{ saveError }}</p>
       <div class="flex gap-2 justify-end px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
         <button @click="$emit('close')" class="btn-ghost">취소</button>
-        <button @click="handleSave" :disabled="store.saving" class="btn-primary">
+        <button @click="handleSave" :disabled="loadState !== 'ready' || store.saving" class="btn-primary">
           {{ store.saving ? '저장 중...' : '저장' }}
         </button>
       </div>
@@ -66,18 +74,39 @@ const store = usePromptStore()
 
 const form = ref({ system_prompt: '', default_user_prompt: '' })
 
-onMounted(async () => {
-  await store.fetch()
-  form.value = { ...store.config }
-})
+// 'loading' → 'ready' | 'error'. 저장은 'ready'일 때만 가능하다.
+const loadState = ref('loading')
+const loadError = ref('')
+const saveError = ref('')
+
+async function load() {
+  loadState.value = 'loading'
+  loadError.value = ''
+  try {
+    await store.fetch()
+    form.value = { ...store.config }
+    loadState.value = 'ready'
+  } catch (e) {
+    loadError.value = e.response?.data?.detail ?? e.message
+    loadState.value = 'error'
+  }
+}
+
+onMounted(load)
 
 watch(() => store.config, (val) => {
   form.value = { ...val }
 }, { deep: true })
 
 async function handleSave() {
-  await store.save(form.value)
-  emit('close')
+  if (loadState.value !== 'ready') return
+  saveError.value = ''
+  try {
+    await store.save(form.value)
+    emit('close')
+  } catch (e) {
+    saveError.value = e.response?.data?.detail ?? e.message
+  }
 }
 </script>
 
