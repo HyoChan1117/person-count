@@ -35,6 +35,8 @@
           </div>
         </header>
 
+        <ErrorNotice v-if="cStore.error" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(classroomId)" />
+
         <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_28rem] gap-gutter">
           <UiCard class="flex min-h-[32rem] flex-col">
             <ClassroomSeatMap
@@ -160,6 +162,7 @@ import UiCard from '@/components/ui/UiCard.vue'
 import ClassroomSeatMap from '@/components/monitoring/ClassroomSeatMap.vue'
 import SeatDetailPanel from '@/components/monitoring/SeatDetailPanel.vue'
 import SnapshotTimeline from '@/components/monitoring/SnapshotTimeline.vue'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import { useSnapshotTimeline } from '@/composables/useSnapshotTimeline'
 import api from '@/api'
 

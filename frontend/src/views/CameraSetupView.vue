@@ -21,6 +21,8 @@
       </div>
     </div>
 
+    <ErrorNotice v-if="cStore.error" legacy class="mx-4 mt-3 shrink-0" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(classroomId)" />
+
     <!-- Main -->
     <div class="flex-1 flex min-h-0">
 
@@ -325,6 +327,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import { useMockToggle } from '@/composables/useMockToggle'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import api from '@/api'
 
 const SEAT_ROI_COLORS = ['#ef4444','#3b82f6','#22c55e','#f97316','#a855f7','#06b6d4','#ec4899','#84cc16']

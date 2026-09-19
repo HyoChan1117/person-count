@@ -58,6 +58,8 @@
         </div>
       </div>
 
+      <ErrorNotice v-if="cStore.error" legacy class="mb-6" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(Number(route.params.id))" />
+
       <!-- 실시간 YOLO 탐지 -->
       <div v-if="liveOn" class="mb-8">
         <div v-if="!liveCameras.length" class="text-center py-12 text-neutral-400 dark:text-neutral-600 text-sm bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
@@ -280,6 +282,7 @@ import { useClassroomStore } from '@/stores/classroomStore.js'
 import SeatPromptModal from '@/components/modals/SeatPromptModal.vue'
 import ClassroomPromptModal from '@/components/modals/ClassroomPromptModal.vue'
 import BlurredImage from '@/components/ui/BlurredImage.vue'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import api from '@/api'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
 import { useMockToggle } from '@/composables/useMockToggle'

@@ -152,6 +152,8 @@
       </div>
     </div>
 
+    <ErrorNotice v-if="cStore.error" legacy class="fixed top-4 left-1/2 z-40 w-[28rem] max-w-[90vw] -translate-x-1/2 shadow-lg" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(Number(route.params.id))" />
+
     <!-- 서버 저장 실패 알림: 로컬 캐시에는 저장돼 있지만 서버에는 반영되지 않았다는 뜻 -->
     <div
       v-if="saveError"
@@ -169,6 +171,7 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import api from '@/api'
 
 const TOOLS = [
