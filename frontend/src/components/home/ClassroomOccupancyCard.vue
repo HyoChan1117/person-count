@@ -27,6 +27,7 @@ import { computed } from 'vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
 import SeatMiniBar from './SeatMiniBar.vue'
+import { roomStatus } from '@/utils/roomStatus'
 
 const props = defineProps({
   room: { type: Object, required: true }, // { id, name, total, occupied, judgeable, unknown, seats[], error }
@@ -35,10 +36,11 @@ const props = defineProps({
 // 점유율 = 점유 ÷ 판정 가능 좌석. 판정 가능한 좌석이 없으면 null("–")
 const pct = computed(() => (props.room.judgeable ? Math.round((props.room.occupied / props.room.judgeable) * 100) : null))
 
-const badge = computed(() => {
-  const r = props.room
-  if (r.error || (r.total > 0 && r.judgeable === 0)) return { status: 'unknown', label: '판정 불가' }
-  if (r.occupied > 0) return { status: 'occupied', label: '사용 중' }
-  return { status: 'empty', label: '비어 있음' }
-})
+// 오류·좌석 0개·판정 가능한 좌석 없음은 "비어 있음"이 아니라 "판정 불가"다(utils/roomStatus.js)
+const BADGES = {
+  unknown: { status: 'unknown', label: '판정 불가' },
+  occupied: { status: 'occupied', label: '사용 중' },
+  empty: { status: 'empty', label: '비어 있음' },
+}
+const badge = computed(() => BADGES[roomStatus(props.room)])
 </script>

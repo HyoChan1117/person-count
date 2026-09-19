@@ -48,6 +48,7 @@ import DashboardHeader from '@/components/home/DashboardHeader.vue'
 import ClassroomOccupancyCard from '@/components/home/ClassroomOccupancyCard.vue'
 import PatrolStatusPanel from '@/components/home/PatrolStatusPanel.vue'
 import RecentDetectionsList from '@/components/home/RecentDetectionsList.vue'
+import { countRoomStatuses, describeRoomCounts } from '@/utils/roomStatus'
 
 const store = useHomeDashboardStore()
 
@@ -57,10 +58,8 @@ const occupancyHint = computed(() => {
   return store.totalUnknown ? `${base} · 판정 불가 ${store.totalUnknown}석` : base
 })
 
-const idleHint = computed(() => {
-  const idle = store.rooms.length - store.activeRooms
-  return idle > 0 ? `${idle}개 교실 비어 있음` : '모든 교실 사용 중'
-})
+// 판정 불가 교실(조회 오류, 좌석 0개 등)은 "비어 있음"에 세지 않고 따로 적는다
+const idleHint = computed(() => describeRoomCounts(countRoomStatuses(store.rooms)))
 
 onMounted(() => store.start())
 onUnmounted(() => store.stop())
