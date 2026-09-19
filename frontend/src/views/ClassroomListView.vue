@@ -1,134 +1,136 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
-    <div class="max-w-6xl mx-auto">
+  <div class="ds-root h-full overflow-y-auto p-section">
+    <div class="mx-auto max-w-[1680px]">
 
       <!-- 헤더 -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">좌석 확인</h1>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">카메라와 좌석 배치를 관리하세요</p>
+      <header class="mb-section flex items-end justify-between gap-section">
+        <div class="min-w-0">
+          <h1 class="text-3xl font-bold tracking-tight text-fg">좌석 확인</h1>
+          <p class="mt-1 text-lg text-fg-muted">교실별 대시보드와 모니터링을 열고, 카메라와 좌석 배치를 관리합니다</p>
         </div>
 
-
-        <div class="flex items-center gap-2">
-          <div class="relative">
-            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-300 dark:text-neutral-700 text-sm">⌕</span>
+        <div class="flex shrink-0 items-center gap-gutter">
+          <label class="relative block">
+            <span class="sr-only">교실 이름 검색</span>
+            <NavIcon name="search" :size="18" class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-fg-muted" />
             <input
               v-model="search"
               type="text"
               placeholder="교실 이름으로 검색"
-              class="pl-8 pr-3 py-2 text-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-transparent"
+              :class="[INPUT, 'w-64 pl-10']"
             />
-          </div>
-          <button
-            v-if="auth.isAdmin"
-            @click="showForm = true"
-            class="inline-flex items-center gap-1.5 bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-violet-700 transition shrink-0"
-          >+ 새 교실 추가</button>
+          </label>
+          <button v-if="auth.isAdmin" type="button" :class="BTN_MAIN" @click="showForm = true">+ 새 교실 추가</button>
         </div>
+      </header>
+
+      <!-- 교실 선택 모드 배너 (사이드바 하위 메뉴에서 넘어온 경우) -->
+      <div
+        v-if="actionMeta"
+        role="status"
+        class="mb-section flex items-center justify-between gap-gutter rounded-card border border-l-2 border-line border-l-fg bg-card px-card py-gutter"
+      >
+        <p class="text-lg text-fg"><strong class="font-semibold">{{ actionMeta.label }}</strong>을(를) 진행할 교실을 선택하세요.</p>
+        <router-link to="/classrooms" class="shrink-0 text-base text-fg-muted underline underline-offset-4 transition-colors hover:text-fg">선택 취소</router-link>
       </div>
 
-      <!-- 교실 선택 모드 배너 -->
-      <div v-if="actionMeta" class="mb-6 flex items-center justify-between bg-violet-50 border border-violet-200 rounded-xl px-4 py-3">
-        <p class="text-sm text-violet-700"><strong>{{ actionMeta.label }}</strong>을(를) 진행할 교실을 선택하세요.</p>
-        <router-link to="/classrooms" class="text-xs text-violet-500 hover:underline shrink-0">선택 취소</router-link>
+      <p v-if="store.loading" class="py-20 text-center text-base text-fg-muted">불러오는 중...</p>
+
+      <!-- 조회 실패를 "등록된 교실 없음"으로 보이지 않게 따로 안내한다 -->
+      <ErrorNotice
+        v-else-if="store.error && store.classrooms.length === 0"
+        title="교실 목록을 불러오지 못했습니다"
+        :message="store.error"
+        @retry="reload"
+      />
+
+      <div v-else-if="store.classrooms.length === 0" class="flex flex-col items-center justify-center gap-3 py-24 text-center">
+        <span class="flex h-14 w-14 items-center justify-center rounded-card border border-line bg-card text-fg-muted">
+          <NavIcon name="seats" :size="28" />
+        </span>
+        <p class="text-lg font-semibold text-fg">등록된 교실이 없습니다</p>
+        <p class="text-sm text-fg-muted">새 교실을 추가해 보세요.</p>
       </div>
 
-      <div v-if="store.loading" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
+      <p v-else-if="filteredClassrooms.length === 0" class="py-16 text-center text-base text-fg-muted">"{{ search }}"에 해당하는 교실이 없습니다.</p>
 
-      <div v-else-if="store.classrooms.length === 0" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 gap-3">
-        <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">🏫</div>
-        <p class="text-sm">등록된 교실이 없습니다. 새 교실을 추가해보세요.</p>
-      </div>
-
-      <div v-else-if="filteredClassrooms.length === 0" class="text-center py-16 text-neutral-400 dark:text-neutral-600">
-        <p class="text-sm">"{{ search }}"에 해당하는 교실이 없습니다.</p>
-      </div>
-
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        <div
+      <div v-else class="grid grid-cols-1 gap-gutter sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        <UiCard
           v-for="c in filteredClassrooms"
           :key="c.id"
+          interactive
+          class="group flex min-h-[17rem] flex-col"
+          :class="actionMeta ? 'cursor-pointer hover:!border-fg' : ''"
+          :role="actionMeta ? 'button' : undefined"
+          :tabindex="actionMeta ? 0 : undefined"
           @click="actionMeta && selectClassroom(c)"
-          class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm p-5 hover:shadow-md hover:border-violet-200 transition group flex flex-col"
-          :class="actionMeta ? 'cursor-pointer hover:ring-2 hover:ring-violet-300' : ''"
+          @keydown.enter.self.prevent="actionMeta && selectClassroom(c)"
         >
-          <!-- 아이콘 배지 + 메뉴 -->
-          <div class="flex items-start justify-between mb-3">
-            <div
-              class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shrink-0"
-              :class="badgeColor(c.id)"
-            >{{ initials(c.name) }}</div>
+          <div class="flex items-start justify-between gap-2">
+            <h2 class="min-w-0 truncate text-xl font-semibold text-fg" :title="c.name">{{ c.name }}</h2>
             <button
               v-if="auth.isAdmin"
+              type="button"
+              :class="[LINK_QUIET, 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100']"
               @click.stop="deleteClassroom(c.id)"
-              title="교실 삭제"
-              class="text-neutral-300 dark:text-neutral-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition text-lg leading-none px-1"
-            >⋯</button>
+            >삭제</button>
           </div>
 
-          <h2 class="font-semibold text-neutral-800 dark:text-neutral-100 mb-2">{{ c.name }}</h2>
-
-          <ul class="text-xs text-neutral-500 dark:text-neutral-400 space-y-1 mb-3">
-            <li>· CCTV {{ c.cameras.length }}대<span v-if="seatLineCount(c)"> · 좌석 설정 {{ seatLineCount(c) }}대</span></li>
-          </ul>
-
-          <!-- 설정 진행률 -->
-          <div v-if="progressPct(c) !== 100" class="mb-3">
-            <div class="flex items-center justify-between text-[10px] text-neutral-400 dark:text-neutral-600 mb-1">
-              <span>설정 진행률</span>
-              <span class="font-semibold text-neutral-500 dark:text-neutral-400">{{ progressPct(c) }}%</span>
+          <dl class="mt-card grid grid-cols-2 gap-gutter">
+            <div>
+              <dt class="text-sm text-fg-muted">CCTV</dt>
+              <dd class="mt-1 text-3xl font-bold tabular-nums text-fg">{{ c.cameras.length }}<span class="ml-1 text-base font-normal text-fg-muted">대</span></dd>
             </div>
-            <div class="w-full h-1.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-              <div
-                class="h-full rounded-full transition-all duration-500"
-                :class="progressPct(c) > 0 ? 'bg-violet-500' : 'bg-neutral-200'"
-                :style="{ width: progressPct(c) + '%' }"
-              />
+            <div>
+              <dt class="text-sm text-fg-muted">좌석 설정</dt>
+              <dd class="mt-1 text-3xl font-bold tabular-nums text-fg">{{ seatLineCount(c) }}<span class="ml-1 text-base font-normal text-fg-muted">대</span></dd>
+            </div>
+          </dl>
+
+          <!-- 설정 진행률: 좌석 라인 설정이 끝난 카메라 비율 -->
+          <div class="mt-card">
+            <div class="flex items-center justify-between text-sm text-fg-muted">
+              <span>설정 진행률</span>
+              <span class="tabular-nums text-fg">{{ progressPct(c) }}%</span>
+            </div>
+            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
+              <div class="h-full rounded-full bg-fg-muted transition-[width] duration-500" :style="{ width: progressPct(c) + '%' }" />
             </div>
           </div>
 
           <div class="flex-1" />
 
-          <!-- 액션 버튼 -->
-          <div v-if="!actionMeta" class="flex gap-1.5 flex-wrap border-t border-neutral-100 dark:border-neutral-800 pt-3">
-            <router-link
-              v-if="auth.isAdmin"
-              :to="`/classrooms/${c.id}/setup`"
-              @click.stop
-              class="flex-1 text-center text-[11px] bg-violet-600 text-white py-1.5 rounded-lg hover:bg-violet-700 transition"
-            >카메라 설정</router-link>
-            <router-link
-              :to="`/dashboard/${c.id}`"
-              @click.stop
-              class="flex-1 flex items-center justify-center text-center text-[11px] bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
-            >대시보드</router-link>
-            <router-link
-              :to="`/monitoring/${c.id}`"
-              @click.stop
-              class="flex-1 flex items-center justify-center text-center text-[11px] bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
-            >모니터링</router-link>
-            <router-link
-              v-if="auth.isAdmin"
-              :to="`/classrooms/${c.id}/map`"
-              @click.stop
-              class="w-full text-center text-[11px] bg-emerald-50 text-emerald-700 py-1.5 rounded-lg hover:bg-emerald-100 transition border border-emerald-200"
-            >🗺 맵 에디터</router-link>
+          <!-- 액션: 보기(모니터링·대시보드)를 먼저, 관리자 설정은 아래 -->
+          <div v-if="!actionMeta" class="mt-card space-y-2 border-t border-line pt-card">
+            <div class="flex gap-2">
+              <router-link :to="`/monitoring/${c.id}`" :class="BTN_MAIN_LINK" @click.stop>모니터링</router-link>
+              <router-link :to="`/dashboard/${c.id}`" :class="BTN_SUB_LINK" @click.stop>대시보드</router-link>
+            </div>
+            <div v-if="auth.isAdmin" class="flex gap-2">
+              <router-link :to="`/classrooms/${c.id}/setup`" :class="BTN_SUB_LINK" @click.stop>카메라 설정</router-link>
+              <router-link :to="`/classrooms/${c.id}/map`" :class="BTN_SUB_LINK" @click.stop>맵 에디터</router-link>
+            </div>
           </div>
-        </div>
+          <p v-else class="mt-card border-t border-line pt-card text-sm text-fg-muted">클릭하면 {{ actionMeta.label }}(으)로 이동합니다</p>
+        </UiCard>
       </div>
     </div>
 
     <!-- 새 교실 추가 모달 -->
-    <div v-if="showForm" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showForm = false">
-      <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-80 shadow-xl">
-        <h2 class="font-bold text-neutral-800 dark:text-neutral-100 mb-4">새 교실 추가</h2>
+    <div
+      v-if="showForm"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-canvas/80"
+      @click.self="showForm = false"
+      @keydown.esc="showForm = false"
+    >
+      <div role="dialog" aria-modal="true" aria-labelledby="new-classroom-title" class="ds-text w-96 rounded-card border border-line bg-card p-card">
+        <h2 id="new-classroom-title" class="mb-4 text-xl font-semibold text-fg">새 교실 추가</h2>
         <form @submit.prevent="createClassroom">
-          <label class="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">교실 이름</label>
-          <input v-model="form.name" required class="input w-full mb-4" placeholder="예: 101호" />
+          <label for="new-classroom-name" class="mb-1 block text-sm text-fg-muted">교실 이름</label>
+          <input id="new-classroom-name" v-model="form.name" required autofocus :class="[INPUT, 'mb-4 w-full']" placeholder="예: 101호" />
           <div class="flex gap-2">
-            <button type="button" @click="showForm = false" class="flex-1 btn-ghost">취소</button>
-            <button type="submit" class="flex-1 btn-primary">추가</button>
+            <button type="button" :class="BTN_SUB" @click="showForm = false">취소</button>
+            <button type="submit" :class="BTN_MAIN_FULL">추가</button>
           </div>
         </form>
       </div>
@@ -143,6 +145,19 @@ import { useRoute, useRouter } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import { useAuthStore } from '@/stores/authStore'
 import { SEAT_ACTIONS } from '@/constants/navActions'
+import UiCard from '@/components/ui/UiCard.vue'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
+import NavIcon from '@/components/ui/NavIcon.vue'
+
+// 클래스는 Tailwind가 스캔할 수 있도록 전부 리터럴로 적는다.
+const FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted'
+const INPUT = `rounded-lg border border-line bg-canvas px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted ${FOCUS}`
+const BTN_MAIN = `shrink-0 rounded-lg bg-fg px-4 py-2.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 ${FOCUS}`
+const BTN_MAIN_FULL = `flex-1 rounded-lg bg-fg px-4 py-2.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 ${FOCUS}`
+const BTN_MAIN_LINK = `flex-1 rounded-lg bg-fg py-2.5 text-center text-sm font-semibold text-canvas transition-opacity hover:opacity-90 ${FOCUS}`
+const BTN_SUB = `flex-1 rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:border-fg-muted/60 hover:text-fg ${FOCUS}`
+const BTN_SUB_LINK = `flex-1 rounded-lg border border-line py-2.5 text-center text-sm font-medium text-fg-muted transition-colors hover:border-fg-muted/60 hover:text-fg ${FOCUS}`
+const LINK_QUIET = `shrink-0 rounded-md px-2 py-0.5 text-sm text-fg-muted transition-colors hover:text-fg ${FOCUS}`
 
 const auth = useAuthStore()
 const store = useClassroomStore()
@@ -164,9 +179,13 @@ function selectClassroom(c) {
   router.push(actionMeta.value.path(c.id))
 }
 
-onMounted(() => {
+// 다른 화면에서 남은 오류가 이 화면에 비치지 않도록 비운 뒤 조회한다
+function reload() {
+  store.error = null
   store.fetchAll()
-})
+}
+
+onMounted(reload)
 
 const filteredClassrooms = computed(() => {
   const q = search.value.trim().toLowerCase()
@@ -184,18 +203,6 @@ function progressPct(classroom) {
   return Math.round(seatLineCount(classroom) / classroom.cameras.length * 100)
 }
 
-const BADGE_COLORS = [
-  'bg-blue-500', 'bg-violet-500', 'bg-emerald-500', 'bg-orange-500',
-  'bg-pink-500', 'bg-cyan-500', 'bg-rose-500', 'bg-lime-600',
-]
-function badgeColor(seed) {
-  return BADGE_COLORS[seed % BADGE_COLORS.length]
-}
-
-function initials(name) {
-  return name?.trim()?.slice(0, 2) ?? '?'
-}
-
 async function createClassroom() {
   await store.createClassroom({ name: form.value.name })
   showForm.value = false
@@ -207,15 +214,3 @@ async function deleteClassroom(id) {
   await store.deleteClassroom(id)
 }
 </script>
-
-<style scoped>
-.input {
-  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400;
-}
-.btn-primary {
-  @apply bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition;
-}
-.btn-ghost {
-  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition;
-}
-</style>

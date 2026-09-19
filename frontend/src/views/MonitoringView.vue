@@ -2,8 +2,8 @@
   <div class="ds-root h-full overflow-y-auto p-section">
     <div class="mx-auto flex max-w-[1680px] flex-col gap-section">
 
-      <!-- 배치도 + 좌석 상태 + 스냅샷 타임라인: 첫 화면(1920x1080)에 맞춘다 -->
-      <section class="flex min-h-[calc(100vh-4rem)] flex-col gap-gutter">
+      <!-- 배치도 + 좌석 상태 + 스냅샷 타임라인: 첫 화면(1920x1080)에 모두 들어오도록 높이를 뷰포트에 맞춘다 -->
+      <section class="flex h-[calc(100vh-4rem)] min-h-[44rem] flex-col gap-gutter">
         <header class="flex items-end justify-between gap-section">
           <div class="min-w-0">
             <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
@@ -38,11 +38,12 @@
         <ErrorNotice v-if="cStore.error" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(classroomId)" />
 
         <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_28rem] gap-gutter">
-          <UiCard class="flex min-h-[32rem] flex-col">
+          <UiCard class="flex min-h-0 flex-col">
             <ClassroomSeatMap
               v-if="mapData"
               :map="mapData"
               :seat-states="seatStates"
+              :has-record="hasRecord"
               :selected-id="selectedSeat"
               @select="selectSeat"
             />
@@ -56,6 +57,7 @@
             :classroom-id="classroomId"
             :seat-id="selectedSeat"
             :state="selectedSeat ? seatStates[selectedSeat] ?? 'unknown' : 'unknown'"
+            :has-record="hasRecord"
             :slot="current"
             :is-latest="isLatest"
             :camera="selectedCamera"
@@ -66,81 +68,75 @@
         <SnapshotTimeline :slots="slots" :index="index" :playing="playing" :interval-min="intervalMin" @scrub="scrub" @toggle="togglePlay" />
       </section>
 
-      <!-- 기존 통계 (다음 화면 전환 때 토큰으로 정리 예정) -->
-      <div class="dark mx-auto w-full max-w-4xl pb-section">
+      <!-- 하루 통계 (첫 화면 아래) -->
+      <section class="flex flex-col gap-gutter pb-section" aria-label="하루 통계">
+        <h2 class="text-2xl font-bold tracking-tight text-fg">
+          하루 통계<span class="ml-3 text-lg font-normal text-fg-muted">{{ selectedDayLabel }}</span>
+        </h2>
 
-      <div v-if="loading" class="text-center py-20 text-fg-muted text-sm">불러오는 중...</div>
+        <p v-if="loading" class="py-20 text-center text-base text-fg-muted">불러오는 중...</p>
 
-      <!-- 조회 실패를 "저장된 기록 없음"으로 보이지 않게 따로 안내한다 -->
-      <ErrorNotice v-else-if="statsError" class="my-section" title="점유 기록을 불러오지 못했습니다" :message="statsError" @retry="fetchStats" />
+        <!-- 조회 실패를 "저장된 기록 없음"으로 보이지 않게 따로 안내한다 -->
+        <ErrorNotice v-else-if="statsError" title="점유 기록을 불러오지 못했습니다" :message="statsError" @retry="fetchStats" />
 
-      <div v-else-if="!hasAnyData" class="text-center py-20 text-fg-muted text-sm">
-        {{ selectedDayLabel }}에 저장된 점유 기록이 없습니다.<br>
-        <span class="text-xs">10분마다 자동으로 좌석 점유 상태가 기록됩니다.</span>
-      </div>
-
-      <template v-else>
-        <!-- 요약 지표 타일 -->
-        <div class="grid grid-cols-3 gap-3 mb-6">
-          <div class="bg-card border border-line rounded-lg p-3.5">
-            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">등록 좌석</p>
-            <p class="text-2xl font-bold font-mono tabular-nums text-fg">{{ allSeatIds.length }}<span class="text-xs font-normal text-fg-muted ml-1">석</span></p>
-          </div>
-          <div class="bg-card border border-line rounded-lg p-3.5">
-            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">{{ selectedHourData ? selectedHourData.time + ' 점유' : '최고 점유 시간대' }}</p>
-            <p class="text-2xl font-bold font-mono tabular-nums" :class="displayHourData ? 'text-fg' : 'text-fg-muted/50'">
-              {{ displayHourData ? `${displayHourData.occupied}/${displayHourData.total}` : '—' }}
-            </p>
-          </div>
-          <div class="bg-card border border-line rounded-lg p-3.5">
-            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">최다 점유 좌석</p>
-            <p class="text-2xl font-bold font-mono tabular-nums" :class="topSeat && topSeat.occupiedMinutes > 0 ? 'text-red-500 dark:text-red-400' : 'text-fg-muted/50'">
-              {{ topSeat && topSeat.occupiedMinutes > 0 ? `${topSeat.seatId}번` : '—' }}
-            </p>
-          </div>
-        </div>
-
-        <!-- 정각 기준 시간별 점유율 그래프 -->
-        <p class="text-[11px] text-fg-muted mb-2">수업 시간인 09:00 ~ 21:00, 교실별로 설정한 시간표에 따라 정각 기준으로 확인합니다.</p>
-        <div class="bg-card border border-line rounded-lg px-3 pt-4 pb-2 mb-2">
-          <DitherStackedChart :hours="hourlyStats" :selected-hour="selectedHour" @select="toggleHour" />
-          <div class="flex gap-1.5 mt-1.5">
-            <span
-              v-for="h in hourlyStats"
-              :key="h.hour"
-              class="flex-1 text-center text-[9px] font-mono tabular-nums"
-              :class="selectedHour === h.hour ? 'text-violet-600 dark:text-violet-400 font-bold' : 'text-fg-muted/50'"
-            >{{ h.hour }}</span>
-          </div>
-        </div>
-
-        <!-- 선택한 정각의 점유 좌석 상세 -->
-        <div v-if="selectedHourData" class="bg-card border-l-2 border-violet-500 border-y border-r border-line rounded-r-lg px-4 py-3 mb-6 text-sm">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="font-semibold text-violet-600 dark:text-violet-400 font-mono">{{ selectedHourData.time }}</span>
-            <span class="text-xs text-fg-muted font-mono tabular-nums">점유 {{ selectedHourData.occupied }}/{{ selectedHourData.total }}석</span>
-          </div>
-          <div v-if="selectedHourData.seats?.length" class="flex flex-wrap gap-1.5">
-            <span
-              v-for="sid in selectedHourData.seats"
-              :key="sid"
-              class="text-xs px-2 py-0.5 rounded font-mono font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20"
-            >{{ sid }}번</span>
-          </div>
-          <div v-else class="text-xs text-fg-muted">이 시간에 점유된 좌석이 없습니다.</div>
-        </div>
-
-        <!-- 가장 오래 점유한 좌석 순위 -->
-        <h2 class="text-sm font-bold text-fg mb-1">{{ rankingTitle }}</h2>
-        <p class="text-[11px] text-fg-muted mb-2">
-          하루 종일 10분마다 점유 여부를 확인해 좌석마다 누적한 시간입니다. 상위 {{ Math.min(8, seatRows.length) }}석을 보여줍니다.
-          <span v-if="selectedDay?.isToday" class="text-amber-600 dark:text-amber-400"> · {{ rangeDescription }}이라 하루 전체 기록보다 적을 수 있습니다.</span>
+        <p v-else-if="!hasAnyData" class="py-20 text-center text-base text-fg-muted">
+          {{ selectedDayLabel }}에 저장된 점유 기록이 없습니다.<br />
+          <span class="text-sm">10분마다 자동으로 좌석 점유 상태가 기록됩니다.</span>
         </p>
-        <div class="bg-card rounded-lg border border-line p-2">
-          <DitherFunnelChart :rows="seatRows" :max-items="8" />
-        </div>
-      </template>
-      </div>
+
+        <template v-else>
+          <div class="grid grid-cols-3 gap-gutter">
+            <UiCard>
+              <MetricStat label="등록 좌석" :value="allSeatIds.length" unit="석" size="sm" />
+            </UiCard>
+            <UiCard>
+              <MetricStat
+                :label="selectedHourData ? `${selectedHourData.time} 점유` : '최고 점유 시간대'"
+                :value="displayHourData ? `${displayHourData.occupied}/${displayHourData.total}` : '–'"
+                :unit="displayHourData ? '석' : ''"
+                :hint="displayHourData && !selectedHourData ? `${displayHourData.time} 기준` : ''"
+                size="sm"
+              />
+            </UiCard>
+            <UiCard>
+              <MetricStat
+                label="최다 점유 좌석"
+                :value="hasTopSeat ? `${topSeat.seatId}번` : '–'"
+                :hint="hasTopSeat ? `누적 ${topSeat.timeText}` : ''"
+                size="sm"
+              />
+            </UiCard>
+          </div>
+
+          <div class="grid grid-cols-2 items-start gap-gutter">
+            <UiCard>
+              <SectionHeader title="시간대별 점유" description="교실 시간표 기준, 정각마다 점유 좌석 수 · 막대를 누르면 그 시각의 좌석을 보여 줍니다" />
+              <HourlyBarChart class="mt-card" :hours="hourlyStats" :selected-hour="selectedHour" @select="toggleHour" />
+
+              <div v-if="selectedHourData" class="mt-card rounded-lg border border-line bg-canvas/40 p-4">
+                <p class="flex items-baseline gap-3">
+                  <span class="text-xl font-semibold tabular-nums text-fg">{{ selectedHourData.time }}</span>
+                  <span class="text-base tabular-nums text-fg-muted">점유 {{ selectedHourData.occupied }}/{{ selectedHourData.total }}석</span>
+                </p>
+                <div v-if="selectedHourData.seats?.length" class="mt-3 flex flex-wrap gap-2">
+                  <span
+                    v-for="sid in selectedHourData.seats"
+                    :key="sid"
+                    class="rounded-md border border-state-occupied/40 bg-state-occupied/10 px-2.5 py-1 text-sm tabular-nums text-state-occupied"
+                  >{{ sid }}번</span>
+                </div>
+                <p v-else class="mt-2 text-sm text-fg-muted">이 시간에 점유된 좌석이 없습니다.</p>
+              </div>
+            </UiCard>
+
+            <UiCard>
+              <SectionHeader :title="rankingTitle" :description="`하루 종일 10분마다 확인한 점유 시간을 좌석별로 누적했습니다 · 상위 ${Math.min(8, seatRows.length)}석`" />
+              <SeatRankBars class="mt-card" :rows="seatRows" :max-items="8" />
+              <p v-if="selectedDay?.isToday" class="mt-card text-sm text-fg-muted">{{ rangeDescription }}이라 하루 전체 기록보다 적을 수 있습니다.</p>
+            </UiCard>
+          </div>
+        </template>
+      </section>
     </div>
 
     <!-- 시간표 설정 모달 -->
@@ -159,9 +155,11 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import ScheduleModal from '@/components/modals/ScheduleModal.vue'
-import DitherStackedChart from '@/components/charts/DitherStackedChart.vue'
-import DitherFunnelChart from '@/components/charts/DitherFunnelChart.vue'
+import HourlyBarChart from '@/components/charts/HourlyBarChart.vue'
+import SeatRankBars from '@/components/charts/SeatRankBars.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import MetricStat from '@/components/ui/MetricStat.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import ClassroomSeatMap from '@/components/monitoring/ClassroomSeatMap.vue'
 import SeatDetailPanel from '@/components/monitoring/SeatDetailPanel.vue'
 import SnapshotTimeline from '@/components/monitoring/SnapshotTimeline.vue'
@@ -269,7 +267,7 @@ async function loadMap() {
   }
 }
 
-const { slots, index, current, isLatest, seatStates, playing, intervalMin, load: loadTimeline, scrub, togglePlay, start: startTimeline, stop: stopTimeline } =
+const { slots, index, current, isLatest, seatStates, hasRecord, playing, intervalMin, load: loadTimeline, scrub, togglePlay, start: startTimeline, stop: stopTimeline } =
   useSnapshotTimeline({ classroomId, dateStr: selectedDateStr, seatIds: realSeatIds })
 
 const selectedSeat = ref(null)
@@ -315,6 +313,7 @@ const seatRows = computed(() => {
 })
 
 const topSeat = computed(() => seatRows.value[0] ?? null)
+const hasTopSeat = computed(() => topSeat.value != null && topSeat.value.occupiedMinutes > 0)
 
 const selectedDay = computed(() => weekDays.value.find(d => d.dateStr === selectedDateStr.value))
 

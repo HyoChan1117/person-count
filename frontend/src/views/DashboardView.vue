@@ -1,257 +1,145 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
-    <div class="max-w-5xl mx-auto">
+  <div class="ds-root h-full overflow-y-auto p-section">
+    <div class="mx-auto max-w-[1680px]">
 
-      <!-- Header -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <router-link to="/classrooms" class="inline-flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 transition mb-2">
-            ← 좌석 확인
-          </router-link>
-          <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">{{ classroom?.name }}</h1>
-            <span v-if="mockActive" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">목데이터</span>
+      <!-- 헤더 -->
+      <header class="mb-section flex items-end justify-between gap-section">
+        <div class="min-w-0">
+          <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 좌석 확인</router-link>
+          <div class="mt-1 flex items-center gap-3">
+            <h1 class="text-3xl font-bold tracking-tight text-fg">{{ classroom?.name }}</h1>
+            <span v-if="mockActive" class="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-fg-muted">목데이터</span>
           </div>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">실시간 인원 현황</p>
+          <p class="mt-1 text-lg text-fg-muted">실시간 인원 현황</p>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button
-            @click="toggleMock"
-            class="text-xs px-3 py-1.5 rounded-lg transition font-medium border shrink-0"
-            :class="mockActive
-              ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-              : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700'"
-          >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
+        <div class="flex shrink-0 items-center gap-gutter">
+          <button type="button" :class="[BTN_OUTLINE, mockActive ? '!border-fg-muted !bg-line !text-fg' : '']" :aria-pressed="mockActive" @click="toggleMock">
+            {{ mockActive ? '목데이터 끄기' : '목데이터로 보기' }}
+          </button>
 
-          <div class="flex items-center gap-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl p-1.5 shadow-sm w-fit">
-            <button @click="fetchSeatOccupancy" :disabled="seatLoading" class="btn-primary">
-              🪑 {{ seatLoading ? '분석 중...' : 'YOLO 분석' }}
+          <div class="flex items-center gap-1 rounded-card border border-line bg-card p-1.5">
+            <button type="button" :disabled="seatLoading" :class="BTN_PRIMARY" @click="fetchSeatOccupancy">
+              {{ seatLoading ? '분석 중...' : 'YOLO 분석' }}
             </button>
-            <button
-              v-if="classroom"
-              @click="seatPromptOpen = true"
-              title="좌석 점유 프롬프트 편집"
-              class="btn-icon-ghost"
-            >⚙️</button>
-
-            <div class="w-px h-6 bg-neutral-200 mx-1" />
-
-            <button @click="fetchYoloLlm" :disabled="yoloLlmLoading" class="btn-secondary">
-              🤖 {{ yoloLlmLoading ? '분석 중...' : 'YOLO+LLM' }}
+            <button v-if="classroom" type="button" title="좌석 점유 프롬프트 편집" aria-label="좌석 점유 프롬프트 편집" :class="BTN_ICON" @click="seatPromptOpen = true">
+              <NavIcon name="settings" :size="18" />
             </button>
-            <button
-              v-if="classroom"
-              @click="yoloLlmPromptOpen = true"
-              title="YOLO+LLM 프롬프트 편집"
-              class="btn-icon-ghost"
-            >⚙️</button>
 
-            <div class="w-px h-6 bg-neutral-200 mx-1" />
+            <span class="mx-1 h-6 w-px bg-line" aria-hidden="true" />
 
-            <button @click="toggleLive" class="inline-flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg transition"
-              :class="liveOn ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-neutral-800 text-white hover:bg-neutral-900'">
-              <span class="w-1.5 h-1.5 rounded-full" :class="liveOn ? 'bg-white animate-pulse' : 'bg-neutral-400'" />
+            <button type="button" :disabled="yoloLlmLoading" :class="BTN_GHOST" @click="fetchYoloLlm">
+              {{ yoloLlmLoading ? '분석 중...' : 'YOLO+LLM' }}
+            </button>
+            <button v-if="classroom" type="button" title="YOLO+LLM 프롬프트 편집" aria-label="YOLO+LLM 프롬프트 편집" :class="BTN_ICON" @click="yoloLlmPromptOpen = true">
+              <NavIcon name="settings" :size="18" />
+            </button>
+
+            <span class="mx-1 h-6 w-px bg-line" aria-hidden="true" />
+
+            <button type="button" :class="[BTN_GHOST, liveOn ? '!bg-line' : '']" :aria-pressed="liveOn" @click="toggleLive">
+              <span class="h-2 w-2 rounded-full" :class="liveOn ? 'bg-fg' : 'bg-fg-muted/60'" aria-hidden="true" />
               {{ liveOn ? '실시간 종료' : '실시간 탐지' }}
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <ErrorNotice v-if="cStore.error" legacy class="mb-6" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(Number(route.params.id))" />
+      <ErrorNotice v-if="cStore.error" class="mb-section" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(Number(route.params.id))" />
 
       <!-- 실시간 YOLO 탐지 -->
-      <div v-if="liveOn" class="mb-8">
-        <div v-if="!liveCameras.length" class="text-center py-12 text-neutral-400 dark:text-neutral-600 text-sm bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800">
+      <section v-if="liveOn" class="mb-section" aria-label="실시간 탐지">
+        <p v-if="!liveCameras.length" class="rounded-card border border-line bg-card py-12 text-center text-base text-fg-muted">
           RTSP가 설정된 카메라가 없습니다.
-        </div>
-        <div v-else class="rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 overflow-hidden">
-          <div class="px-4 py-2.5 flex items-center justify-between gap-2 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-900/60">
+        </p>
+        <UiCard v-else :padded="false" class="mx-auto w-full max-w-5xl overflow-hidden">
+          <div class="flex items-center justify-between gap-2 border-b border-line px-card py-3">
             <div class="flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" />
-              <select v-model="liveCameraId" class="text-sm font-medium text-neutral-600 dark:text-neutral-400 bg-transparent outline-none">
+              <span class="h-2 w-2 shrink-0 rounded-full bg-fg" aria-hidden="true" />
+              <select v-model="liveCameraId" aria-label="카메라 선택" class="rounded-md bg-transparent py-1 text-base font-medium text-fg outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted">
                 <option v-for="cam in liveCameras" :key="cam.camera_id" :value="cam.camera_id">{{ cam.name }}</option>
               </select>
             </div>
-            <button @click="toggleFullscreen" title="전체화면" class="text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200 transition px-2 py-1 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700">
-              ⛶ 전체화면
-            </button>
+            <button type="button" title="전체화면" :class="LINK_QUIET" @click="toggleFullscreen">전체화면</button>
           </div>
           <!-- 실시간 영상에는 얼굴이 나오므로 기본 블러. 스트림은 보는 동안 계속 봐야 해서 자동 재블러 없이 화면을 나가거나 카메라를 바꾸면 다시 블러 -->
-          <BlurredImage ref="liveImgRef" :key="liveKey" :src="liveSrc" alt="실시간 카메라 영상" :rounded="false" :auto-reblur-ms="0" class="w-full aspect-video" />
-        </div>
-        <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mt-2">부하를 줄이기 위해 한 번에 카메라 1대만 실시간으로 표시합니다.</p>
-      </div>
+          <BlurredImage ref="liveImgRef" :key="liveKey" :src="liveSrc" alt="실시간 카메라 영상" :rounded="false" :auto-reblur-ms="0" class="aspect-video w-full" />
+        </UiCard>
+        <p class="mx-auto mt-2 max-w-5xl text-sm text-fg-muted">부하를 줄이기 위해 한 번에 카메라 1대만 실시간으로 표시합니다.</p>
+      </section>
 
-      <!-- 좌석 점유 결과 -->
-      <div v-if="seatLoading" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 text-sm gap-3">
-        <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-violet-500 animate-spin" />
-        <div>분석 중...</div>
-      </div>
+      <div class="flex flex-col gap-section">
 
-      <div v-else-if="seatResult">
-        <!-- 요약 -->
-        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm mb-4">
-          <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-lg shrink-0">🪑</div>
-              <div>
-                <div class="text-[11px] font-medium text-violet-500 uppercase tracking-wide">YOLO 분석</div>
-                <div class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">좌석 점유 현황</div>
-              </div>
-            </div>
-            <div class="text-right shrink-0 flex items-end gap-1.5">
-              <span class="text-3xl font-bold text-violet-600 leading-none">{{ seatSummary.occupied }}</span>
-              <span class="text-sm text-neutral-400 dark:text-neutral-600 pb-0.5">/ {{ seatSummary.judgeable }}석</span>
-              <span v-if="seatSummary.unknown" class="text-sm text-amber-600 pb-0.5">· 판정 불가 {{ seatSummary.unknown }}석</span>
-            </div>
-          </div>
-          <div class="mt-4 w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-            <div
-              class="h-full bg-violet-500 rounded-full transition-all duration-500"
-              :style="{ width: seatSummary.judgeable ? `${Math.round(seatSummary.occupied / seatSummary.judgeable * 100)}%` : '0%' }"
-            />
-          </div>
+        <!-- 좌석 점유 결과 (YOLO) -->
+        <div v-if="seatLoading" role="status" class="flex flex-col items-center justify-center gap-3 py-24 text-base text-fg-muted">
+          <div class="h-9 w-9 animate-spin rounded-full border-2 border-line border-t-fg-muted" />
+          <p>분석 중...</p>
         </div>
 
-        <!-- 배치도 + 카메라별 카드 -->
-        <div class="flex flex-col lg:flex-row gap-4 mb-4 items-start">
-          <!-- 배치도 오버레이 (절반 크기) -->
-          <div v-if="getMapData()?.objects?.length" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm w-full lg:w-1/2 shrink-0">
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">교실 배치도</span>
-              <div class="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400">
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400" />점유</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-neutral-300" />미점유</span>
-              </div>
-            </div>
-            <canvas ref="mapCanvasRef" class="rounded-xl w-full" />
-          </div>
+        <section v-else-if="seatResult" class="flex flex-col gap-gutter" aria-label="YOLO 분석 결과">
+          <AnalysisSummaryCard label="YOLO 분석" :occupied="seatSummary.occupied" :total="seatSummary.judgeable" :unknown="seatSummary.unknown" />
 
-          <!-- 카메라별 카드 -->
-          <div
-            class="grid gap-3 flex-1 w-full"
-            :class="getMapData()?.objects?.length ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'"
-          >
-            <div
-              v-for="cam in seatResult.cameras"
-              :key="cam.camera_id"
-              class="rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 p-4 hover:border-violet-200 transition-colors"
-            >
-              <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-medium text-neutral-600 dark:text-neutral-400">{{ cam.name }}</span>
-                <span v-if="cam.error" class="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">판정 불가</span>
-                <span v-else class="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">{{ cam.occupied_count }}/{{ cam.total }}석</span>
+          <!-- 배치도 + 카메라별 카드 -->
+          <div class="grid items-start gap-gutter" :class="hasMap ? 'grid-cols-2' : 'grid-cols-1'">
+            <UiCard v-if="hasMap">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-fg">교실 배치도</h2>
+                <ul class="flex items-center gap-4 text-sm text-fg-muted" aria-label="범례">
+                  <li v-for="l in LEGEND" :key="l.label" class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm" :class="l.dot" />{{ l.label }}</li>
+                </ul>
               </div>
-              <p v-if="cam.error" class="text-xs text-amber-700">캡처 실패로 {{ cam.total }}석을 판정하지 못했습니다. ({{ cam.error }})</p>
-              <div v-else class="flex flex-wrap gap-1.5">
-                <span
-                  v-for="s in cam.occupied"
-                  :key="'occ-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-red-50 text-red-600 border border-red-100"
-                >{{ s }}</span>
-                <span
-                  v-for="s in cam.empty"
-                  :key="'emp-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-50 dark:bg-neutral-950 text-neutral-400 dark:text-neutral-600 border border-neutral-100 dark:border-neutral-800"
-                >{{ s }}</span>
-              </div>
+              <canvas ref="mapCanvasRef" class="mt-card block w-full" aria-label="교실 배치도 점유 현황" />
+            </UiCard>
+
+            <div class="grid gap-gutter" :class="hasMap ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-2 xl:grid-cols-3'">
+              <CameraSeatCard v-for="cam in seatResult.cameras" :key="cam.camera_id" :cam="cam" unknown-on-error />
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <!-- YOLO+LLM 결과 -->
-      <div v-if="yoloLlmLoading" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 text-sm gap-3" :class="{ 'mt-6': seatResult }">
-        <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-blue-500 animate-spin" />
-        <div>YOLO+LLM 분석 중...</div>
-      </div>
-
-      <div v-else-if="yoloLlmResult" :class="{ 'mt-8': seatResult }">
-        <!-- 구분선 -->
-        <div v-if="seatResult" class="flex items-center gap-3 mb-6">
-          <div class="h-px flex-1 bg-neutral-200" />
-          <span class="text-[11px] font-medium text-neutral-400 dark:text-neutral-600 uppercase tracking-wide px-2">YOLO+LLM 분석</span>
-          <div class="h-px flex-1 bg-neutral-200" />
+        <!-- YOLO+LLM 결과 -->
+        <div v-if="yoloLlmLoading" role="status" class="flex flex-col items-center justify-center gap-3 py-24 text-base text-fg-muted">
+          <div class="h-9 w-9 animate-spin rounded-full border-2 border-line border-t-fg-muted" />
+          <p>YOLO+LLM 분석 중...</p>
         </div>
 
-        <!-- 요약 -->
-        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm mb-4">
-          <div class="flex items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-lg shrink-0">🤖</div>
-              <div>
-                <div class="text-[11px] font-medium text-blue-500 uppercase tracking-wide">YOLO+LLM 분석</div>
-                <div class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">좌석 점유 현황</div>
+        <section v-else-if="yoloLlmResult" class="flex flex-col gap-gutter" aria-label="YOLO+LLM 분석 결과">
+          <!-- 구분선 -->
+          <div v-if="seatResult" class="flex items-center gap-3">
+            <div class="h-px flex-1 bg-line" />
+            <span class="px-2 text-sm font-medium text-fg-muted">YOLO+LLM 분석</span>
+            <div class="h-px flex-1 bg-line" />
+          </div>
+
+          <AnalysisSummaryCard label="YOLO+LLM 분석" :occupied="yoloLlmResult.total_occupied" :total="yoloLlmResult.total_seats" />
+
+          <div class="grid items-start gap-gutter" :class="hasMap ? 'grid-cols-2' : 'grid-cols-1'">
+            <UiCard v-if="hasMap">
+              <div class="flex items-center justify-between">
+                <h2 class="text-lg font-semibold text-fg">교실 배치도</h2>
+                <ul class="flex items-center gap-4 text-sm text-fg-muted" aria-label="범례">
+                  <li v-for="l in LEGEND" :key="l.label" class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm" :class="l.dot" />{{ l.label }}</li>
+                </ul>
               </div>
-            </div>
-            <div class="text-right shrink-0 flex items-end gap-1.5">
-              <span class="text-3xl font-bold text-blue-600 leading-none">{{ yoloLlmResult.total_occupied }}</span>
-              <span class="text-sm text-neutral-400 dark:text-neutral-600 pb-0.5">/ {{ yoloLlmResult.total_seats }}석</span>
+              <canvas ref="yoloMapCanvasRef" class="mt-card block w-full" aria-label="교실 배치도 점유 현황(YOLO+LLM)" />
+            </UiCard>
+
+            <div class="grid gap-gutter" :class="hasMap ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-2 xl:grid-cols-3'">
+              <CameraSeatCard v-for="cam in yoloLlmResult.cameras" :key="cam.camera_id" :cam="cam" />
             </div>
           </div>
-          <div class="mt-4 w-full h-2 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
-            <div
-              class="h-full bg-blue-500 rounded-full transition-all duration-500"
-              :style="{ width: yoloLlmResult.total_seats ? `${Math.round(yoloLlmResult.total_occupied / yoloLlmResult.total_seats * 100)}%` : '0%' }"
-            />
-          </div>
+        </section>
+
+        <!-- 빈 상태: 이 화면에서 처음 보게 되는 안내 -->
+        <div v-if="!seatResult && !yoloLlmResult && !seatLoading && !yoloLlmLoading" class="flex flex-col items-center justify-center gap-3 py-28 text-center">
+          <span class="flex h-14 w-14 items-center justify-center rounded-card border border-line bg-card text-fg-muted">
+            <NavIcon name="seats" :size="28" />
+          </span>
+          <p class="text-lg font-semibold text-fg">분석을 시작하세요</p>
+          <p class="max-w-md text-sm text-fg-muted">상단의 'YOLO 분석'이나 'YOLO+LLM'을 누르면 카메라 영상으로 좌석 점유를 계산합니다.</p>
         </div>
 
-        <!-- YOLO+LLM 배치도 + 카메라별 카드 -->
-        <div class="flex flex-col lg:flex-row gap-4 mb-4 items-start">
-          <!-- 배치도 오버레이 (절반 크기) -->
-          <div v-if="getMapData()?.objects?.length" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl p-5 shadow-sm w-full lg:w-1/2 shrink-0">
-            <div class="flex items-center justify-between mb-4">
-              <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">교실 배치도</span>
-              <div class="flex items-center gap-3 text-[11px] text-neutral-500 dark:text-neutral-400">
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400" />점유</span>
-                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-neutral-300" />미점유</span>
-              </div>
-            </div>
-            <canvas ref="yoloMapCanvasRef" class="rounded-xl w-full" />
-          </div>
-
-          <!-- 카메라별 카드 -->
-          <div
-            class="grid gap-3 flex-1 w-full"
-            :class="getMapData()?.objects?.length ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'"
-          >
-            <div
-              v-for="cam in yoloLlmResult.cameras"
-              :key="cam.camera_id"
-              class="rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm bg-white dark:bg-neutral-900 p-4 hover:border-blue-200 transition-colors"
-            >
-              <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-medium text-neutral-600 dark:text-neutral-400">{{ cam.name }}</span>
-                <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600">
-                  {{ cam.occupied_count }}/{{ cam.total }}석
-                </span>
-              </div>
-              <div v-if="cam.total > 0 && !cam.error" class="flex flex-wrap gap-1.5">
-                <span
-                  v-for="s in cam.occupied"
-                  :key="'occ-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded-md font-medium bg-red-50 text-red-600 border border-red-100"
-                >{{ s }}</span>
-                <span
-                  v-for="s in cam.empty"
-                  :key="'emp-'+s"
-                  class="text-[10px] px-1.5 py-0.5 rounded-md bg-neutral-50 dark:bg-neutral-950 text-neutral-400 dark:text-neutral-600 border border-neutral-100 dark:border-neutral-800"
-                >{{ s }}</span>
-              </div>
-              <p v-if="cam.error" class="text-xs text-red-400">{{ cam.error }}</p>
-            </div>
-          </div>
-        </div>
       </div>
-
-      <!-- 빈 상태 -->
-      <div v-if="!seatResult && !yoloLlmResult && !seatLoading && !yoloLlmLoading" class="flex flex-col items-center justify-center py-28 text-neutral-400 dark:text-neutral-600 gap-3">
-        <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">📊</div>
-        <div class="text-sm">버튼을 눌러 분석하세요</div>
-      </div>
-
     </div>
 
     <!-- 좌석 점유 프롬프트 모달 -->
@@ -279,16 +167,37 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
+import { useThemeStore } from '@/stores/themeStore'
 import SeatPromptModal from '@/components/modals/SeatPromptModal.vue'
 import ClassroomPromptModal from '@/components/modals/ClassroomPromptModal.vue'
 import BlurredImage from '@/components/ui/BlurredImage.vue'
 import ErrorNotice from '@/components/ui/ErrorNotice.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import NavIcon from '@/components/ui/NavIcon.vue'
+import AnalysisSummaryCard from '@/components/dashboard/AnalysisSummaryCard.vue'
+import CameraSeatCard from '@/components/dashboard/CameraSeatCard.vue'
 import api from '@/api'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
+import { cssColor } from '@/utils/cssColor'
 import { useMockToggle } from '@/composables/useMockToggle'
+
+// 클래스는 Tailwind가 스캔할 수 있도록 전부 리터럴로 적는다.
+const FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted'
+const BTN_OUTLINE = `rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:border-fg-muted/60 hover:text-fg ${FOCUS}`
+const BTN_PRIMARY = `inline-flex items-center gap-1.5 rounded-lg bg-fg px-4 py-2.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`
+const BTN_GHOST = `inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium text-fg transition-colors hover:bg-line/60 disabled:cursor-not-allowed disabled:opacity-50 ${FOCUS}`
+const BTN_ICON = `flex h-9 w-9 items-center justify-center rounded-lg text-fg-muted transition-colors hover:bg-line/60 hover:text-fg ${FOCUS}`
+const LINK_QUIET = `shrink-0 rounded-md px-2 py-1 text-sm text-fg-muted transition-colors hover:text-fg ${FOCUS}`
+
+const LEGEND = [
+  { label: '점유', dot: 'bg-state-occupied' },
+  { label: '빈 좌석', dot: 'bg-state-empty' },
+  { label: '판정 불가', dot: 'bg-state-unknown' },
+]
 
 const route = useRoute()
 const cStore = useClassroomStore()
+const theme = useThemeStore()
 
 const classroom = computed(() => cStore.current)
 const seatPromptOpen = ref(false)
@@ -383,6 +292,9 @@ const mockLiveImg = ref('')
 
 const liveCameras = computed(() => (mockActive.value ? MOCK_CAMERAS : (classroom.value?.cameras ?? []).filter(c => c.rtsp_url)))
 
+// 목데이터 영상 배경은 디자인 토큰 색을 쓴다(얼굴 사진 없음)
+const mockLiveFrame = () => generateMockImageDataUrl('MOCK LIVE FEED', 960, 540, cssColor('canvas'))
+
 function toggleLive() {
   liveOn.value = !liveOn.value
   if (liveOn.value) {
@@ -390,7 +302,7 @@ function toggleLive() {
       liveCameraId.value = liveCameras.value[0]?.camera_id ?? null
     }
     liveKey.value++
-    if (mockActive.value) mockLiveImg.value = generateMockImageDataUrl('MOCK LIVE FEED', 960, 540, '#18181b')
+    if (mockActive.value) mockLiveImg.value = mockLiveFrame()
   }
 }
 
@@ -398,7 +310,7 @@ function toggleLive() {
 watch(liveCameraId, () => {
   if (!liveOn.value) return
   liveKey.value++
-  if (mockActive.value) mockLiveImg.value = generateMockImageDataUrl('MOCK LIVE FEED', 960, 540, '#18181b')
+  if (mockActive.value) mockLiveImg.value = mockLiveFrame()
 })
 
 const liveSrc = computed(() => {
@@ -480,6 +392,8 @@ function getMapData() {
   return mockActive.value ? MOCK_MAP_DATA : mapData.value
 }
 
+const hasMap = computed(() => !!getMapData()?.objects?.length)
+
 // LLM 응답 "5 - 공부\n8 - 휴대폰" → Map { '5' → '공부', '8' → '휴대폰' }
 function parseLlmActivities(cameras) {
   const map = new Map()
@@ -493,6 +407,9 @@ function parseLlmActivities(cameras) {
   return map
 }
 
+const CANVAS_FONT = "'Inter Variable', 'Pretendard Variable', Pretendard, sans-serif"
+
+// 색은 그릴 때마다 디자인 토큰에서 읽는다(테마가 바뀌면 다시 그린다). 좌석 상태색은 ClassroomSeatMap과 같다.
 async function drawMapOnCanvas(canvas, cameras, seatActivity = new Map()) {
   const mapData = getMapData()
   if (!canvas || !mapData?.objects?.length) return
@@ -501,57 +418,80 @@ async function drawMapOnCanvas(canvas, cameras, seatActivity = new Map()) {
 
   const allOccupied = new Set()
   const allEmpty = new Set()
+  const allFailed = new Set()
   for (const cam of cameras) {
     for (const s of cam.occupied ?? []) allOccupied.add(s)
-    // 캡처에 실패한 카메라는 서버가 좌석을 전부 empty로 돌려주므로 빈 좌석으로 그리지 않는다(판정 불가)
-    if (!cam.error) for (const s of cam.empty ?? []) allEmpty.add(s)
+    // 캡처에 실패한 카메라는 서버가 좌석을 전부 empty로 돌려주므로 빈 좌석이 아니라 판정 불가로 그린다
+    if (cam.error) for (const s of cam.empty ?? []) allFailed.add(s)
+    else for (const s of cam.empty ?? []) allEmpty.add(s)
   }
   // LLM이 활동을 응답한 좌석은 점유로 확정
   for (const [sid] of seatActivity) allOccupied.add(sid)
 
-  const maxW = Math.min(canvas.parentElement?.clientWidth ?? 500, 480)
-  const scale = Math.min(maxW / mapW, 1)
-  canvas.width = Math.round(mapW * scale)
-  canvas.height = Math.round(mapH * scale)
+  // 카드 폭에 맞춰 그린다(레티나에서도 또렷하게 화면 배율만큼 해상도를 올린다)
+  const cssW = canvas.getBoundingClientRect().width || 480
+  const scale = cssW / mapW
+  const dpr = window.devicePixelRatio || 1
+  canvas.width = Math.round(mapW * scale * dpr)
+  canvas.height = Math.round(mapH * scale * dpr)
 
   const ctx = canvas.getContext('2d')
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, mapW * scale, mapH * scale)
+
+  const C = {
+    fg: cssColor('fg'),
+    muted: cssColor('fg-muted'),
+    mutedLine: cssColor('fg-muted', 0.5),
+    card: cssColor('card'),
+    line: cssColor('line'),
+    chair: cssColor('line', 0.7),
+    occ: cssColor('state-occupied'),
+    occFill: cssColor('state-occupied', 0.25),
+    emp: cssColor('state-empty'),
+    empFill: cssColor('state-empty', 0.1),
+    unk: cssColor('state-unknown'),
+    unkFill: cssColor('state-unknown', 0.15),
+  }
 
   for (const obj of objects) {
     const x = obj.x * scale, y = obj.y * scale
     const w = obj.w * scale, h = obj.h * scale
 
     if (obj.type === 'chair') {
-      ctx.fillStyle = '#e2e8f0'
+      ctx.fillStyle = C.chair
       ctx.beginPath(); ctx.roundRect(x, y, w, h, 3); ctx.fill()
     } else if (obj.type === 'cctv') {
-      ctx.fillStyle = '#e2e8f0'
-      ctx.strokeStyle = '#94a3b8'
+      ctx.fillStyle = C.card
+      ctx.strokeStyle = C.mutedLine
       ctx.lineWidth = 1.5
       ctx.beginPath(); ctx.roundRect(x, y, w, h, 4); ctx.fill(); ctx.stroke()
-      ctx.fillStyle = '#334155'
-      ctx.font = `bold ${Math.min(h * 0.28, 11)}px sans-serif`
+      ctx.fillStyle = C.muted
+      // 라벨이 박스보다 넓으면 글자 크기를 줄여 안에 담는다(글자 폭은 크기의 약 0.7배로 어림)
+      const cctvLabel = obj.label || 'CAM'
+      ctx.font = `600 ${Math.min(h * 0.28, 16, (w * 0.86) / (cctvLabel.length * 0.7))}px ${CANVAS_FONT}`
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
-      ctx.fillText(obj.label || 'CAM', x + w / 2, y + h / 2)
+      ctx.fillText(cctvLabel, x + w / 2, y + h / 2)
     } else if (obj.type === 'desk') {
       const label = obj.label?.trim()
       const activity = label ? seatActivity.get(label) : undefined
-      const isOcc  = label && allOccupied.has(label)
+      const isOcc = label && allOccupied.has(label)
       const isEmpty = label && !isOcc && allEmpty.has(label)
-      ctx.fillStyle = isOcc ? '#fee2e2' : isEmpty ? '#f1f5f9' : '#f8fafc'
-      ctx.strokeStyle = isOcc ? '#ef4444' : isEmpty ? '#94a3b8' : '#cbd5e1'
-      ctx.lineWidth = isOcc || isEmpty ? 2.5 : 1.5
+      const isUnknown = label && !isOcc && !isEmpty && allFailed.has(label)
+      ctx.fillStyle = isOcc ? C.occFill : isEmpty ? C.empFill : isUnknown ? C.unkFill : 'transparent'
+      ctx.strokeStyle = isOcc ? C.occ : isEmpty ? C.emp : isUnknown ? C.unk : C.line
+      ctx.lineWidth = isOcc || isEmpty || isUnknown ? 2.5 : 1.5
       ctx.beginPath(); ctx.rect(x, y, w, h); ctx.fill(); ctx.stroke()
       if (label) {
         const hasActivity = !!activity
         const labelY = hasActivity ? y + h * 0.38 : y + h / 2
-        ctx.font = `bold ${Math.min(h * 0.36, 15)}px sans-serif`
-        ctx.fillStyle = isOcc ? '#dc2626' : isEmpty ? '#64748b' : '#1e293b'
+        ctx.font = `600 ${Math.min(h * 0.36, 24)}px ${CANVAS_FONT}`
+        ctx.fillStyle = C.fg
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
         ctx.fillText(label, x + w / 2, labelY)
         if (hasActivity) {
-          ctx.font = `${Math.min(h * 0.26, 11)}px sans-serif`
-          ctx.fillStyle = '#dc2626'
+          ctx.font = `${Math.min(h * 0.26, 16)}px ${CANVAS_FONT}`
+          ctx.fillStyle = C.muted
           ctx.fillText(activity, x + w / 2, y + h * 0.68)
         }
       }
@@ -574,16 +514,10 @@ async function drawYoloLlmMap() {
 
 watch(seatResult, () => { if (seatResult.value) drawOccupancyMap() })
 watch(yoloLlmResult, () => { if (yoloLlmResult.value) drawYoloLlmMap() })
-</script>
 
-<style scoped>
-.btn-primary {
-  @apply inline-flex items-center gap-1.5 bg-violet-600 text-white text-xs font-medium px-3.5 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed;
-}
-.btn-secondary {
-  @apply inline-flex items-center gap-1.5 bg-blue-600 text-white text-xs font-medium px-3.5 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed;
-}
-.btn-icon-ghost {
-  @apply w-8 h-8 flex items-center justify-center text-xs rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 transition;
-}
-</style>
+// 캔버스는 그릴 때의 색이 그대로 남으므로 테마가 바뀌면 다시 그린다
+watch(() => theme.mode, () => {
+  if (seatResult.value) drawOccupancyMap()
+  if (yoloLlmResult.value) drawYoloLlmMap()
+})
+</script>

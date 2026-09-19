@@ -94,4 +94,4 @@ if __name__ == "__main__":
     import uvicorn
     # debugpy(VS Code 디버거)와 reload=True는 호환되지 않으므로 자동 감지
     in_debug = "debugpy" in sys.modules
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=not in_debug)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=not in_debug)
