@@ -71,6 +71,9 @@
 
       <div v-if="loading" class="text-center py-20 text-fg-muted text-sm">불러오는 중...</div>
 
+      <!-- 조회 실패를 "저장된 기록 없음"으로 보이지 않게 따로 안내한다 -->
+      <ErrorNotice v-else-if="statsError" class="my-section" title="점유 기록을 불러오지 못했습니다" :message="statsError" @retry="fetchStats" />
+
       <div v-else-if="!hasAnyData" class="text-center py-20 text-fg-muted text-sm">
         {{ selectedDayLabel }}에 저장된 점유 기록이 없습니다.<br>
         <span class="text-xs">10분마다 자동으로 좌석 점유 상태가 기록됩니다.</span>
@@ -164,6 +167,7 @@ import SeatDetailPanel from '@/components/monitoring/SeatDetailPanel.vue'
 import SnapshotTimeline from '@/components/monitoring/SnapshotTimeline.vue'
 import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import { useSnapshotTimeline } from '@/composables/useSnapshotTimeline'
+import { useDailyStats } from '@/composables/useDailyStats'
 import api from '@/api'
 
 const route = useRoute()
@@ -206,10 +210,13 @@ const weekDays = computed(() => {
 
 const selectedDateStr = ref(toDateStr(today))
 
-const loading = ref(false)
-const seatStats = ref({})
-const periodMinutes = ref(0)
-const hourlyStats = ref([])
+// 하루치 통계. 요일 탭을 빠르게 바꿀 때 늦게 온 응답이 최신 응답을 덮지 않고, 조회에 실패하면 이전 날짜
+// 통계를 비운다(composables/useDailyStats.js, 단위 테스트 있음).
+const { seatStats, periodMinutes, hourlyStats, loading, error: statsError, load: loadStats } = useDailyStats({
+  fetchDaily: (date) => api.get(`/analysis/${route.params.id}/occupancy-stats-daily`, { params: { date } }).then((r) => r.data),
+  fetchHourly: (date) => api.get(`/analysis/${route.params.id}/occupancy-hourly`, { params: { date } }).then((r) => r.data),
+  dateStr: selectedDateStr,
+})
 const selectedHour = ref(null)
 
 function toggleHour(hour) {
@@ -228,21 +235,8 @@ const peakHourData = computed(() => {
 const displayHourData = computed(() => selectedHourData.value ?? peakHourData.value)
 
 async function fetchStats() {
-  loading.value = true
   selectedHour.value = null
-  try {
-    const [dailyRes, hourlyRes] = await Promise.all([
-      api.get(`/analysis/${route.params.id}/occupancy-stats-daily`, { params: { date: selectedDateStr.value } }),
-      api.get(`/analysis/${route.params.id}/occupancy-hourly`, { params: { date: selectedDateStr.value } }),
-    ])
-    seatStats.value = dailyRes.data.seats ?? {}
-    periodMinutes.value = dailyRes.data.period_minutes ?? 0
-    hourlyStats.value = hourlyRes.data.hours ?? []
-  } catch (e) {
-    alert('점유 기록 조회 실패: ' + (e.response?.data?.detail ?? e.message))
-  } finally {
-    loading.value = false
-  }
+  await loadStats()
 }
 
 // 관리자가 설정해 놓은 전체 좌석 번호(숫자 오름차순)
