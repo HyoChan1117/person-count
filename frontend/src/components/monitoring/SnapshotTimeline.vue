@@ -30,7 +30,7 @@
         <span
           v-for="m in missing"
           :key="`m${m.i}`"
-          class="absolute top-0 h-1 w-1 -translate-x-1/2 rounded-full bg-state-unknown"
+          class="absolute top-0 h-1 w-1 -translate-x-1/2 rounded-full bg-fg-muted/60"
           :style="{ left: `${m.pct}%` }"
           title="기록 없음"
         />
@@ -64,6 +64,6 @@ const pct = (i) => (props.slots.length > 1 ? (i / (props.slots.length - 1)) * 10
 const ticks = computed(() =>
   props.slots.map((s, i) => ({ i, label: s.time.slice(0, 2), pct: pct(i), on: s.time.endsWith(':00') })).filter((t) => t.on),
 )
-// 그 시각 기록이 없는 슬롯 표시(판정 불가 색)
+// 그 시각 기록이 없는 슬롯 표시(판정 불가가 아니므로 상태색이 아닌 중립색)
 const missing = computed(() => props.slots.map((s, i) => ({ i, pct: pct(i), none: s.seats == null })).filter((m) => m.none))
 </script>

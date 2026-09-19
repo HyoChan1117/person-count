@@ -6,7 +6,8 @@
           <p class="text-label text-fg-muted">선택한 좌석</p>
           <p class="text-metric-sm tabular-nums text-fg">{{ seatId }}번</p>
         </div>
-        <StatusBadge :status="state" size="lg" />
+        <StatusBadge v-if="hasRecord" :status="state" size="lg" />
+        <span v-else class="rounded-full border border-line px-3 py-1 text-sm font-medium text-fg-muted">기록 없음</span>
       </div>
 
       <dl class="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-2 text-sm">
@@ -28,7 +29,7 @@
           이 시점의 이미지는 저장되지 않습니다.<br />가장 최근 스냅샷에서만 현재 화면을 볼 수 있습니다.
         </div>
         <div v-else-if="!camera" class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-line p-4 text-sm text-fg-muted">배정된 카메라가 없습니다.</div>
-        <div v-else-if="error" class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-line p-4 text-sm text-state-unknown">{{ error }}</div>
+        <div v-else-if="error" class="flex flex-1 items-center justify-center rounded-lg border border-dashed border-line p-4 text-sm text-fg-muted">{{ error }}</div>
         <div v-else-if="frame" class="relative">
           <BlurredImage :src="frame.src" :alt="`${seatId}번 좌석 카메라 스냅샷`" class="aspect-video w-full" />
           <svg :viewBox="`0 0 ${frame.width} ${frame.height}`" class="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
@@ -59,14 +60,15 @@ const props = defineProps({
   classroomId: { type: Number, required: true },
   seatId: { type: String, default: null },
   state: { type: String, default: 'unknown' },
+  hasRecord: { type: Boolean, default: true }, // false면 그 시각 스냅샷이 없다("판정 불가"와 구분)
   slot: { type: Object, default: null }, // { ts, time }
   isLatest: { type: Boolean, default: false },
   camera: { type: Object, default: null }, // { camera_id, name, seat_lines }
   stat: { type: Object, default: null }, // occupancy-stats-daily의 좌석 항목
 })
 
-const VERDICTS = { occupied: '점유', empty: '빈 좌석', unknown: '판정 불가 (이 시각 스냅샷에 기록 없음)' }
-const verdict = computed(() => VERDICTS[props.state] ?? VERDICTS.unknown)
+const VERDICTS = { occupied: '점유', empty: '빈 좌석', unknown: '판정 불가 (스냅샷에서 이 좌석을 판정하지 못함)' }
+const verdict = computed(() => (props.hasRecord ? VERDICTS[props.state] ?? VERDICTS.unknown : '이 시각 기록 없음'))
 const slotLabel = computed(() => (props.slot ? props.slot.ts.replace('T', ' ').slice(0, 16) : '–'))
 const minutesText = computed(() => {
   const m = props.stat?.occupied_minutes ?? 0

@@ -15,8 +15,13 @@ html, body, #app {
 /* ── 디자인 토큰 (CLAUDE.md 지침) ───────────────────────────────────────────────
    RGB 채널로 정의해 Tailwind의 `bg-card/50` 같은 투명도가 동작하게 한다.
    hex는 이 파일에서만 주석으로 남기고, 컴포넌트/캔버스는 토큰이나
-   utils/cssColor.js로만 색을 읽는다. */
+   utils/cssColor.js로만 색을 읽는다.
+
+   기본은 다크 네이비. 테마는 <html>의 `dark` 클래스로 정한다(stores/themeStore.js,
+   index.html의 인라인 스크립트가 페인트 전에 적용). */
 :root {
+  color-scheme: dark;
+
   --color-canvas: 11 18 32;          /* #0B1220 배경 */
   --color-card: 17 26 43;            /* #111A2B 카드 */
   --color-line: 31 42 63;            /* #1F2A3F 경계선 */
@@ -28,13 +33,49 @@ html, body, #app {
   --color-state-empty: 100 116 139;    /* #64748B 빈 좌석 */
   --color-state-unknown: 224 169 59;   /* #E0A93B 판정 불가 */
   --color-state-alert: 239 111 108;    /* #EF6F6C 경고(미등록 인물) */
+
+  /* 네이티브 스크롤바/체크박스가 화면과 어울리도록 */
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--color-fg-muted) / 0.35) transparent;
+  accent-color: rgb(var(--color-fg-muted));
 }
 
-/* 새 디자인 시스템을 쓰는 화면의 루트. 기존 화면의 폰트/배경은 바뀌지 않는다. */
-.ds-root {
+/* 라이트 테마. 순백/순검정을 피하고 같은 네이비 계열로 맞춘다.
+   상태색은 흰 배경에서 글자·큰 숫자·테두리로도 읽히도록(대비 4.5:1 내외)
+   다크 값과 같은 색상 계열의 진한 값을 쓴다. 의미(점유/빈 좌석/판정 불가/경고)는 그대로다. */
+:root:not(.dark) {
+  color-scheme: light;
+
+  --color-canvas: 244 246 250;       /* #F4F6FA 배경 */
+  --color-card: 255 255 255;         /* #FFFFFF 카드 */
+  --color-line: 216 223 234;         /* #D8DFEA 경계선 */
+  --color-fg: 15 26 46;              /* #0F1A2E 텍스트 */
+  --color-fg-muted: 86 103 131;      /* #566783 보조 텍스트 */
+
+  --color-state-occupied: 20 123 112;  /* #147B70 점유 */
+  --color-state-empty: 91 107 130;     /* #5B6B82 빈 좌석 */
+  --color-state-unknown: 154 106 14;   /* #9A6A0E 판정 불가 */
+  --color-state-alert: 199 64 61;      /* #C7403D 경고(미등록 인물) */
+}
+
+body {
   background-color: rgb(var(--color-canvas));
   color: rgb(var(--color-fg));
-  font-family: 'Inter Variable', 'Pretendard Variable', Pretendard, system-ui, sans-serif;
-  font-variant-numeric: tabular-nums;
-  -webkit-font-smoothing: antialiased;
+}
+
+/* 새 디자인 시스템을 쓰는 영역의 공통 서체/배경.
+   `ds-text`는 배경 없이 서체만(사이드바처럼 카드색을 쓰는 곳),
+   `ds-root`는 화면 루트(배경 포함). components 레이어라 `bg-card` 같은 유틸리티가 덮어쓸 수 있다. */
+@layer components {
+  .ds-text,
+  .ds-root {
+    color: rgb(var(--color-fg));
+    font-family: 'Inter Variable', 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .ds-root {
+    background-color: rgb(var(--color-canvas));
+  }
 }

@@ -1,5 +1,6 @@
 import { ref, computed, watch } from 'vue'
 import api from '@/api'
+import { seatStatesFor, hasSnapshotRecord } from '@/utils/seatSnapshot'
 
 const STEP_MS = 1000 // 자동 재생: 1초에 한 칸
 const IDLE_RESUME_MS = 15000 // 슬라이더를 직접 움직인 뒤 이 시간 동안 조작이 없으면 자동 재생 재개
@@ -24,12 +25,9 @@ export function useSnapshotTimeline({ classroomId, dateStr, seatIds }) {
   const isLatest = computed(() => slots.value.length > 0 && index.value === slots.value.length - 1)
 
   // 현재 슬롯의 좌석별 상태. 그 시각 기록이 없거나 스냅샷에 빠진 좌석은 판정 불가.
-  const seatStates = computed(() => {
-    const seats = current.value?.seats
-    const out = {}
-    seatIds.value.forEach((id) => { out[id] = seats ? (seats[id] ?? 'unknown') : 'unknown' })
-    return out
-  })
+  const seatStates = computed(() => seatStatesFor(current.value?.seats, seatIds.value))
+  // 스냅샷 자체가 없는 시각(미래 시각, 수집 누락)은 "판정 불가"가 아니라 "기록 없음"으로 보여 주기 위한 플래그
+  const hasRecord = computed(() => hasSnapshotRecord(current.value))
 
   function fromHourly(hours, date) {
     return hours.map((h) => ({
@@ -115,5 +113,5 @@ export function useSnapshotTimeline({ classroomId, dateStr, seatIds }) {
 
   watch(dateStr, load)
 
-  return { slots, index, current, isLatest, seatStates, playing, loading, intervalMin, load, scrub, togglePlay, start, stop }
+  return { slots, index, current, isLatest, seatStates, hasRecord, playing, loading, intervalMin, load, scrub, togglePlay, start, stop }
 }

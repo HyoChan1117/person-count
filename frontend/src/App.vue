@@ -1,5 +1,5 @@
 <template>
-  <div class="flex h-screen bg-neutral-50 dark:bg-neutral-950">
+  <div class="flex h-screen bg-canvas text-fg">
     <template v-if="auth.isAdmin">
       <Sidebar />
       <main class="flex-1 overflow-hidden">
