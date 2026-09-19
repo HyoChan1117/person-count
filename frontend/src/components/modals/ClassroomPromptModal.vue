@@ -1,13 +1,13 @@
 <template>
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="$emit('close')">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-xl mx-4 flex flex-col max-h-[90vh]">
+    <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-xl mx-4 flex flex-col max-h-[90vh]">
       <!-- 헤더 -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
         <div>
-          <h2 class="font-bold text-slate-800">YOLO+LLM 설정 — {{ classroom.name }}</h2>
-          <p class="text-xs text-slate-400 mt-0.5">모델, 임계값, AI 카운팅 지침을 설정하세요</p>
+          <h2 class="font-bold text-neutral-800 dark:text-neutral-100">YOLO+LLM 설정 — {{ classroom.name }}</h2>
+          <p class="text-xs text-neutral-400 dark:text-neutral-600 mt-0.5">모델, 임계값, AI 카운팅 지침을 설정하세요</p>
         </div>
-        <button @click="$emit('close')" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        <button @click="$emit('close')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 text-xl leading-none">✕</button>
       </div>
 
       <!-- 본문 -->
@@ -15,7 +15,7 @@
 
         <!-- YOLO 모델 선택 -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">YOLO 감지 모델</label>
+          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">YOLO 감지 모델</label>
           <div class="grid grid-cols-2 gap-2">
             <label
               v-for="opt in YOLO_MODEL_OPTIONS"
@@ -25,14 +25,14 @@
             >
               <input type="radio" :value="opt.value" v-model="selectedYoloModel" class="sr-only" />
               <div class="font-medium text-sm">{{ opt.label }}</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">{{ opt.desc }}</div>
+              <div class="text-[11px] text-neutral-400 dark:text-neutral-600 mt-0.5">{{ opt.desc }}</div>
             </label>
           </div>
         </div>
 
         <!-- LLM 모델 선택 -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">LLM 모델</label>
+          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">LLM 모델</label>
           <div class="grid grid-cols-2 gap-2">
             <label
               v-for="opt in LLM_MODEL_OPTIONS"
@@ -42,7 +42,7 @@
             >
               <input type="radio" :value="opt.value" v-model="selectedLlmModel" class="sr-only" />
               <div class="font-medium text-sm">{{ opt.label }}</div>
-              <div class="text-[11px] text-slate-400 mt-0.5">{{ opt.desc }}</div>
+              <div class="text-[11px] text-neutral-400 dark:text-neutral-600 mt-0.5">{{ opt.desc }}</div>
             </label>
           </div>
         </div>
@@ -50,12 +50,12 @@
         <!-- YOLO 감지 임계값 -->
         <div>
           <div class="flex items-center justify-between mb-1.5">
-            <label class="text-sm font-medium text-slate-700">YOLO 감지 임계값</label>
+            <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">YOLO 감지 임계값</label>
             <div class="flex items-center gap-2">
               <span class="text-sm font-mono font-semibold text-blue-600">{{ confThreshold.toFixed(2) }}</span>
               <button
                 @click="confThreshold = 0.35"
-                class="text-xs text-slate-400 hover:text-slate-600 underline underline-offset-2"
+                class="text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 underline underline-offset-2"
               >기본값 (0.35)</button>
             </div>
           </div>
@@ -65,17 +65,17 @@
             min="0.10" max="0.90" step="0.05"
             class="w-full accent-blue-500"
           />
-          <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+          <div class="flex justify-between text-[10px] text-neutral-400 dark:text-neutral-600 mt-1">
             <span>0.10 — 민감 (오탐 증가)</span>
             <span>0.90 — 보수적 (미탐 증가)</span>
           </div>
         </div>
 
-        <div class="h-px bg-slate-100" />
+        <div class="h-px bg-neutral-100 dark:bg-neutral-800" />
 
         <!-- 카운트 제외 대상 -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-2">카운트 제외 대상</label>
+          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">카운트 제외 대상</label>
           <div class="flex gap-2 mb-2">
             <input
               v-model="exclusionInput"
@@ -100,12 +100,12 @@
               <button @click="exclusionItems.splice(i, 1)" class="text-red-400 hover:text-red-600 leading-none">✕</button>
             </span>
           </div>
-          <p v-else class="text-xs text-slate-400 mt-1">제외 대상이 없습니다. 위에서 항목을 추가하세요.</p>
+          <p v-else class="text-xs text-neutral-400 dark:text-neutral-600 mt-1">제외 대상이 없습니다. 위에서 항목을 추가하세요.</p>
         </div>
 
         <!-- 기타 지침 -->
         <div>
-          <label class="block text-sm font-medium text-slate-700 mb-1">기타 지침 <span class="text-slate-400 font-normal">(선택)</span></label>
+          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">기타 지침 <span class="text-neutral-400 dark:text-neutral-600 font-normal">(선택)</span></label>
           <textarea
             v-model="extraNotes"
             rows="5"
@@ -115,15 +115,15 @@
         </div>
 
         <!-- 기본 프롬프트 미리보기 -->
-        <div v-if="promptStore.config.default_user_prompt" class="bg-slate-50 rounded-lg px-4 py-3">
-          <p class="text-xs font-medium text-slate-500 mb-1">기본 프롬프트 (위의 지침이 이 뒤에 이어붙여짐)</p>
-          <p class="text-xs text-slate-600 whitespace-pre-wrap">{{ promptStore.config.default_user_prompt }}</p>
+        <div v-if="promptStore.config.default_user_prompt" class="bg-neutral-50 dark:bg-neutral-950 rounded-lg px-4 py-3">
+          <p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">기본 프롬프트 (위의 지침이 이 뒤에 이어붙여짐)</p>
+          <p class="text-xs text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">{{ promptStore.config.default_user_prompt }}</p>
         </div>
 
       </div>
 
       <!-- 푸터 -->
-      <div class="flex gap-2 justify-end px-6 py-4 border-t border-slate-100">
+      <div class="flex gap-2 justify-end px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
         <button v-if="isDirty" @click="resetAll" class="btn-ghost mr-auto">초기화</button>
         <button @click="$emit('close')" class="btn-ghost">취소</button>
         <button @click="handleSave" :disabled="saving" class="btn-primary">
@@ -296,22 +296,22 @@ async function handleSave() {
 
 <style scoped>
 .input {
-  @apply border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400;
+  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400;
 }
 .textarea {
-  @apply border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none;
+  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none;
 }
 .btn-add {
-  @apply bg-slate-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-slate-700 disabled:opacity-40 transition;
+  @apply bg-neutral-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-neutral-700 disabled:opacity-40 transition;
 }
 .btn-primary {
   @apply bg-blue-600 text-white text-sm px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition;
 }
 .btn-ghost {
-  @apply bg-slate-100 text-slate-700 text-sm px-5 py-2 rounded-lg hover:bg-slate-200 transition;
+  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-5 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition;
 }
 .model-option {
-  @apply cursor-pointer border border-slate-200 rounded-xl p-3 transition hover:border-blue-300 hover:bg-blue-50;
+  @apply cursor-pointer border border-neutral-200 dark:border-neutral-800 rounded-xl p-3 transition hover:border-blue-300 hover:bg-blue-50;
 }
 .model-option--selected {
   @apply border-blue-500 bg-blue-50 ring-1 ring-blue-400;

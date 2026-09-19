@@ -1,13 +1,13 @@
 <template>
   <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="$emit('close')">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh]">
+    <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-2xl mx-4 flex flex-col max-h-[90vh]">
       <!-- 헤더 -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+      <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
         <div>
-          <h2 class="font-bold text-slate-800">시간표 설정 — {{ classroom.name }}</h2>
-          <p class="text-xs text-slate-400 mt-0.5">수업이 있는 정각을 선택하세요. 선택하지 않은 시간은 모니터링에서 '수업 없음'으로 표시됩니다.</p>
+          <h2 class="font-bold text-neutral-800 dark:text-neutral-100">시간표 설정 — {{ classroom.name }}</h2>
+          <p class="text-xs text-neutral-400 dark:text-neutral-600 mt-0.5">수업이 있는 정각을 선택하세요. 선택하지 않은 시간은 모니터링에서 '수업 없음'으로 표시됩니다.</p>
         </div>
-        <button @click="$emit('close')" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        <button @click="$emit('close')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 text-xl leading-none">✕</button>
       </div>
 
       <!-- 본문 -->
@@ -19,7 +19,7 @@
               <th
                 v-for="h in HOURS"
                 :key="h"
-                class="text-[10px] font-medium text-slate-400 pb-1.5 px-0.5"
+                class="text-[10px] font-medium text-neutral-400 dark:text-neutral-600 pb-1.5 px-0.5"
               >{{ h }}</th>
             </tr>
           </thead>
@@ -28,7 +28,7 @@
               <td>
                 <button
                   @click="toggleDay(day.key)"
-                  class="w-11 h-8 text-xs font-semibold rounded-lg mr-1.5 hover:bg-blue-50 text-slate-600 transition"
+                  class="w-11 h-8 text-xs font-semibold rounded-lg mr-1.5 hover:bg-blue-50 text-neutral-600 dark:text-neutral-400 transition"
                 >{{ day.label }}</button>
               </td>
               <td v-for="h in HOURS" :key="h" class="p-0.5">
@@ -37,7 +37,7 @@
                   class="w-8 h-8 rounded-md text-[10px] font-medium transition"
                   :class="isOn(day.key, h)
                     ? 'bg-blue-500 text-white'
-                    : 'bg-slate-100 text-slate-300 hover:bg-slate-200'"
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-300 dark:text-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600'"
                 >{{ h }}</button>
               </td>
             </tr>
@@ -46,7 +46,7 @@
       </div>
 
       <!-- 푸터 -->
-      <div class="flex gap-2 justify-end px-6 py-4 border-t border-slate-100">
+      <div class="flex gap-2 justify-end px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
         <button @click="clearAll" class="btn-ghost mr-auto">전체 해제</button>
         <button @click="$emit('close')" class="btn-ghost">취소</button>
         <button @click="handleSave" :disabled="saving" class="btn-primary">
@@ -121,6 +121,6 @@ async function handleSave() {
   @apply bg-blue-600 text-white text-sm px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition;
 }
 .btn-ghost {
-  @apply bg-slate-100 text-slate-700 text-sm px-5 py-2 rounded-lg hover:bg-slate-200 transition;
+  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-5 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition;
 }
 </style>

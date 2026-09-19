@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '@/views/HomeView.vue'
+// 기존 HomeView.vue는 롤백용으로 파일만 보존한다(이 라우트에서는 더 이상 쓰지 않는다)
+import HomeView from '@/views/HomeDashboardView.vue'
 import ClassroomListView from '@/views/ClassroomListView.vue'
 import CameraSetupView from '@/views/CameraSetupView.vue'
 import DashboardView from '@/views/DashboardView.vue'
@@ -23,6 +24,11 @@ const routes = [
   { path: '/face/:id/camera', name: 'FaceCameraSetup', component: FaceCameraSetupView },
   { path: '/face/:id/monitoring', name: 'FaceMonitoring', component: FaceMonitoringView },
 ]
+
+// 디자인 토대 확인용 (개발 모드에서만 등록, 프로덕션 빌드에는 포함되지 않는다)
+if (import.meta.env.DEV) {
+  routes.push({ path: '/__ds', name: 'DesignPreview', component: () => import('@/views/DesignPreview.vue') })
+}
 
 const router = createRouter({
   history: createWebHistory(),

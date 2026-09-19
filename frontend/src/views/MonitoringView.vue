@@ -1,123 +1,146 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 p-6">
-    <div class="max-w-3xl mx-auto">
-      <router-link to="/classrooms" class="text-xs text-neutral-400 hover:text-neutral-600">← 목록</router-link>
+  <div class="ds-root h-full overflow-y-auto p-section">
+    <div class="mx-auto flex max-w-[1680px] flex-col gap-section">
 
-      <div class="mt-2 mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 class="text-xl font-bold text-neutral-800">좌석별 누적 점유 시간</h1>
-          <p class="text-xs text-neutral-400 mt-1">{{ classroom?.name }}</p>
-        </div>
-        <button
-          v-if="classroom"
-          @click="scheduleOpen = true"
-          class="text-xs bg-white border border-neutral-200 text-neutral-600 px-3 py-1.5 rounded-lg hover:bg-neutral-50 transition shrink-0"
-        >📅 시간표 설정</button>
-      </div>
-
-      <!-- 요일 선택 (매주 월요일 00시에 기록이 초기화되므로 이번 주 요일 단위로 조회) -->
-      <div class="grid grid-cols-7 gap-1.5 mb-5">
-        <button
-          v-for="day in weekDays"
-          :key="day.dateStr"
-          :disabled="day.isFuture"
-          @click="selectedDateStr = day.dateStr"
-          class="rounded-lg py-2 text-center transition"
-          :class="[
-            day.isFuture
-              ? 'bg-neutral-50 text-neutral-300 cursor-not-allowed'
-              : selectedDateStr === day.dateStr
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'bg-white text-neutral-600 border border-neutral-200 hover:border-blue-300 hover:text-blue-600',
-          ]"
-        >
-          <div class="text-sm font-semibold">{{ day.label }}</div>
-          <div class="text-[10px] mt-0.5" :class="day.isFuture ? 'text-neutral-300' : selectedDateStr === day.dateStr ? 'text-blue-100' : 'text-neutral-400'">
-            {{ day.shortDate }}
+      <!-- 배치도 + 좌석 상태 + 스냅샷 타임라인: 첫 화면(1920x1080)에 맞춘다 -->
+      <section class="flex min-h-[calc(100vh-4rem)] flex-col gap-gutter">
+        <header class="flex items-end justify-between gap-section">
+          <div class="min-w-0">
+            <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
+            <h1 class="mt-1 text-3xl font-bold tracking-tight text-fg">{{ classroom?.name || '좌석 모니터링' }}</h1>
+            <p class="mt-1 text-lg text-fg-muted">배치도 위 좌석 상태와 {{ intervalMin }}분 단위 스냅샷</p>
           </div>
-        </button>
-      </div>
+          <div class="flex shrink-0 items-center gap-gutter">
+            <!-- 요일 선택 (매주 월요일 00시에 기록이 초기화되므로 이번 주 요일 단위로 조회) -->
+            <div class="flex gap-1 rounded-card border border-line bg-card p-1" role="tablist" aria-label="요일 선택">
+              <button
+                v-for="day in weekDays"
+                :key="day.dateStr"
+                role="tab"
+                :aria-selected="selectedDateStr === day.dateStr"
+                :disabled="day.isFuture"
+                class="rounded-lg px-4 py-2 text-center transition-colors"
+                :class="day.isFuture ? 'cursor-not-allowed text-fg-muted/40' : selectedDateStr === day.dateStr ? 'bg-line text-fg' : 'text-fg-muted hover:text-fg'"
+                @click="selectedDateStr = day.dateStr"
+              >
+                <span class="block text-sm font-semibold">{{ day.label }}</span>
+                <span class="block text-xs tabular-nums">{{ day.shortDate }}</span>
+              </button>
+            </div>
+            <button
+              v-if="classroom"
+              class="rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:border-fg-muted/60 hover:text-fg"
+              @click="scheduleOpen = true"
+            >시간표 설정</button>
+          </div>
+        </header>
 
-      <div v-if="loading" class="text-center py-20 text-neutral-400 text-sm">불러오는 중...</div>
+        <ErrorNotice v-if="cStore.error" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(classroomId)" />
 
-      <div v-else-if="!hasAnyData" class="text-center py-20 text-neutral-400 text-sm">
+        <div class="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_28rem] gap-gutter">
+          <UiCard class="flex min-h-[32rem] flex-col">
+            <ClassroomSeatMap
+              v-if="mapData"
+              :map="mapData"
+              :seat-states="seatStates"
+              :selected-id="selectedSeat"
+              @select="selectSeat"
+            />
+            <div v-else class="flex flex-1 flex-col items-center justify-center gap-3 text-center">
+              <p class="text-lg font-semibold text-fg">{{ mapLoading ? '배치도를 불러오는 중...' : '배치도가 등록되지 않았습니다.' }}</p>
+              <router-link v-if="!mapLoading" :to="`/classrooms/${classroomId}/map`" class="text-sm text-fg-muted underline underline-offset-4 hover:text-fg">맵 에디터에서 배치도 만들기</router-link>
+            </div>
+          </UiCard>
+
+          <SeatDetailPanel
+            :classroom-id="classroomId"
+            :seat-id="selectedSeat"
+            :state="selectedSeat ? seatStates[selectedSeat] ?? 'unknown' : 'unknown'"
+            :slot="current"
+            :is-latest="isLatest"
+            :camera="selectedCamera"
+            :stat="selectedSeat ? seatStats[selectedSeat] ?? null : null"
+          />
+        </div>
+
+        <SnapshotTimeline :slots="slots" :index="index" :playing="playing" :interval-min="intervalMin" @scrub="scrub" @toggle="togglePlay" />
+      </section>
+
+      <!-- 기존 통계 (다음 화면 전환 때 토큰으로 정리 예정) -->
+      <div class="dark mx-auto w-full max-w-4xl pb-section">
+
+      <div v-if="loading" class="text-center py-20 text-fg-muted text-sm">불러오는 중...</div>
+
+      <!-- 조회 실패를 "저장된 기록 없음"으로 보이지 않게 따로 안내한다 -->
+      <ErrorNotice v-else-if="statsError" class="my-section" title="점유 기록을 불러오지 못했습니다" :message="statsError" @retry="fetchStats" />
+
+      <div v-else-if="!hasAnyData" class="text-center py-20 text-fg-muted text-sm">
         {{ selectedDayLabel }}에 저장된 점유 기록이 없습니다.<br>
         <span class="text-xs">10분마다 자동으로 좌석 점유 상태가 기록됩니다.</span>
       </div>
 
       <template v-else>
-        <!-- 정각 기준 시간별 점유 좌석 수 -->
-        <p class="text-xs text-neutral-400 mb-2">수업 시간인 09:00 ~ 21:00 사이, 교실별로 설정한 시간표에 따라 정각 기준으로 확인합니다.</p>
-        <div class="flex flex-wrap gap-2 mb-2">
-          <button
-            v-for="h in hourlyStats"
-            :key="h.hour"
-            :disabled="!h.scheduled || h.occupied === null"
-            @click="toggleHour(h.hour)"
-            class="w-[74px] bg-white rounded-xl border py-2.5 text-center transition"
-            :class="[
-              !h.scheduled ? 'border-neutral-100 bg-neutral-50 cursor-not-allowed' : h.occupied === null ? 'border-neutral-200 cursor-not-allowed' : 'border-neutral-200 hover:border-blue-300',
-              selectedHour === h.hour ? '!border-blue-500 ring-1 ring-blue-500' : '',
-            ]"
-          >
-            <div
-              class="w-5 h-5 mx-auto rounded-full flex items-center justify-center text-[11px] font-bold mb-1"
-              :class="h.scheduled && h.occupied !== null ? 'bg-emerald-500 text-white' : 'bg-neutral-100 text-neutral-300'"
-            >{{ h.scheduled && h.occupied !== null ? '✓' : '·' }}</div>
-            <div class="text-xs font-semibold" :class="h.scheduled && h.occupied !== null ? 'text-neutral-700' : 'text-neutral-300'">{{ h.time }}</div>
-            <div class="text-[10px] mt-0.5" :class="h.scheduled && h.occupied !== null ? 'text-neutral-400' : 'text-neutral-300'">
-              {{ !h.scheduled ? '수업 없음' : h.occupied !== null ? `점유 ${h.occupied}석` : '대기중' }}
-            </div>
-          </button>
+        <!-- 요약 지표 타일 -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div class="bg-card border border-line rounded-lg p-3.5">
+            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">등록 좌석</p>
+            <p class="text-2xl font-bold font-mono tabular-nums text-fg">{{ allSeatIds.length }}<span class="text-xs font-normal text-fg-muted ml-1">석</span></p>
+          </div>
+          <div class="bg-card border border-line rounded-lg p-3.5">
+            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">{{ selectedHourData ? selectedHourData.time + ' 점유' : '최고 점유 시간대' }}</p>
+            <p class="text-2xl font-bold font-mono tabular-nums" :class="displayHourData ? 'text-fg' : 'text-fg-muted/50'">
+              {{ displayHourData ? `${displayHourData.occupied}/${displayHourData.total}` : '—' }}
+            </p>
+          </div>
+          <div class="bg-card border border-line rounded-lg p-3.5">
+            <p class="text-[10px] font-semibold tracking-wide text-fg-muted uppercase mb-1">최다 점유 좌석</p>
+            <p class="text-2xl font-bold font-mono tabular-nums" :class="topSeat && topSeat.occupiedMinutes > 0 ? 'text-red-500 dark:text-red-400' : 'text-fg-muted/50'">
+              {{ topSeat && topSeat.occupiedMinutes > 0 ? `${topSeat.seatId}번` : '—' }}
+            </p>
+          </div>
+        </div>
+
+        <!-- 정각 기준 시간별 점유율 그래프 -->
+        <p class="text-[11px] text-fg-muted mb-2">수업 시간인 09:00 ~ 21:00, 교실별로 설정한 시간표에 따라 정각 기준으로 확인합니다.</p>
+        <div class="bg-card border border-line rounded-lg px-3 pt-4 pb-2 mb-2">
+          <DitherStackedChart :hours="hourlyStats" :selected-hour="selectedHour" @select="toggleHour" />
+          <div class="flex gap-1.5 mt-1.5">
+            <span
+              v-for="h in hourlyStats"
+              :key="h.hour"
+              class="flex-1 text-center text-[9px] font-mono tabular-nums"
+              :class="selectedHour === h.hour ? 'text-violet-600 dark:text-violet-400 font-bold' : 'text-fg-muted/50'"
+            >{{ h.hour }}</span>
+          </div>
         </div>
 
         <!-- 선택한 정각의 점유 좌석 상세 -->
-        <div v-if="selectedHourData" class="bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3 mb-6 text-sm">
+        <div v-if="selectedHourData" class="bg-card border-l-2 border-violet-500 border-y border-r border-line rounded-r-lg px-4 py-3 mb-6 text-sm">
           <div class="flex items-center gap-2 mb-2">
-            <span class="font-semibold text-blue-700">{{ selectedHourData.time }}</span>
-            <span class="text-xs text-neutral-500">점유 {{ selectedHourData.occupied }}석 / {{ selectedHourData.total }}석</span>
+            <span class="font-semibold text-violet-600 dark:text-violet-400 font-mono">{{ selectedHourData.time }}</span>
+            <span class="text-xs text-fg-muted font-mono tabular-nums">점유 {{ selectedHourData.occupied }}/{{ selectedHourData.total }}석</span>
           </div>
           <div v-if="selectedHourData.seats?.length" class="flex flex-wrap gap-1.5">
             <span
               v-for="sid in selectedHourData.seats"
               :key="sid"
-              class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium"
+              class="text-xs px-2 py-0.5 rounded font-mono font-medium bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-500/20"
             >{{ sid }}번</span>
           </div>
-          <div v-else class="text-xs text-neutral-400">이 시간에 점유된 좌석이 없습니다.</div>
+          <div v-else class="text-xs text-fg-muted">이 시간에 점유된 좌석이 없습니다.</div>
         </div>
 
         <!-- 가장 오래 점유한 좌석 순위 -->
-        <h2 class="text-sm font-bold text-neutral-700 mb-1">{{ rankingTitle }}</h2>
-        <p class="text-xs text-neutral-400 mb-2">하루 종일 10분마다 점유 여부를 확인해 좌석마다 누적한 시간입니다.</p>
-        <div class="bg-white rounded-xl border border-neutral-200 p-4">
-          <div
-            v-for="(row, i) in seatRows"
-            :key="row.seatId"
-            class="flex items-center gap-3 py-1.5"
-          >
-            <span
-              class="text-xs font-bold w-10 h-7 shrink-0 rounded-lg border flex items-center justify-center"
-              :class="isTopRow(i, row) ? 'border-red-300 text-red-600 bg-red-50' : 'border-neutral-200 text-neutral-400 bg-neutral-50'"
-            >{{ row.seatId }}</span>
-            <div
-              class="flex-1 h-3 rounded-full overflow-hidden bg-neutral-100"
-              :class="isTopRow(i, row) && barsFilled ? 'gauge-glow' : ''"
-              :title="`${row.seatId}번 · 점유 ${row.timeText} / ${rangeDescription}`"
-            >
-              <div
-                class="h-full rounded-full duration-700 ease-out"
-                :class="isTopRow(i, row) ? 'bg-red-400' : 'bg-red-100'"
-                :style="{ width: (barsFilled ? row.barPct : 0) + '%', transitionProperty: 'width', transitionDelay: (i * 50) + 'ms' }"
-              />
-            </div>
-            <span
-              class="text-xs w-16 text-right shrink-0 tabular-nums"
-              :class="isTopRow(i, row) ? 'text-neutral-700 font-semibold' : 'text-neutral-400'"
-            >{{ row.timeText }}</span>
-          </div>
+        <h2 class="text-sm font-bold text-fg mb-1">{{ rankingTitle }}</h2>
+        <p class="text-[11px] text-fg-muted mb-2">
+          하루 종일 10분마다 점유 여부를 확인해 좌석마다 누적한 시간입니다. 상위 {{ Math.min(8, seatRows.length) }}석을 보여줍니다.
+          <span v-if="selectedDay?.isToday" class="text-amber-600 dark:text-amber-400"> · {{ rangeDescription }}이라 하루 전체 기록보다 적을 수 있습니다.</span>
+        </p>
+        <div class="bg-card rounded-lg border border-line p-2">
+          <DitherFunnelChart :rows="seatRows" :max-items="8" />
         </div>
       </template>
+      </div>
     </div>
 
     <!-- 시간표 설정 모달 -->
@@ -132,10 +155,19 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import ScheduleModal from '@/components/modals/ScheduleModal.vue'
+import DitherStackedChart from '@/components/charts/DitherStackedChart.vue'
+import DitherFunnelChart from '@/components/charts/DitherFunnelChart.vue'
+import UiCard from '@/components/ui/UiCard.vue'
+import ClassroomSeatMap from '@/components/monitoring/ClassroomSeatMap.vue'
+import SeatDetailPanel from '@/components/monitoring/SeatDetailPanel.vue'
+import SnapshotTimeline from '@/components/monitoring/SnapshotTimeline.vue'
+import ErrorNotice from '@/components/ui/ErrorNotice.vue'
+import { useSnapshotTimeline } from '@/composables/useSnapshotTimeline'
+import { useDailyStats } from '@/composables/useDailyStats'
 import api from '@/api'
 
 const route = useRoute()
@@ -178,12 +210,14 @@ const weekDays = computed(() => {
 
 const selectedDateStr = ref(toDateStr(today))
 
-const loading = ref(false)
-const seatStats = ref({})
-const periodMinutes = ref(0)
-const hourlyStats = ref([])
+// 하루치 통계. 요일 탭을 빠르게 바꿀 때 늦게 온 응답이 최신 응답을 덮지 않고, 조회에 실패하면 이전 날짜
+// 통계를 비운다(composables/useDailyStats.js, 단위 테스트 있음).
+const { seatStats, periodMinutes, hourlyStats, loading, error: statsError, load: loadStats } = useDailyStats({
+  fetchDaily: (date) => api.get(`/analysis/${route.params.id}/occupancy-stats-daily`, { params: { date } }).then((r) => r.data),
+  fetchHourly: (date) => api.get(`/analysis/${route.params.id}/occupancy-hourly`, { params: { date } }).then((r) => r.data),
+  dateStr: selectedDateStr,
+})
 const selectedHour = ref(null)
-const barsFilled = ref(false)
 
 function toggleHour(hour) {
   selectedHour.value = selectedHour.value === hour ? null : hour
@@ -191,43 +225,73 @@ function toggleHour(hour) {
 
 const selectedHourData = computed(() => hourlyStats.value.find(h => h.hour === selectedHour.value) ?? null)
 
-async function fetchStats() {
-  loading.value = true
-  selectedHour.value = null
-  barsFilled.value = false
-  try {
-    const [dailyRes, hourlyRes] = await Promise.all([
-      api.get(`/analysis/${route.params.id}/occupancy-stats-daily`, { params: { date: selectedDateStr.value } }),
-      api.get(`/analysis/${route.params.id}/occupancy-hourly`, { params: { date: selectedDateStr.value } }),
-    ])
-    seatStats.value = dailyRes.data.seats ?? {}
-    periodMinutes.value = dailyRes.data.period_minutes ?? 0
-    hourlyStats.value = hourlyRes.data.hours ?? []
-  } catch (e) {
-    alert('점유 기록 조회 실패: ' + (e.response?.data?.detail ?? e.message))
-  } finally {
-    loading.value = false
-    // 막대를 0%로 먼저 그린 뒤 다음 프레임에 목표 길이로 전환해 게이지가 차오르는 것처럼 보이게 함
-    await nextTick()
-    requestAnimationFrame(() => { barsFilled.value = true })
-  }
-}
-
-onMounted(async () => {
-  await cStore.fetchOne(Number(route.params.id))
-  await fetchStats()
+// 선택된 시간대가 없으면 점유율이 가장 높은 시간대를 대신 보여준다
+const peakHourData = computed(() => {
+  const scheduled = hourlyStats.value.filter(h => h.scheduled && h.occupied !== null)
+  if (!scheduled.length) return null
+  return scheduled.reduce((max, h) => (h.occupied > (max?.occupied ?? -1) ? h : max), null)
 })
 
-watch(selectedDateStr, fetchStats)
+const displayHourData = computed(() => selectedHourData.value ?? peakHourData.value)
+
+async function fetchStats() {
+  selectedHour.value = null
+  await loadStats()
+}
 
 // 관리자가 설정해 놓은 전체 좌석 번호(숫자 오름차순)
-const allSeatIds = computed(() => {
+const realSeatIds = computed(() => {
   const ids = new Set()
   for (const cam of classroom.value?.cameras ?? []) {
     for (const sid of cam.seat_ids ?? []) ids.add(sid)
   }
   return [...ids].sort((a, b) => Number(a) - Number(b))
 })
+
+const allSeatIds = realSeatIds
+
+// ── 배치도 + 스냅샷 타임라인 ─────────────────────────────────────────────────
+const classroomId = computed(() => Number(route.params.id))
+
+// 맵 에디터가 저장한 배치도를 읽기만 한다(저장 형식/저장 요청 없음)
+const mapData = ref(null)
+const mapLoading = ref(true)
+
+async function loadMap() {
+  mapLoading.value = true
+  try {
+    const { data } = await api.get(`/classrooms/${classroomId.value}/map-data`)
+    mapData.value = data?.objects?.length ? data : null
+  } catch {
+    mapData.value = null // 404: 배치도 미등록
+  } finally {
+    mapLoading.value = false
+  }
+}
+
+const { slots, index, current, isLatest, seatStates, playing, intervalMin, load: loadTimeline, scrub, togglePlay, start: startTimeline, stop: stopTimeline } =
+  useSnapshotTimeline({ classroomId, dateStr: selectedDateStr, seatIds: realSeatIds })
+
+const selectedSeat = ref(null)
+const selectSeat = (id) => { selectedSeat.value = selectedSeat.value === id ? null : id }
+const selectedCamera = computed(() => classroom.value?.cameras.find((c) => (c.seat_ids ?? []).includes(selectedSeat.value)) ?? null)
+
+// 마운트 중 await가 끝나기 전에 화면을 떠나면 onUnmounted(stopTimeline)이 먼저 실행된다. 그 뒤에 startTimeline()이
+// 호출되면 1초 타이머가 정리되지 않고 남으므로, 떠난 뒤에는 시작하지 않는다.
+let unmounted = false
+onMounted(async () => {
+  await cStore.fetchOne(classroomId.value)
+  if (unmounted) return
+  await Promise.all([fetchStats(), loadMap(), loadTimeline()])
+  if (unmounted) return
+  startTimeline()
+})
+onUnmounted(() => {
+  unmounted = true
+  stopTimeline()
+})
+
+watch(selectedDateStr, fetchStats)
 
 const hasAnyData = computed(() => Object.keys(seatStats.value).length > 0)
 
@@ -250,10 +314,7 @@ const seatRows = computed(() => {
   return rows.sort((a, b) => b.occupiedMinutes - a.occupiedMinutes || Number(a.seatId) - Number(b.seatId))
 })
 
-// 가장 오래 사용된 좌석(1위)만 강조 표시
-function isTopRow(index, row) {
-  return index === 0 && row.occupiedMinutes > 0
-}
+const topSeat = computed(() => seatRows.value[0] ?? null)
 
 const selectedDay = computed(() => weekDays.value.find(d => d.dateStr === selectedDateStr.value))
 
@@ -275,16 +336,3 @@ const rankingTitle = computed(() => {
   return d.isToday ? '오늘 가장 오래 사용된 좌석' : `${d.shortDate}(${d.label}) 가장 오래 사용된 좌석`
 })
 </script>
-
-<style scoped>
-/* 1위 좌석 게이지가 다 채워진 뒤 잠깐 반짝이며 시선을 끄는 효과 */
-.gauge-glow {
-  animation: gauge-glow 1.1s ease-out 0.7s 1;
-}
-
-@keyframes gauge-glow {
-  0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.6); }
-  60% { box-shadow: 0 0 8px 3px rgba(248, 113, 113, 0.35); }
-  100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
-}
-</style>

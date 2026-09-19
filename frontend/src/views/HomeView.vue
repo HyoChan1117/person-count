@@ -1,19 +1,19 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 p-6 lg:p-8">
+  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
     <div class="max-w-7xl mx-auto">
 
       <!-- 헤더 -->
       <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
         <div>
-          <h1 class="text-2xl font-bold text-neutral-900 tracking-tight">홈</h1>
-          <p class="text-sm text-neutral-500 mt-0.5">지정한 교실의 YOLO 분석과 모니터링을 한 번에 확인하세요</p>
+          <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">홈</h1>
+          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">지정한 교실의 YOLO 분석과 모니터링을 한 번에 확인하세요</p>
         </div>
 
         <div class="flex items-center gap-2">
-          <label class="text-xs text-neutral-400 shrink-0">표시할 교실</label>
+          <label class="text-xs text-neutral-400 dark:text-neutral-600 shrink-0">표시할 교실</label>
           <select
             v-model="selectedId"
-            class="text-sm bg-white border border-neutral-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400 min-w-[9rem]"
+            class="text-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400 min-w-[9rem]"
           >
             <option v-if="!cStore.classrooms.length" :value="null">등록된 교실 없음</option>
             <option v-for="c in cStore.classrooms" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -22,20 +22,20 @@
       </div>
 
       <!-- 교실 미지정 -->
-      <div v-if="!selectedId" class="flex flex-col items-center justify-center py-28 text-neutral-400 gap-3">
-        <div class="w-14 h-14 rounded-2xl bg-neutral-100 flex items-center justify-center text-2xl">🏫</div>
+      <div v-if="!selectedId" class="flex flex-col items-center justify-center py-28 text-neutral-400 dark:text-neutral-600 gap-3">
+        <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">🏫</div>
         <p class="text-sm">표시할 교실이 없습니다. <router-link to="/classrooms" class="text-violet-600 hover:underline">교실을 추가</router-link>해보세요.</p>
       </div>
 
       <template v-else>
         <!-- YOLO 결과 -->
-        <div class="bg-white border border-neutral-200 rounded-2xl shadow-sm p-6 lg:p-8 mb-6">
+        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm p-6 lg:p-8 mb-6">
           <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center text-xl shrink-0">🪑</div>
               <div class="min-w-0">
                 <div class="text-xs font-medium text-violet-500 uppercase tracking-wide">YOLO 분석</div>
-                <div class="text-base font-semibold text-neutral-800 truncate">{{ classroom?.name }} 좌석 점유</div>
+                <div class="text-base font-semibold text-neutral-800 dark:text-neutral-100 truncate">{{ classroom?.name }} 좌석 점유</div>
               </div>
             </div>
             <button @click="refreshAll" :disabled="seatLoading" class="btn-primary shrink-0">
@@ -43,17 +43,17 @@
             </button>
           </div>
 
-          <div v-if="seatLoading && !seatResult" class="flex flex-col items-center justify-center py-20 text-neutral-400 text-sm gap-3">
-            <div class="w-9 h-9 rounded-full border-2 border-neutral-200 border-t-violet-500 animate-spin" />
+          <div v-if="seatLoading && !seatResult" class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 text-sm gap-3">
+            <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-violet-500 animate-spin" />
             분석 중...
           </div>
 
           <div v-else-if="seatResult">
             <div class="flex items-end gap-2 mb-4">
               <span class="text-4xl font-bold text-violet-600 leading-none">{{ seatResult.total_occupied }}</span>
-              <span class="text-base text-neutral-400 pb-1">/ {{ seatResult.total_seats }}석</span>
+              <span class="text-base text-neutral-400 dark:text-neutral-600 pb-1">/ {{ seatResult.total_seats }}석</span>
             </div>
-            <div class="w-full h-2.5 bg-neutral-100 rounded-full overflow-hidden mb-6">
+            <div class="w-full h-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden mb-6">
               <div
                 class="h-full bg-violet-500 rounded-full transition-all duration-500"
                 :style="{ width: seatResult.total_seats ? `${Math.round(seatResult.total_occupied / seatResult.total_seats * 100)}%` : '0%' }"
@@ -64,8 +64,8 @@
               <!-- 배치도 -->
               <div v-if="mapData?.objects?.length" class="w-full lg:w-1/2 shrink-0">
                 <div class="flex items-center justify-between mb-1">
-                  <span class="text-sm font-semibold text-neutral-800">교실 배치도</span>
-                  <div class="flex items-center gap-3 text-xs text-neutral-500 flex-wrap justify-end">
+                  <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">교실 배치도</span>
+                  <div class="flex items-center gap-3 text-xs text-neutral-500 dark:text-neutral-400 flex-wrap justify-end">
                     <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-400" />점유</span>
                     <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-neutral-300" />미점유</span>
                     <template v-if="seatFaces">
@@ -74,37 +74,37 @@
                     </template>
                   </div>
                 </div>
-                <p class="text-[11px] mb-2" :class="patrolState?.running ? 'text-violet-600' : 'text-neutral-400'">
+                <p class="text-[11px] mb-2" :class="patrolState?.running ? 'text-violet-600' : 'text-neutral-400 dark:text-neutral-600'">
                   <template v-if="patrolState?.running">
                     얼굴 인식 순찰 중... {{ patrolState.zone_index }}/{{ patrolState.total_zones }} 구역 ({{ patrolState.zone }})
                   </template>
                   <template v-else>좌석을 누르면 담당 카메라의 실시간 화면을 볼 수 있어요</template>
                 </p>
-                <canvas ref="mapCanvasRef" class="rounded-xl w-full border border-neutral-100 cursor-pointer" @click="onMapClick" />
+                <canvas ref="mapCanvasRef" class="rounded-xl w-full border border-neutral-100 dark:border-neutral-800 cursor-pointer" @click="onMapClick" />
               </div>
 
               <!-- 카메라별 카드 + 실시간 화면 -->
               <div class="flex-1 w-full flex flex-col gap-3">
                 <div class="grid gap-3" :class="mapData?.objects?.length ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'">
-                  <div v-for="cam in seatResult.cameras" :key="cam.camera_id" class="rounded-xl border border-neutral-200 p-4">
+                  <div v-for="cam in seatResult.cameras" :key="cam.camera_id" class="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div class="flex items-center justify-between mb-2.5">
-                      <span class="text-sm font-medium text-neutral-600">{{ cam.name }}</span>
+                      <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">{{ cam.name }}</span>
                       <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">{{ cam.occupied_count }}/{{ cam.total }}석</span>
                     </div>
                     <div class="flex flex-wrap gap-1.5">
                       <span v-for="s in cam.occupied" :key="'occ-'+s" class="text-xs px-2 py-0.5 rounded-md font-medium bg-red-50 text-red-600 border border-red-100">{{ s }}</span>
-                      <span v-for="s in cam.empty" :key="'emp-'+s" class="text-xs px-2 py-0.5 rounded-md bg-neutral-50 text-neutral-400 border border-neutral-100">{{ s }}</span>
+                      <span v-for="s in cam.empty" :key="'emp-'+s" class="text-xs px-2 py-0.5 rounded-md bg-neutral-50 dark:bg-neutral-950 text-neutral-400 dark:text-neutral-600 border border-neutral-100 dark:border-neutral-800">{{ s }}</span>
                     </div>
                   </div>
                 </div>
 
                 <!-- 배치도에서 선택한 CCTV의 실시간 화면 -->
-                <div v-if="liveCameraId" class="rounded-xl border border-neutral-200 overflow-hidden flex-1 flex flex-col">
-                  <div class="px-3 py-2 flex items-center justify-between bg-neutral-50 border-b border-neutral-100 shrink-0">
-                    <span class="text-xs font-medium text-neutral-600 flex items-center gap-1.5">
+                <div v-if="liveCameraId" class="rounded-xl border border-neutral-200 dark:border-neutral-800 overflow-hidden flex-1 flex flex-col">
+                  <div class="px-3 py-2 flex items-center justify-between bg-neutral-50 dark:bg-neutral-950 border-b border-neutral-100 dark:border-neutral-800 shrink-0">
+                    <span class="text-xs font-medium text-neutral-600 dark:text-neutral-400 flex items-center gap-1.5">
                       <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shrink-0" /> {{ liveCameraName }} 실시간
                     </span>
-                    <button @click="closeLiveView" class="text-neutral-400 hover:text-neutral-600 text-xs">✕ 닫기</button>
+                    <button @click="closeLiveView" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 text-xs">✕ 닫기</button>
                   </div>
                   <img :key="liveKey" :src="liveSrc" class="w-full flex-1 aspect-video object-cover bg-neutral-900" />
                 </div>
@@ -112,31 +112,31 @@
             </div>
           </div>
 
-          <div v-else class="flex flex-col items-center justify-center py-20 text-neutral-400 gap-2 text-sm text-center">
+          <div v-else class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 gap-2 text-sm text-center">
             <div class="text-2xl">📷</div>
             분석 결과를 불러오지 못했습니다
           </div>
         </div>
 
         <!-- 모니터링 -->
-        <div class="bg-white border border-neutral-200 rounded-2xl shadow-sm p-6 lg:p-8">
+        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm p-6 lg:p-8">
           <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
             <div class="flex items-center gap-3 min-w-0">
               <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-xl shrink-0">📊</div>
               <div class="min-w-0">
                 <div class="text-xs font-medium text-blue-500 uppercase tracking-wide">모니터링</div>
-                <div class="text-base font-semibold text-neutral-800">오늘 점유 기록</div>
+                <div class="text-base font-semibold text-neutral-800 dark:text-neutral-100">오늘 점유 기록</div>
               </div>
             </div>
-            <router-link :to="`/monitoring/${selectedId}`" class="text-sm text-neutral-400 hover:text-blue-600 transition shrink-0">전체 보기 →</router-link>
+            <router-link :to="`/monitoring/${selectedId}`" class="text-sm text-neutral-400 dark:text-neutral-600 hover:text-blue-600 transition shrink-0">전체 보기 →</router-link>
           </div>
 
-          <div v-if="monLoading" class="flex flex-col items-center justify-center py-20 text-neutral-400 text-sm gap-3">
-            <div class="w-9 h-9 rounded-full border-2 border-neutral-200 border-t-blue-500 animate-spin" />
+          <div v-if="monLoading" class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 text-sm gap-3">
+            <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-blue-500 animate-spin" />
             불러오는 중...
           </div>
 
-          <div v-else-if="!hasMonitoringData" class="flex flex-col items-center justify-center py-20 text-neutral-400 gap-2 text-sm text-center">
+          <div v-else-if="!hasMonitoringData" class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 gap-2 text-sm text-center">
             <div class="text-2xl">🕒</div>
             오늘 저장된 점유 기록이 없습니다.
           </div>
@@ -144,57 +144,57 @@
           <div v-else class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- 정각 기준 시간별 -->
             <div>
-              <div class="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">시간대별 점유</div>
+              <div class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">시간대별 점유</div>
               <div class="flex flex-wrap gap-2 mb-4">
                 <button
                   v-for="h in hourlyStats"
                   :key="h.hour"
                   :disabled="!h.scheduled || h.occupied === null"
                   @click="toggleHour(h.hour)"
-                  class="w-16 bg-neutral-50 rounded-lg border py-2 text-center transition"
+                  class="w-16 bg-neutral-50 dark:bg-neutral-950 rounded-lg border py-2 text-center transition"
                   :class="[
-                    !h.scheduled || h.occupied === null ? 'border-neutral-100 text-neutral-300 cursor-not-allowed' : 'border-neutral-200 hover:border-blue-300',
-                    selectedHour === h.hour ? '!border-blue-500 ring-1 ring-blue-500 bg-white' : '',
+                    !h.scheduled || h.occupied === null ? 'border-neutral-100 dark:border-neutral-800 text-neutral-300 dark:text-neutral-700 cursor-not-allowed' : 'border-neutral-200 dark:border-neutral-800 hover:border-blue-300',
+                    selectedHour === h.hour ? '!border-blue-500 ring-1 ring-blue-500 bg-white dark:bg-neutral-900' : '',
                   ]"
                 >
-                  <div class="text-xs font-semibold" :class="h.scheduled && h.occupied !== null ? 'text-neutral-700' : 'text-neutral-300'">{{ h.time }}</div>
-                  <div class="text-[10px] mt-0.5" :class="h.scheduled && h.occupied !== null ? 'text-neutral-400' : 'text-neutral-300'">
+                  <div class="text-xs font-semibold" :class="h.scheduled && h.occupied !== null ? 'text-neutral-700 dark:text-neutral-300' : 'text-neutral-300 dark:text-neutral-700'">{{ h.time }}</div>
+                  <div class="text-[10px] mt-0.5" :class="h.scheduled && h.occupied !== null ? 'text-neutral-400 dark:text-neutral-600' : 'text-neutral-300 dark:text-neutral-700'">
                     {{ h.occupied !== null ? `${h.occupied}석` : '-' }}
                   </div>
                 </button>
               </div>
 
-              <div v-if="selectedHourData" class="bg-blue-50/60 border border-blue-100 rounded-xl px-4 py-3">
+              <div v-if="selectedHourData" class="bg-blue-50/60 dark:bg-blue-500/10 border border-blue-100 rounded-xl px-4 py-3">
                 <div class="flex items-center gap-2 mb-2">
                   <span class="font-semibold text-blue-700 text-sm">{{ selectedHourData.time }}</span>
-                  <span class="text-xs text-neutral-500">점유 {{ selectedHourData.occupied }}석 / {{ selectedHourData.total }}석</span>
+                  <span class="text-xs text-neutral-500 dark:text-neutral-400">점유 {{ selectedHourData.occupied }}석 / {{ selectedHourData.total }}석</span>
                 </div>
                 <div v-if="selectedHourData.seats?.length" class="flex flex-wrap gap-1.5">
                   <span v-for="sid in selectedHourData.seats" :key="sid" class="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">{{ sid }}번</span>
                 </div>
-                <div v-else class="text-xs text-neutral-400">이 시간에 점유된 좌석이 없습니다.</div>
+                <div v-else class="text-xs text-neutral-400 dark:text-neutral-600">이 시간에 점유된 좌석이 없습니다.</div>
               </div>
             </div>
 
             <!-- 오늘 가장 오래 점유한 좌석 -->
             <div>
-              <div class="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-3">오늘 가장 오래 점유한 좌석</div>
+              <div class="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mb-3">오늘 가장 오래 점유한 좌석</div>
               <div v-if="topSeats.length" class="space-y-2.5">
                 <div v-for="(row, i) in topSeats" :key="row.seatId" class="flex items-center gap-3">
                   <span
                     class="text-xs font-bold w-9 h-7 shrink-0 rounded-md border flex items-center justify-center"
-                    :class="i === 0 && row.occupiedMinutes > 0 ? 'border-red-300 text-red-600 bg-red-50' : 'border-neutral-200 text-neutral-400 bg-neutral-50'"
+                    :class="i === 0 && row.occupiedMinutes > 0 ? 'border-red-300 text-red-600 bg-red-50' : 'border-neutral-200 dark:border-neutral-800 text-neutral-400 dark:text-neutral-600 bg-neutral-50 dark:bg-neutral-950'"
                   >{{ row.seatId }}</span>
-                  <div class="flex-1 h-3 rounded-full overflow-hidden bg-neutral-100">
+                  <div class="flex-1 h-3 rounded-full overflow-hidden bg-neutral-100 dark:bg-neutral-800">
                     <div
                       class="h-full rounded-full bg-red-400 transition-all duration-500"
                       :style="{ width: (topSeats[0]?.occupiedMinutes ? Math.round(row.occupiedMinutes / topSeats[0].occupiedMinutes * 100) : 0) + '%' }"
                     />
                   </div>
-                  <span class="text-xs w-16 text-right shrink-0 text-neutral-500 tabular-nums">{{ formatMinutes(row.occupiedMinutes) }}</span>
+                  <span class="text-xs w-16 text-right shrink-0 text-neutral-500 dark:text-neutral-400 tabular-nums">{{ formatMinutes(row.occupiedMinutes) }}</span>
                 </div>
               </div>
-              <p v-else class="text-xs text-neutral-400">등록된 좌석이 없습니다.</p>
+              <p v-else class="text-xs text-neutral-400 dark:text-neutral-600">등록된 좌석이 없습니다.</p>
             </div>
           </div>
         </div>

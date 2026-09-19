@@ -1,14 +1,14 @@
 <template>
   <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-6" @click.self="$emit('close')">
-    <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-full overflow-y-auto">
+    <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-4xl max-h-full overflow-y-auto">
 
       <!-- 헤더 -->
-      <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between gap-4">
+      <div class="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-4">
         <div>
-          <h2 class="font-bold text-neutral-800">{{ zone.name }} · 자리 영역(ROI) 설정</h2>
-          <p class="text-xs text-neutral-500 mt-0.5">앞쪽 선 2클릭, 뒤쪽 선 2클릭으로 자리를 감싸세요. 그 안에서 인식된 얼굴만 기록됩니다.</p>
+          <h2 class="font-bold text-neutral-800 dark:text-neutral-100">{{ zone.name }} · 자리 영역(ROI) 설정</h2>
+          <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">앞쪽 선 2클릭, 뒤쪽 선 2클릭으로 자리를 감싸세요. 그 안에서 인식된 얼굴만 기록됩니다.</p>
         </div>
-        <button @click="$emit('close')" class="text-neutral-400 hover:text-neutral-600 shrink-0">✕</button>
+        <button @click="$emit('close')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 shrink-0">✕</button>
       </div>
 
       <div class="p-6">
@@ -16,18 +16,18 @@
           {{ error }}
         </div>
 
-        <div v-else-if="!snapshotUrl" class="flex flex-col items-center justify-center py-20 text-neutral-400 gap-3 text-sm">
-          <div class="w-9 h-9 rounded-full border-2 border-neutral-200 border-t-violet-500 animate-spin" />
+        <div v-else-if="!snapshotUrl" class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 gap-3 text-sm">
+          <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-violet-500 animate-spin" />
           카메라를 구역으로 옮기는 중...
         </div>
 
         <template v-else>
           <!-- 진행 안내 -->
           <div class="mb-2 flex items-center gap-3 flex-wrap text-xs">
-            <span class="font-semibold text-neutral-700">자리 그리기</span>
+            <span class="font-semibold text-neutral-700 dark:text-neutral-300">자리 그리기</span>
             <span v-if="draft.length < 2" class="text-orange-600">① 앞쪽 선: 시작점 → 끝점 클릭</span>
             <span v-else-if="draft.length < 4" class="text-emerald-600">② 뒤쪽 선: 시작점 → 끝점 클릭 (4번째에 자동 완성)</span>
-            <button v-if="draft.length" @click="draft.pop()" class="text-neutral-400 hover:text-neutral-700 underline">되돌리기</button>
+            <button v-if="draft.length" @click="draft.pop()" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-700 dark:hover:text-neutral-200 underline">되돌리기</button>
           </div>
 
           <!-- 그리기 영역 -->
@@ -44,7 +44,7 @@
             />
 
             <!-- 화면이 뜨기 전까지 안내 (이미지는 미리 붙여둬야 load 이벤트가 온다) -->
-            <div v-if="!imageReady" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-sm text-neutral-300">
+            <div v-if="!imageReady" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-sm text-neutral-300 dark:text-neutral-700">
               <div class="w-9 h-9 rounded-full border-2 border-neutral-600 border-t-violet-400 animate-spin" />
               화면을 가져오는 중...
             </div>
@@ -80,19 +80,19 @@
           <!-- 목록 -->
           <div class="mt-4">
             <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-semibold text-neutral-800">자리 {{ rois.length }}개</span>
-              <button v-if="rois.length" @click="rois = []; draft = []" class="text-xs text-neutral-400 hover:text-red-500 transition">모두 지우기</button>
+              <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">자리 {{ rois.length }}개</span>
+              <button v-if="rois.length" @click="rois = []; draft = []" class="text-xs text-neutral-400 dark:text-neutral-600 hover:text-red-500 transition">모두 지우기</button>
             </div>
 
-            <div v-if="!rois.length" class="text-xs text-neutral-400 py-3">
+            <div v-if="!rois.length" class="text-xs text-neutral-400 dark:text-neutral-600 py-3">
               아직 지정한 자리가 없습니다. 화면을 클릭해 선을 그어보세요.
             </div>
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div v-for="(r, i) in rois" :key="i" class="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-2">
+              <div v-for="(r, i) in rois" :key="i" class="flex items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 py-2">
                 <span class="w-5 h-5 rounded bg-violet-100 text-violet-700 text-[11px] flex items-center justify-center shrink-0">{{ i + 1 }}</span>
                 <input v-model="r.name" class="flex-1 min-w-0 text-sm border-0 focus:outline-none" />
-                <button @click="rois.splice(i, 1)" class="text-neutral-300 hover:text-red-400 text-xs shrink-0">✕</button>
+                <button @click="rois.splice(i, 1)" class="text-neutral-300 dark:text-neutral-700 hover:text-red-400 text-xs shrink-0">✕</button>
               </div>
             </div>
           </div>
@@ -100,12 +100,12 @@
       </div>
 
       <!-- 하단 -->
-      <div class="px-6 py-4 border-t border-neutral-100 flex items-center justify-between gap-3">
-        <p class="text-[11px] text-neutral-400">
+      <div class="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between gap-3">
+        <p class="text-[11px] text-neutral-400 dark:text-neutral-600">
           구역의 팬·틸트·줌을 바꾸면 이 영역들은 화면과 어긋나므로 다시 지정해야 합니다.
         </p>
         <div class="flex gap-2 shrink-0">
-          <button @click="$emit('close')" class="bg-neutral-100 text-neutral-700 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 transition">취소</button>
+          <button @click="$emit('close')" class="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition">취소</button>
           <button @click="save" :disabled="saving || !imageReady" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50">
             {{ saving ? '저장 중...' : '저장' }}
           </button>
