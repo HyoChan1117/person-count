@@ -1,6 +1,8 @@
 """분석 라우터: 프레임 캡처, ROI 저장, 인원 카운트."""
 from __future__ import annotations
 
+import asyncio
+import json
 import threading
 from datetime import datetime, timedelta
 
@@ -430,3 +432,32 @@ def occupancy_hourly(classroom_id: int, date: str):
     from app.services.occupancy_monitor import compute_hourly_occupancy
     hours = compute_hourly_occupancy(classroom_id, date, schedule=classroom.schedule)
     return {"date": date, "hours": hours}
+
+
+@router.get("/{classroom_id}/occupancy-events")
+async def occupancy_events(classroom_id: int, request: Request):
+    """Stream an event whenever a new stored occupancy snapshot appears."""
+    classroom = storage.get_one(classroom_id)
+    if not classroom:
+        raise HTTPException(404, "Classroom not found")
+
+    async def event_stream():
+        last_ts = None
+        while True:
+            if await request.is_disconnected():
+                break
+            snapshots = storage.get_occupancy_history(classroom_id)
+            latest = snapshots[-1] if snapshots else None
+            ts = latest.get("ts") if latest else None
+            if latest and ts != last_ts:
+                last_ts = ts
+                payload = json.dumps(
+                    {"ts": ts, "seats": latest.get("seats", {})},
+                    ensure_ascii=False,
+                )
+                yield f"event: occupancy\ndata: {payload}\n\n"
+            else:
+                yield ": keepalive\n\n"
+            await asyncio.sleep(2)
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")

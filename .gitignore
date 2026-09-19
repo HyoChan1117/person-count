@@ -61,6 +61,10 @@ runs
 # 얼굴 인식 모델 (용량이 커서 커밋하지 않음, 최초 실행 시 자동 다운로드)
 backend/data/insightface/
 
+# Runtime face images
+backend/data/face/detections/*.jpg
+backend/data/face/photos/*.jpg
+
 # Local tooling and large model weights (ecc/ is its own git repository)
 ecc/
 backend/*.pt

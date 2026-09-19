@@ -1,132 +1,113 @@
 <template>
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="$emit('close')">
-    <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-xl mx-4 flex flex-col max-h-[90vh]">
-      <!-- 헤더 -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" @click.self="emit('close')">
+    <div class="ds-text flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-card border border-line bg-card shadow-xl">
+      <div class="flex items-start justify-between gap-4 border-b border-line px-card py-5">
         <div>
-          <h2 class="font-bold text-neutral-800 dark:text-neutral-100">YOLO+LLM 설정 — {{ classroom.name }}</h2>
-          <p class="text-xs text-neutral-400 dark:text-neutral-600 mt-0.5">모델, 임계값, AI 카운팅 지침을 설정하세요</p>
+          <p class="text-xs font-semibold uppercase tracking-wide text-fg-muted">AI 분석 설정</p>
+          <h2 class="mt-1 text-xl font-bold text-fg">YOLO+LLM 설정</h2>
+          <p class="mt-1 text-sm text-fg-muted">{{ classroom.name }}의 모델, 임계값, 카운팅 지침을 설정하세요.</p>
         </div>
-        <button @click="$emit('close')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 text-xl leading-none">✕</button>
+        <button type="button" class="icon-button" aria-label="닫기" @click="emit('close')">×</button>
       </div>
 
-      <!-- 본문 -->
-      <div class="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-
-        <!-- YOLO 모델 선택 -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">YOLO 감지 모델</label>
-          <div class="grid grid-cols-2 gap-2">
+      <div class="flex-1 space-y-6 overflow-y-auto px-card py-5">
+        <section class="space-y-3">
+          <h3 class="section-title">YOLO 감지 모델</h3>
+          <div class="grid gap-2 sm:grid-cols-2">
             <label
               v-for="opt in YOLO_MODEL_OPTIONS"
               :key="opt.value"
               class="model-option"
               :class="{ 'model-option--selected': selectedYoloModel === opt.value }"
             >
-              <input type="radio" :value="opt.value" v-model="selectedYoloModel" class="sr-only" />
-              <div class="font-medium text-sm">{{ opt.label }}</div>
-              <div class="text-[11px] text-neutral-400 dark:text-neutral-600 mt-0.5">{{ opt.desc }}</div>
+              <input v-model="selectedYoloModel" type="radio" :value="opt.value" class="sr-only" />
+              <span class="text-sm font-semibold text-fg">{{ opt.label }}</span>
+              <span class="mt-1 block text-xs text-fg-muted">{{ opt.desc }}</span>
             </label>
           </div>
-        </div>
+        </section>
 
-        <!-- LLM 모델 선택 -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">LLM 모델</label>
-          <div class="grid grid-cols-2 gap-2">
+        <section class="space-y-3">
+          <h3 class="section-title">LLM 모델</h3>
+          <div class="grid gap-2 sm:grid-cols-2">
             <label
               v-for="opt in LLM_MODEL_OPTIONS"
               :key="opt.value"
               class="model-option"
               :class="{ 'model-option--selected': selectedLlmModel === opt.value }"
             >
-              <input type="radio" :value="opt.value" v-model="selectedLlmModel" class="sr-only" />
-              <div class="font-medium text-sm">{{ opt.label }}</div>
-              <div class="text-[11px] text-neutral-400 dark:text-neutral-600 mt-0.5">{{ opt.desc }}</div>
+              <input v-model="selectedLlmModel" type="radio" :value="opt.value" class="sr-only" />
+              <span class="text-sm font-semibold text-fg">{{ opt.label }}</span>
+              <span class="mt-1 block text-xs text-fg-muted">{{ opt.desc }}</span>
             </label>
           </div>
-        </div>
+        </section>
 
-        <!-- YOLO 감지 임계값 -->
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">YOLO 감지 임계값</label>
+        <section class="space-y-2">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="section-title">YOLO 감지 임계값</h3>
             <div class="flex items-center gap-2">
-              <span class="text-sm font-mono font-semibold text-blue-600">{{ confThreshold.toFixed(2) }}</span>
-              <button
-                @click="confThreshold = 0.35"
-                class="text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 underline underline-offset-2"
-              >기본값 (0.35)</button>
+              <span class="font-mono text-sm font-semibold text-fg">{{ confThreshold.toFixed(2) }}</span>
+              <button type="button" class="reset-link" @click="confThreshold = 0.35">기본값 0.35</button>
             </div>
           </div>
           <input
-            type="range"
             v-model.number="confThreshold"
-            min="0.10" max="0.90" step="0.05"
-            class="w-full accent-blue-500"
+            type="range"
+            min="0.10"
+            max="0.90"
+            step="0.05"
+            class="w-full accent-fg"
           />
-          <div class="flex justify-between text-[10px] text-neutral-400 dark:text-neutral-600 mt-1">
-            <span>0.10 — 민감 (오탐 증가)</span>
-            <span>0.90 — 보수적 (미탐 증가)</span>
+          <div class="flex justify-between text-[11px] text-fg-muted">
+            <span>0.10 민감</span>
+            <span>0.90 보수적</span>
           </div>
-        </div>
+        </section>
 
-        <div class="h-px bg-neutral-100 dark:bg-neutral-800" />
+        <div class="h-px bg-line" />
 
-        <!-- 카운트 제외 대상 -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">카운트 제외 대상</label>
-          <div class="flex gap-2 mb-2">
+        <section class="space-y-3">
+          <h3 class="section-title">카운트 제외 대상</h3>
+          <div class="flex gap-2">
             <input
               v-model="exclusionInput"
-              @keydown.enter.prevent="addExclusionItem"
               type="text"
+              class="field flex-1"
               placeholder="예: 모니터 화면 속 사람"
-              class="input flex-1"
+              @keydown.enter.prevent="addExclusionItem"
             />
-            <button
-              @click="addExclusionItem"
-              :disabled="!exclusionInput.trim()"
-              class="btn-add"
-            >추가</button>
+            <button type="button" class="btn-add" :disabled="!exclusionInput.trim()" @click="addExclusionItem">추가</button>
           </div>
-          <div v-if="exclusionItems.length" class="flex flex-wrap gap-2 mt-2">
-            <span
-              v-for="(item, i) in exclusionItems"
-              :key="i"
-              class="inline-flex items-center gap-1.5 bg-red-50 text-red-700 text-xs px-3 py-1.5 rounded-full"
-            >
+          <div v-if="exclusionItems.length" class="flex flex-wrap gap-2">
+            <span v-for="(item, i) in exclusionItems" :key="i" class="chip">
               {{ item }}
-              <button @click="exclusionItems.splice(i, 1)" class="text-red-400 hover:text-red-600 leading-none">✕</button>
+              <button type="button" class="text-fg-muted hover:text-fg" aria-label="제외 대상 삭제" @click="exclusionItems.splice(i, 1)">×</button>
             </span>
           </div>
-          <p v-else class="text-xs text-neutral-400 dark:text-neutral-600 mt-1">제외 대상이 없습니다. 위에서 항목을 추가하세요.</p>
-        </div>
+          <p v-else class="text-xs text-fg-muted">제외 대상이 없습니다. 필요하면 위에서 항목을 추가하세요.</p>
+        </section>
 
-        <!-- 기타 지침 -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">기타 지침 <span class="text-neutral-400 dark:text-neutral-600 font-normal">(선택)</span></label>
+        <section class="space-y-2">
+          <h3 class="section-title">기타 지침 <span class="font-normal text-fg-muted">(선택)</span></h3>
           <textarea
             v-model="extraNotes"
             rows="5"
-            placeholder="각 사람이 좌석에 앉아 있는지(seated), 서 있는지(standing) 판단하세요."
             class="textarea w-full"
+            placeholder="각 사람이 좌석에 앉아 있는지(seated), 서 있는지(standing) 판단하세요."
           />
-        </div>
+        </section>
 
-        <!-- 기본 프롬프트 미리보기 -->
-        <div v-if="promptStore.config.default_user_prompt" class="bg-neutral-50 dark:bg-neutral-950 rounded-lg px-4 py-3">
-          <p class="text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1">기본 프롬프트 (위의 지침이 이 뒤에 이어붙여짐)</p>
-          <p class="text-xs text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">{{ promptStore.config.default_user_prompt }}</p>
-        </div>
-
+        <section v-if="promptStore.config.default_user_prompt" class="rounded-lg border border-line bg-canvas px-4 py-3">
+          <p class="text-xs font-semibold text-fg">기본 프롬프트</p>
+          <p class="mt-2 whitespace-pre-wrap text-xs leading-5 text-fg-muted">{{ promptStore.config.default_user_prompt }}</p>
+        </section>
       </div>
 
-      <!-- 푸터 -->
-      <div class="flex gap-2 justify-end px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
-        <button v-if="isDirty" @click="resetAll" class="btn-ghost mr-auto">초기화</button>
-        <button @click="$emit('close')" class="btn-ghost">취소</button>
-        <button @click="handleSave" :disabled="saving" class="btn-primary">
+      <div class="flex items-center justify-end gap-2 border-t border-line bg-canvas px-card py-4">
+        <button v-if="isDirty" type="button" class="btn-ghost mr-auto" @click="resetAll">초기화</button>
+        <button type="button" class="btn-ghost" @click="emit('close')">취소</button>
+        <button type="button" class="btn-primary" :disabled="saving" @click="handleSave">
           {{ saving ? '저장 중...' : '저장' }}
         </button>
       </div>
@@ -135,21 +116,29 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 import { usePromptStore } from '@/stores/promptStore.js'
 
 const YOLO_MODEL_OPTIONS = [
-  { value: 'yolo26x', label: 'YOLO26x', desc: '강의실 — 사람 몸 감지 (고정밀)' },
+  { value: 'yolo26x', label: 'YOLO26x', desc: '강의실 사람 몸 감지 (고정밀)' },
 ]
 
 const LLM_MODEL_OPTIONS = [
   { value: 'claude-sonnet-5', label: 'Sonnet 5', desc: '빠름 / 저비용 (기본값)' },
-  { value: 'claude-opus-5',   label: 'Opus 5',   desc: '정확 / 고비용' },
+  { value: 'claude-opus-5', label: 'Opus 5', desc: '정확 / 고비용' },
 ]
 
 const EXCLUSION_HEADER = '# 카운트 제외 대상'
-const SEAT_HEADER = '# 카메라별 자릿수'
+const SEAT_HEADERS = ['# 카메라별 좌석', '# 카메라별 자릿수']
+
+const props = defineProps({
+  classroom: { type: Object, required: true },
+})
+const emit = defineEmits(['close'])
+
+const classroomStore = useClassroomStore()
+const promptStore = usePromptStore()
 
 function extractListSection(text, header) {
   const idx = text.indexOf(header)
@@ -160,6 +149,7 @@ function extractListSection(text, header) {
   const items = []
   const leftover = []
   let inList = true
+
   for (const line of lines) {
     const trimmed = line.trim()
     if (!trimmed) continue
@@ -170,17 +160,9 @@ function extractListSection(text, header) {
       leftover.push(line)
     }
   }
+
   return { items, rest: [before, ...leftover].filter(Boolean).join('\n').trim() }
 }
-
-
-const props = defineProps({
-  classroom: { type: Object, required: true },
-})
-const emit = defineEmits(['close'])
-
-const classroomStore = useClassroomStore()
-const promptStore = usePromptStore()
 
 function parsePrompt(text) {
   const result = { exclusions: [], extra: '' }
@@ -188,7 +170,7 @@ function parsePrompt(text) {
 
   let remaining = text
 
-  for (const deadHeader of ['# 카운팅 방식', '# 대표 카메라']) {
+  for (const deadHeader of ['# 카운트 방식', '# 카운팅 방식', '# 대상 카메라', '# 대표 카메라']) {
     const idx = remaining.indexOf(deadHeader)
     if (idx !== -1) {
       const before = remaining.slice(0, idx).trim()
@@ -196,6 +178,7 @@ function parsePrompt(text) {
       const lines = after.split('\n')
       const leftover = []
       let inList = true
+
       for (const line of lines) {
         const trimmed = line.trim()
         if (!trimmed) continue
@@ -203,17 +186,20 @@ function parsePrompt(text) {
         inList = false
         leftover.push(line)
       }
+
       remaining = [before, ...leftover].filter(Boolean).join('\n').trim()
     }
   }
 
-  const seatIdx = remaining.indexOf(SEAT_HEADER)
-  if (seatIdx !== -1) {
+  const seatHeader = SEAT_HEADERS.find(header => remaining.includes(header))
+  if (seatHeader) {
+    const seatIdx = remaining.indexOf(seatHeader)
     const before = remaining.slice(0, seatIdx).trim()
-    const after = remaining.slice(seatIdx + SEAT_HEADER.length)
+    const after = remaining.slice(seatIdx + seatHeader.length)
     const lines = after.split('\n')
     const leftover = []
     let inList = true
+
     for (const line of lines) {
       const trimmed = line.trim()
       if (!trimmed) continue
@@ -221,14 +207,13 @@ function parsePrompt(text) {
       inList = false
       leftover.push(line)
     }
+
     remaining = [before, ...leftover].filter(Boolean).join('\n').trim()
   }
 
   const excl = extractListSection(remaining, EXCLUSION_HEADER)
   result.exclusions = excl.items
-  remaining = excl.rest
-
-  result.extra = remaining
+  result.extra = excl.rest
 
   return result
 }
@@ -244,7 +229,6 @@ function serializePrompt(exclusions, extra) {
 }
 
 const DEFAULT_EXTRA = '각 사람이 좌석에 앉아 있는지(seated), 서 있는지(standing) 판단하세요.'
-
 const parsed = parsePrompt(props.classroom.prompt ?? '')
 
 const selectedYoloModel = ref(props.classroom.yolo_llm_yolo_model ?? 'yolo26x')
@@ -255,10 +239,7 @@ const extraNotes = ref(parsed.extra || DEFAULT_EXTRA)
 const exclusionInput = ref('')
 const saving = ref(false)
 
-const isDirty = computed(() =>
-  exclusionItems.value.length > 0 ||
-  extraNotes.value.trim()
-)
+const isDirty = computed(() => exclusionItems.value.length > 0 || extraNotes.value.trim())
 
 function addExclusionItem() {
   const val = exclusionInput.value.trim()
@@ -276,13 +257,8 @@ function resetAll() {
 async function handleSave() {
   saving.value = true
   try {
-    const prompt = serializePrompt(
-      exclusionItems.value,
-      extraNotes.value,
-    ) || null
-
     await classroomStore.saveClassroom(props.classroom.id, {
-      prompt,
+      prompt: serializePrompt(exclusionItems.value, extraNotes.value) || null,
       yolo_llm_yolo_model: selectedYoloModel.value,
       yolo_llm_model: selectedLlmModel.value,
       yolo_llm_conf_threshold: confThreshold.value,
@@ -295,25 +271,49 @@ async function handleSave() {
 </script>
 
 <style scoped>
-.input {
-  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400;
+.section-title {
+  @apply text-sm font-semibold text-fg;
 }
+
+.icon-button {
+  @apply grid h-9 w-9 place-items-center rounded-lg border border-transparent text-2xl leading-none text-fg-muted transition-colors hover:border-line hover:bg-line/40 hover:text-fg;
+}
+
+.field,
 .textarea {
-  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none;
+  @apply rounded-lg border border-line bg-canvas px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted;
 }
-.btn-add {
-  @apply bg-neutral-800 text-white text-sm px-4 py-2 rounded-lg hover:bg-neutral-700 disabled:opacity-40 transition;
+
+.textarea {
+  @apply resize-none leading-6;
 }
-.btn-primary {
-  @apply bg-blue-600 text-white text-sm px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition;
-}
-.btn-ghost {
-  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-5 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition;
-}
+
 .model-option {
-  @apply cursor-pointer border border-neutral-200 dark:border-neutral-800 rounded-xl p-3 transition hover:border-blue-300 hover:bg-blue-50;
+  @apply cursor-pointer rounded-lg border border-line bg-card p-3 transition-colors hover:bg-line/40;
 }
+
 .model-option--selected {
-  @apply border-blue-500 bg-blue-50 ring-1 ring-blue-400;
+  @apply !border-slate-400 !bg-slate-100/70 dark:!border-slate-500 dark:!bg-slate-800/70;
+}
+
+.chip {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-canvas px-3 py-1.5 text-xs font-medium text-fg;
+}
+
+.reset-link {
+  @apply text-xs font-medium text-fg-muted underline underline-offset-2 transition-colors hover:text-fg;
+}
+
+.btn-add,
+.btn-primary {
+  @apply rounded-lg !bg-slate-900 px-4 py-2.5 text-sm font-semibold !text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 dark:!bg-slate-100 dark:!text-slate-950;
+}
+
+.btn-primary {
+  @apply px-5;
+}
+
+.btn-ghost {
+  @apply rounded-lg border border-line px-5 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg;
 }
 </style>

@@ -31,14 +31,17 @@
         >{{ hour }}</span>
       </div>
 
-      <dl class="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-2 text-sm">
-        <dt class="text-fg-muted">판정 결과</dt>
-        <dd class="text-fg">{{ verdict }}</dd>
-        <dt class="text-fg-muted">스냅샷 시각</dt>
-        <dd class="tabular-nums text-fg">{{ slotLabel }}</dd>
-        <dt class="text-fg-muted">담당 카메라</dt>
-        <dd class="text-fg">{{ camera ? camera.name : '배정된 카메라 없음' }}</dd>
-      </dl>
+      <div v-if="participation?.missedHours?.length" class="space-y-2">
+        <p class="text-sm font-semibold text-fg">미참여 수업</p>
+        <div class="flex flex-wrap gap-1.5">
+          <span
+            v-for="hour in participation.missedHours"
+            :key="hour"
+            class="rounded-md border border-state-alert/30 bg-state-alert/10 px-2 py-0.5 text-sm tabular-nums text-state-alert"
+          >{{ hour }}</span>
+        </div>
+      </div>
+
     </template>
 
     <div v-else class="flex flex-1 flex-col items-center justify-center gap-2 text-center">
@@ -65,9 +68,6 @@ const props = defineProps({
   participation: { type: Object, default: null },
 })
 
-const VERDICTS = { occupied: '점유', empty: '미점유', unknown: '확인 불가' }
-const verdict = computed(() => (props.hasRecord ? VERDICTS[props.state] ?? VERDICTS.unknown : '이 시각 기록 없음'))
-const slotLabel = computed(() => (props.slot ? props.slot.ts.replace('T', ' ').slice(0, 16) : '-'))
 const minutesText = computed(() => {
   const m = props.stat?.occupied_minutes ?? 0
   const h = Math.floor(m / 60)

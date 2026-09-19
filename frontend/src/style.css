@@ -78,4 +78,88 @@ body {
   .ds-root {
     background-color: rgb(var(--color-canvas));
   }
+
+  /* Legacy screens used violet focus rings/buttons. Keep any stale or scoped
+     component styles aligned with the current token palette. */
+  .btn-primary {
+    background-color: rgb(var(--color-fg)) !important;
+    color: rgb(var(--color-canvas)) !important;
+  }
+
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    --tw-ring-color: transparent !important;
+    border-color: rgb(var(--color-fg-muted)) !important;
+    box-shadow: none !important;
+  }
+
+  /* Design-system compatibility layer.
+     Older screens still have Tailwind's neutral/traffic-light utilities in
+     small controls. Inside app pages, reinterpret them through the current
+     tokens so every page keeps the same canvas, card, line, and state colors. */
+  .ds-root :is(.bg-neutral-50, .dark\:bg-neutral-950, .bg-neutral-100, .dark\:bg-neutral-800) {
+    background-color: rgb(var(--color-canvas) / 0.55) !important;
+  }
+
+  .ds-root :is(.bg-white, .dark\:bg-neutral-900) {
+    background-color: rgb(var(--color-card)) !important;
+  }
+
+  .ds-root :is(.bg-neutral-900, .bg-neutral-800) {
+    background-color: rgb(var(--color-fg)) !important;
+    color: rgb(var(--color-canvas)) !important;
+  }
+
+  .ds-root :is(.border-neutral-100, .dark\:border-neutral-800, .border-neutral-200, .border-neutral-700, .border-neutral-800) {
+    border-color: rgb(var(--color-line)) !important;
+  }
+
+  .ds-root :is(.text-neutral-300, .dark\:text-neutral-700, .text-neutral-400, .dark\:text-neutral-600, .text-neutral-500, .dark\:text-neutral-400, .text-neutral-600, .dark\:text-neutral-300) {
+    color: rgb(var(--color-fg-muted)) !important;
+  }
+
+  .ds-root :is(.text-neutral-700, .dark\:text-neutral-300, .text-neutral-800, .dark\:text-neutral-100, .text-neutral-900, .dark\:text-neutral-50) {
+    color: rgb(var(--color-fg)) !important;
+  }
+
+  .ds-root :is(.bg-emerald-50, .dark\:bg-emerald-500\/10, .bg-emerald-100) {
+    background-color: rgb(var(--color-state-occupied) / 0.12) !important;
+  }
+
+  .ds-root :is(.border-emerald-200, .dark\:border-emerald-500\/30) {
+    border-color: rgb(var(--color-state-occupied) / 0.35) !important;
+  }
+
+  .ds-root :is(.text-emerald-400, .dark\:text-emerald-400, .text-emerald-600, .text-emerald-700) {
+    color: rgb(var(--color-state-occupied)) !important;
+  }
+
+  .ds-root :is(.bg-red-50, .dark\:bg-red-500\/10, .bg-red-100, .bg-red-500\/10) {
+    background-color: rgb(var(--color-state-alert) / 0.12) !important;
+  }
+
+  .ds-root :is(.border-red-100, .border-red-200, .dark\:border-red-500\/30, .border-red-500\/20, .border-red-500\/30) {
+    border-color: rgb(var(--color-state-alert) / 0.35) !important;
+  }
+
+  .ds-root :is(.text-red-300, .dark\:text-red-300, .text-red-400, .text-red-500, .text-red-600, .text-red-700) {
+    color: rgb(var(--color-state-alert)) !important;
+  }
+
+  .ds-root :is(.bg-amber-50, .bg-amber-100, .dark\:bg-amber-500\/15) {
+    background-color: rgb(var(--color-state-unknown) / 0.12) !important;
+  }
+
+  .ds-root :is(.border-amber-200, .dark\:border-amber-500\/30) {
+    border-color: rgb(var(--color-state-unknown) / 0.35) !important;
+  }
+
+  .ds-root :is(.text-amber-400, .text-amber-700, .dark\:text-amber-400) {
+    color: rgb(var(--color-state-unknown)) !important;
+  }
 }

@@ -1,8 +1,34 @@
 <template>
-  <div class="ds-root flex h-full overflow-hidden">
+  <div class="ds-root flex h-full flex-col overflow-hidden">
+
+    <header class="shrink-0 bg-canvas p-section pb-gutter">
+      <div class="mx-auto flex w-full max-w-[1680px] items-end justify-between gap-section">
+        <div class="min-w-0">
+          <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
+          <h1 class="mt-1 text-3xl font-bold tracking-tight text-fg">맵 에디터</h1>
+          <p class="mt-1 text-lg text-fg-muted">{{ classroom?.name }}의 좌석 배치와 CCTV 위치를 설정합니다</p>
+        </div>
+        <div class="flex shrink-0 items-center gap-3 text-xs text-fg-muted">
+          <template v-if="seatAssignMode">
+            <span class="mr-1 inline-block h-2 w-2 rounded-full" :style="{ background: getCctvColor(assigningCctvId) }" />
+            <span class="font-medium text-state-unknown">자리 선택 모드</span>
+            책상을 클릭하여 배정 / ESC 종료
+          </template>
+          <template v-else-if="activeTool">
+            <span class="font-medium text-fg">{{ TOOLS.find(t => t.type === activeTool)?.label }}</span>
+            선택한 뒤 캔버스를 클릭해 배치
+          </template>
+          <template v-else>
+            클릭 또는 드래그로 객체 선택
+          </template>
+        </div>
+      </div>
+    </header>
+
+    <div class="mx-auto grid min-h-0 w-full max-w-[1680px] flex-1 grid-cols-[18rem_minmax(0,1fr)] gap-gutter overflow-hidden bg-canvas p-gutter">
 
     <!-- Sidebar -->
-    <aside class="flex w-60 shrink-0 flex-col border-r border-line bg-card">
+    <aside class="flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-card shadow-card">
       <div class="flex-1 overflow-y-auto p-3">
       <section class="space-y-1">
         <h2 class="px-3 pb-2 pt-1 text-sm font-semibold text-fg">객체 배치</h2>
@@ -140,12 +166,10 @@
     </aside>
 
     <!-- Main area -->
-    <div class="flex min-w-0 flex-1 flex-col">
+    <div class="flex min-w-0 flex-col overflow-hidden rounded-card border border-line bg-card shadow-card">
 
       <!-- Top bar -->
-      <div class="flex shrink-0 items-center justify-between gap-gutter border-b border-line bg-card px-card py-3">
-        <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
-        <span class="min-w-0 truncate text-sm font-semibold text-fg">{{ classroom?.name }} — 맵 에디터</span>
+      <div class="hidden">
         <span class="flex items-center gap-3 text-xs text-fg-muted">
           <template v-if="seatAssignMode">
             <span class="mr-1 inline-block h-2 w-2 rounded-full" :style="{ background: getCctvColor(assigningCctvId) }" />
@@ -174,7 +198,7 @@
       <!-- Canvas scroll area -->
       <div
         ref="scrollEl"
-        class="flex flex-1 items-start justify-start overflow-auto bg-canvas p-section"
+        class="flex flex-1 items-start justify-center overflow-auto bg-canvas p-gutter"
       >
         <div class="relative inline-block">
           <canvas
@@ -195,6 +219,7 @@
           />
         </div>
       </div>
+    </div>
     </div>
 
     <ErrorNotice v-if="cStore.error" legacy class="fixed top-4 left-1/2 z-40 w-[28rem] max-w-[90vw] -translate-x-1/2 shadow-lg" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(Number(route.params.id))" />
@@ -227,7 +252,7 @@ const TOOLS = [
 ]
 
 const HANDLE_R = 6
-const CCTV_COLORS = ['#3b82f6', '#22c55e', '#ef4444', '#a855f7', '#f97316', '#06b6d4', '#ec4899', '#84cc16']
+const CCTV_COLORS = ['#147b70', '#5b6b82', '#9a6a0e', '#c7403d', '#0f766e', '#0369a1', '#b45309', '#4d7c0f']
 const MAP_STYLES = {
   border: '#a9b3c2',
   chair: '#e2e8f1',
@@ -236,7 +261,7 @@ const MAP_STYLES = {
   empty: '#5b6b82',
   occupied: '#147b70',
   unknown: '#9a6a0e',
-  selected: '#2563eb',
+  selected: '#147b70',
 }
 
 function getCctvColor(cctvId) {
@@ -595,9 +620,9 @@ function redraw() {
     const rw = Math.abs(rubberBand.endX - rubberBand.startX)
     const rh = Math.abs(rubberBand.endY - rubberBand.startY)
     ctx.save()
-    ctx.fillStyle = 'rgba(124,58,237,0.08)'
+    ctx.fillStyle = 'rgba(20,123,112,0.10)'
     ctx.fillRect(rx, ry, rw, rh)
-    ctx.strokeStyle = '#7c3aed'
+    ctx.strokeStyle = '#147b70'
     ctx.lineWidth = 1
     ctx.setLineDash([4, 3])
     ctx.strokeRect(rx, ry, rw, rh)
@@ -660,7 +685,7 @@ function drawRotatedObject(ctx, obj, isSelected) {
 
 function drawSelection(ctx, obj) {
   ctx.save()
-  ctx.strokeStyle = '#7c3aed'
+  ctx.strokeStyle = '#147b70'
   ctx.lineWidth = 1.5
   ctx.setLineDash([5, 4])
   ctx.strokeRect(obj.x - 4, obj.y - 4, obj.w + 8, obj.h + 8)
@@ -670,7 +695,7 @@ function drawSelection(ctx, obj) {
   if (selectedIds.value.length === 1) {
     for (const h of getLocalHandles(obj)) {
       ctx.fillStyle = '#fff'
-      ctx.strokeStyle = '#7c3aed'
+      ctx.strokeStyle = '#147b70'
       ctx.lineWidth = 1.5
       ctx.beginPath()
       ctx.rect(h.hx - HANDLE_R, h.hy - HANDLE_R, HANDLE_R * 2, HANDLE_R * 2)

@@ -1,45 +1,45 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
-    <div class="max-w-6xl mx-auto">
+  <div class="ds-root h-full overflow-y-auto bg-canvas p-section">
+    <div class="mx-auto flex w-full max-w-[1680px] flex-col gap-section">
 
       <!-- 헤더 -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div class="flex flex-col gap-gutter sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <router-link to="/face" class="inline-flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 transition mb-2">
+          <router-link to="/face" class="text-sm text-fg-muted transition-colors hover:text-fg">
             ← 얼굴 인식
           </router-link>
-          <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">인물 등록</h1>
-            <span v-if="mockActive" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">목데이터</span>
+          <div class="mt-1 flex items-center gap-2">
+            <h1 class="text-3xl font-bold tracking-tight text-fg">인물 등록</h1>
+            <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
           </div>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">얼굴을 등록해두면 순찰 중 허가된 사람인지 구분합니다</p>
+          <p class="mt-1 text-lg text-fg-muted">얼굴을 등록해두면 순찰 중 허가된 사람인지 구분합니다</p>
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
           <button
             @click="toggleMock"
-            class="text-xs px-3 py-2 rounded-lg transition font-medium border"
+            class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
             :class="mockActive
-              ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-              : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700'"
+              ? 'border-state-unknown bg-state-unknown text-canvas hover:opacity-90'
+              : 'border-line text-fg-muted hover:bg-line/40 hover:text-fg'"
           >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
           <button
             @click="openForm('recognize')"
-            class="inline-flex items-center gap-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm font-medium px-4 py-2 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-800 transition"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg"
           >인식 테스트</button>
           <button
             @click="openForm('enroll')"
-            class="inline-flex items-center gap-1.5 bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-violet-700 transition"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-canvas transition-opacity hover:opacity-90"
           >+ 인물 등록</button>
         </div>
       </div>
 
-      <div v-if="loading" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
+      <div v-if="loading" class="py-12 text-center text-fg-muted">불러오는 중...</div>
 
       <ErrorNotice v-else-if="loadError" legacy class="my-6" title="인물 목록을 불러오지 못했습니다" :message="loadError" @retry="retryPeople" />
 
-      <div v-else-if="!people.length" class="flex flex-col items-center justify-center py-24 text-neutral-400 dark:text-neutral-600 gap-3 text-center">
-        <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">👤</div>
+      <div v-else-if="!people.length" class="flex flex-col items-center justify-center gap-3 py-24 text-center text-fg-muted">
+        <div class="flex h-14 w-14 items-center justify-center rounded-card border border-line bg-card text-2xl">👤</div>
         <p class="text-sm">등록된 인물이 없습니다.<br>사진을 올려 등록해보세요.</p>
       </div>
 
@@ -47,14 +47,14 @@
         <div
           v-for="p in people"
           :key="p.id"
-          class="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden group"
+          class="group overflow-hidden rounded-card border border-line bg-card shadow-card"
         >
           <BlurredImage :src="mockActive ? p.photoUrl : `/api/face/people/${p.id}/photo`" :alt="`${p.name} 등록 사진`" :rounded="false" class="w-full aspect-[4/3]" />
           <div class="p-4">
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="min-w-0">
-                <div class="font-semibold text-neutral-800 dark:text-neutral-100 truncate">{{ p.name }}</div>
-                <div class="text-[11px] text-neutral-400 dark:text-neutral-600">사진 {{ p.samples }}장 · {{ p.enrolled_at?.slice(0, 10) }}</div>
+                <div class="truncate font-semibold text-fg">{{ p.name }}</div>
+                <div class="text-[11px] text-fg-muted">사진 {{ p.samples }}장 · {{ p.enrolled_at?.slice(0, 10) }}</div>
               </div>
               <button
                 @click="removePerson(p)"
@@ -76,9 +76,9 @@
     </div>
 
     <!-- 등록 모달 -->
-    <div v-if="showForm" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" @click.self="showForm = false">
-      <div class="bg-white dark:bg-neutral-900 rounded-2xl p-6 w-96 shadow-xl">
-        <h2 class="font-bold text-neutral-800 dark:text-neutral-100 mb-4">{{ purpose === 'enroll' ? '인물 등록' : '인식 테스트' }}</h2>
+    <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center bg-fg/50 p-4" @click.self="showForm = false">
+      <div class="w-96 rounded-card border border-line bg-card p-card shadow-xl">
+        <h2 class="mb-4 text-xl font-bold text-fg">{{ purpose === 'enroll' ? '인물 등록' : '인식 테스트' }}</h2>
 
         <template v-if="purpose === 'enroll'">
           <label class="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">이름</label>
@@ -113,7 +113,7 @@
 
           <div v-if="shots.length" class="flex gap-1.5 flex-wrap mb-2">
             <div v-for="(s, i) in shots" :key="s.url" class="relative">
-              <BlurredImage :src="s.url" alt="촬영한 사진" class="w-14 h-14 border border-neutral-200 dark:border-neutral-800" />
+              <BlurredImage :src="s.url" alt="촬영한 사진" class="h-14 w-14 border border-line" />
               <button
                 type="button"
                 @click="removeShot(i)"
@@ -149,7 +149,7 @@
             class="rounded-lg border px-3 py-2 text-xs"
             :class="f.name
               ? (f.authorized ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700')
-              : 'border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400'"
+              : 'border-line bg-canvas/40 text-fg-muted'"
           >
             <span class="font-semibold">{{ f.name ?? '미등록 인물' }}</span>
             <span v-if="f.name"> · {{ f.authorized ? '허가됨' : '미허가' }}</span>
@@ -404,18 +404,18 @@ onUnmounted(() => {
 
 <style scoped>
 .input {
-  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400;
+  @apply rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted;
 }
 .btn-primary {
-  @apply bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50;
+  @apply rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
 }
 .btn-ghost {
-  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition;
+  @apply rounded-lg border border-line px-4 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg;
 }
 .tab {
-  @apply flex-1 text-sm py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition;
+  @apply flex-1 rounded-lg border border-line bg-card py-1.5 text-sm text-fg-muted transition-colors hover:bg-line/40 hover:text-fg;
 }
 .tab-on {
-  @apply !bg-violet-600 !text-white !border-violet-600;
+  @apply !border-fg-muted !bg-line/60 !text-fg;
 }
 </style>

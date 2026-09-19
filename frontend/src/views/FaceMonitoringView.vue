@@ -1,9 +1,10 @@
 <template>
-  <div class="ds-root flex h-full flex-col gap-gutter overflow-hidden p-section">
+  <div class="ds-root flex h-full flex-col overflow-hidden p-section">
+    <div class="mx-auto flex w-full max-w-[1680px] flex-1 flex-col gap-gutter overflow-hidden">
     <header class="flex shrink-0 items-end justify-between gap-gutter">
       <div>
         <router-link to="/face" class="text-sm text-fg-muted transition-colors hover:text-fg">← 얼굴 인식</router-link>
-        <h1 class="mt-1 text-3xl font-semibold text-fg">모니터링</h1>
+        <h1 class="mt-1 text-3xl font-bold tracking-tight text-fg">모니터링</h1>
         <p class="mt-1 text-fg-muted">{{ place?.name }} 순찰 중 감지된 인물</p>
       </div>
     </header>
@@ -75,6 +76,7 @@
     <!-- 사진 크게 보기 (블러를 이미 해제한 뒤에만 열린다) -->
     <div v-if="zoomed" class="fixed inset-0 z-50 flex items-center justify-center bg-canvas/85 p-section" role="dialog" aria-label="감지 사진" @click="zoomed = null" @keydown.esc="zoomed = null">
       <img :src="`/api/face/detections/${zoomed.id}/photo`" class="max-h-full max-w-full rounded-card" alt="감지 사진 크게 보기" />
+    </div>
     </div>
   </div>
 </template>
@@ -158,9 +160,15 @@ async function poll() {
   try {
     const { data } = await api.get(`/face/places/${placeId}/patrol/status`)
     const wasCount = status.value.detections
+    const wasSeatsLogged = status.value.seats_logged ?? 0
     const wasRunning = status.value.running
     status.value = data
     if (wasRunning && !data.running) await fetchAll() // 순찰 완료 -> 자리 결과 갱신
+    else if ((data.seats_logged ?? 0) !== wasSeatsLogged) {
+      const res = await api.get(`/face/places/${placeId}/seat-logs`, { params: { limit: 50 } })
+      seatLogs.value = res.data.snapshots
+      logIndex.value = 0
+    }
     else if (data.detections !== wasCount) {
       const res = await api.get(`/face/places/${placeId}/detections`)
       detections.value = res.data.detections

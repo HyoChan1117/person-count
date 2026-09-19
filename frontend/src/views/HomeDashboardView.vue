@@ -1,5 +1,6 @@
 <template>
-  <div class="ds-root flex h-full min-h-0 flex-col gap-section overflow-y-auto p-section 2xl:overflow-hidden">
+  <div class="ds-root flex h-full min-h-0 flex-col overflow-y-auto p-section 2xl:overflow-hidden">
+    <div class="mx-auto flex w-full max-w-[1680px] flex-col gap-section 2xl:min-h-0 2xl:flex-1">
     <DashboardHeader
       :last-at="store.collect.lastAt"
       :next-in-sec="store.collect.nextInSec"
@@ -42,6 +43,7 @@
         <PatrolStatusPanel :place="store.primaryPatrol" />
         <RecentDetectionsList :items="store.recentDetections" @reveal="store.markSeen" />
       </aside>
+    </div>
     </div>
   </div>
 </template>

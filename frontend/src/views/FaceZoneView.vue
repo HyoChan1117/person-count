@@ -1,41 +1,41 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
-    <div class="max-w-7xl mx-auto">
+  <div class="ds-root h-full overflow-y-auto bg-canvas p-section">
+    <div class="mx-auto flex w-full max-w-[1680px] flex-col gap-section">
 
       <!-- 헤더 -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div class="flex flex-col gap-gutter sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <router-link to="/face" class="inline-flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 transition mb-2">
+          <router-link to="/face" class="text-sm text-fg-muted transition-colors hover:text-fg">
             ← 얼굴 인식
           </router-link>
-          <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">{{ place?.name }}</h1>
-            <span v-if="mockActive" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">목데이터</span>
+          <div class="mt-1 flex items-center gap-2">
+            <h1 class="text-3xl font-bold tracking-tight text-fg">구역 등록</h1>
+            <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
           </div>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">PTZ 카메라를 움직여 순찰할 구역을 등록하세요</p>
+          <p class="mt-1 text-lg text-fg-muted">{{ place?.name }}의 PTZ 카메라를 움직여 순찰할 구역을 등록하세요</p>
         </div>
         <div class="flex items-center gap-3 shrink-0">
-          <div v-if="position" class="text-xs text-neutral-400 dark:text-neutral-600 tabular-nums">
+          <div v-if="position" class="tabular-nums text-sm text-fg-muted">
             현재 좌표 · 팬 {{ position.pan }} · 틸트 {{ position.tilt }} · 줌 {{ position.zoom }}
           </div>
           <button
             @click="toggleMock"
-            class="text-xs px-3 py-1.5 rounded-lg transition font-medium border"
+            class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
             :class="mockActive
-              ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-              : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700'"
+              ? 'border-state-unknown bg-state-unknown text-canvas hover:opacity-90'
+              : 'border-line text-fg-muted hover:bg-line/40 hover:text-fg'"
           >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
         </div>
       </div>
 
       <!-- PTZ 카메라가 없는 장소 -->
-      <div v-if="place && !place.camera?.ip" class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm">
+      <div v-if="place && !place.camera?.ip" class="rounded-card border border-line bg-card shadow-card">
         <div class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 gap-3 text-center px-6">
-          <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">📷</div>
+          <div class="flex h-14 w-14 items-center justify-center rounded-card border border-line bg-canvas text-2xl">📷</div>
           <p class="text-sm">이 장소에는 PTZ 카메라가 없습니다.</p>
           <p class="text-xs">
             구역을 등록하려면
-            <router-link :to="`/face/${placeId}/camera`" class="text-violet-600 hover:underline">카메라 설정</router-link>에서
+            <router-link :to="`/face/${placeId}/camera`" class="font-medium text-fg underline underline-offset-2">카메라 설정</router-link>에서
             카메라 IP를 입력해주세요.
           </p>
         </div>
@@ -49,8 +49,8 @@
       <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
 
         <!-- 미리보기 + 제어 -->
-        <div class="xl:col-span-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm overflow-hidden">
-          <div class="px-4 py-2.5 flex items-center justify-between border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-900/60">
+        <div class="xl:col-span-2 overflow-hidden rounded-card border border-line bg-card shadow-card">
+          <div class="flex items-center justify-between border-b border-line bg-card px-4 py-2.5">
             <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
               <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> PTZ 카메라
             </span>
@@ -82,13 +82,13 @@
               <input
                 v-model="newZoneName"
                 placeholder="구역 이름 (예: 앞줄 좌측)"
-                class="border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm w-52 focus:outline-none focus:ring-2 focus:ring-violet-400"
+                class="w-52 rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted"
                 @keyup.enter="saveZone"
               />
               <button
                 @click="saveZone"
                 :disabled="saving"
-                class="bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50"
+                class="rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >{{ saving ? '저장 중...' : '📍 이 위치 등록' }}</button>
             </div>
           </div>
@@ -99,7 +99,7 @@
         </div>
 
         <!-- 등록된 구역 -->
-        <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm p-5">
+        <div class="rounded-card border border-line bg-card p-card shadow-card">
           <div class="flex items-center justify-between mb-1">
             <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">순찰 구역</span>
             <span class="text-xs text-neutral-400 dark:text-neutral-600">{{ zones.length }}개</span>
@@ -125,9 +125,9 @@
               @click="selectedZoneId = selectedZoneId === z.id ? null : z.id"
               class="rounded-xl border p-3 transition group cursor-pointer"
               :class="[
-                selectedZoneId === z.id ? 'border-violet-400 bg-violet-50/50 dark:bg-violet-500/10' : 'border-neutral-200 dark:border-neutral-800 hover:border-violet-200',
+                selectedZoneId === z.id ? 'border-fg-muted bg-line/40' : 'border-line hover:border-fg-muted/50',
                 dragFrom === zi ? 'opacity-40' : '',
-                dragOver === zi && dragFrom !== null && dragFrom !== zi ? '!border-violet-500 border-dashed' : '',
+                dragOver === zi && dragFrom !== null && dragFrom !== zi ? '!border-fg-muted border-dashed' : '',
               ]"
             >
               <div class="flex items-center gap-2">
@@ -137,7 +137,7 @@
                   <div class="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">{{ z.name }}</div>
                   <div class="text-[11px] text-neutral-400 dark:text-neutral-600 tabular-nums">
                     팬 {{ z.pan }} · 틸트 {{ z.tilt }} · 줌 {{ z.zoom }}
-                    <span v-if="z.rois?.length" class="text-violet-500"> · 자리 {{ z.rois.length }}개</span>
+                    <span v-if="z.rois?.length" class="text-state-occupied"> · 자리 {{ z.rois.length }}개</span>
                     <span v-else class="text-neutral-400 dark:text-neutral-600"> · 이동만 (인식 안 함)</span>
                   </div>
                 </div>
@@ -156,7 +156,7 @@
               <div v-if="selectedZoneId === z.id" class="mt-2.5 flex gap-1.5">
                 <button
                   @click.stop="openRoiEditor(z)"
-                  class="flex-1 text-xs bg-violet-600 text-white py-1.5 rounded-lg hover:bg-violet-700 transition"
+                  class="flex-1 rounded-lg bg-fg py-1.5 text-xs font-semibold text-canvas transition-opacity hover:opacity-90"
                 >{{ z.rois?.length ? '자리 영역 수정' : '자리 영역 설정' }}</button>
                 <button
                   @click.stop="runZoneTest(z)"
@@ -172,8 +172,8 @@
     </div>
 
     <!-- 인식 테스트 결과 -->
-    <div v-if="testResult" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-6" @click.self="testResult = null">
-      <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-md p-6">
+    <div v-if="testResult" class="fixed inset-0 z-50 flex items-center justify-center bg-fg/50 p-6" @click.self="testResult = null">
+      <div class="w-full max-w-md rounded-card border border-line bg-card p-card shadow-xl">
         <div class="flex items-start justify-between gap-3 mb-4">
           <div>
             <h2 class="font-bold text-neutral-800 dark:text-neutral-100">{{ testResult.zone }} · 인식 테스트</h2>
@@ -194,7 +194,7 @@
             v-for="(v, seat) in testResult.seats"
             :key="seat"
             class="flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm"
-            :class="v ? (v.authorized ? 'border-emerald-200 bg-emerald-50' : 'border-red-200 bg-red-50') : 'border-neutral-200 dark:border-neutral-800'"
+            :class="v ? (v.authorized ? 'border-state-occupied/30 bg-state-occupied/10' : 'border-state-alert/30 bg-state-alert/10') : 'border-line bg-canvas/40'"
           >
             <span class="font-medium text-neutral-700 dark:text-neutral-300">{{ seat }}</span>
             <span v-if="!v" class="text-xs text-neutral-400 dark:text-neutral-600">비어있음</span>
@@ -228,7 +228,7 @@ import BlurredImage from '@/components/ui/BlurredImage.vue'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
 import { useMockToggle } from '@/composables/useMockToggle'
 
-const SPEED = 30
+const SPEED = 100
 
 const route = useRoute()
 const placeId = route.params.id
@@ -495,9 +495,9 @@ onUnmounted(() => {
 
 <style scoped>
 .pad {
-  @apply w-12 h-12 flex items-center justify-center rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-950 text-neutral-600 dark:text-neutral-400 text-lg transition select-none;
+  @apply flex h-12 w-12 select-none items-center justify-center rounded-lg border border-line bg-canvas text-lg text-fg-muted transition-colors;
 }
 .pad-on {
-  @apply bg-violet-600 border-violet-600 text-white;
+  @apply border-fg bg-fg text-canvas;
 }
 </style>

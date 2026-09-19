@@ -7,10 +7,10 @@
         <div class="min-w-0">
           <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 좌석 확인</router-link>
           <div class="mt-1 flex items-center gap-3">
-            <h1 class="text-3xl font-bold tracking-tight text-fg">{{ classroom?.name }}</h1>
+            <h1 class="text-3xl font-bold tracking-tight text-fg">대시보드</h1>
             <span v-if="mockActive" class="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-fg-muted">목데이터</span>
           </div>
-          <p class="mt-1 text-lg text-fg-muted">실시간 인원 현황</p>
+          <p class="mt-1 text-lg text-fg-muted">{{ classroom?.name }} 실시간 인원 현황</p>
         </div>
 
         <div class="flex shrink-0 items-center gap-gutter">

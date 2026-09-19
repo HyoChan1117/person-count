@@ -17,7 +17,7 @@
         </div>
 
         <div v-else-if="!snapshotUrl" class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 gap-3 text-sm">
-          <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-violet-500 animate-spin" />
+          <div class="w-9 h-9 rounded-full border-2 border-line border-t-fg-muted animate-spin" />
           카메라를 구역으로 옮기는 중...
         </div>
 
@@ -45,7 +45,7 @@
 
             <!-- 화면이 뜨기 전까지 안내 (이미지는 미리 붙여둬야 load 이벤트가 온다) -->
             <div v-if="!imageReady" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-sm text-neutral-300 dark:text-neutral-700">
-              <div class="w-9 h-9 rounded-full border-2 border-neutral-600 border-t-violet-400 animate-spin" />
+              <div class="w-9 h-9 rounded-full border-2 border-line border-t-fg-muted animate-spin" />
               화면을 가져오는 중...
             </div>
 
@@ -55,8 +55,8 @@
                 v-for="(r, i) in rois"
                 :key="i"
                 :points="hullPoints(r.points)"
-                fill="rgba(139,92,246,0.25)"
-                stroke="#a78bfa"
+                fill="rgba(20,123,112,0.18)"
+                stroke="#147b70"
                 stroke-width="0.004"
               />
               <!-- 앞선(주황) / 뒷선(초록) -->
@@ -72,7 +72,7 @@
             <span
               v-for="(r, i) in rois"
               :key="'label'+i"
-              class="absolute text-[11px] bg-violet-600 text-white px-1.5 py-0.5 rounded whitespace-nowrap -translate-y-full"
+              class="absolute whitespace-nowrap rounded bg-fg px-1.5 py-0.5 text-[11px] text-canvas -translate-y-full"
               :style="labelStyle(r.points)"
             >{{ r.name }}</span>
           </div>
@@ -90,7 +90,7 @@
 
             <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div v-for="(r, i) in rois" :key="i" class="flex items-center gap-2 rounded-lg border border-neutral-200 dark:border-neutral-800 px-3 py-2">
-                <span class="w-5 h-5 rounded bg-violet-100 text-violet-700 text-[11px] flex items-center justify-center shrink-0">{{ i + 1 }}</span>
+                <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-line text-[11px] text-fg">{{ i + 1 }}</span>
                 <input v-model="r.name" class="flex-1 min-w-0 text-sm border-0 focus:outline-none" />
                 <button @click="rois.splice(i, 1)" class="text-neutral-300 dark:text-neutral-700 hover:text-red-400 text-xs shrink-0">✕</button>
               </div>
@@ -106,7 +106,7 @@
         </p>
         <div class="flex gap-2 shrink-0">
           <button @click="$emit('close')" class="bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition">취소</button>
-          <button @click="save" :disabled="saving || !imageReady" class="bg-violet-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50">
+          <button @click="save" :disabled="saving || !imageReady" class="rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">
             {{ saving ? '저장 중...' : '저장' }}
           </button>
         </div>

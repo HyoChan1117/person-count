@@ -137,7 +137,7 @@ function drawChart() {
   const maxVal = Math.max(1, rows[0]?.occupiedMinutes ?? 0)
   const cx = width / 2
   const HOT = '#ef4444'
-  const COOL = '#8b5cf6'
+  const COOL = '#147b70'
 
   // 각 행 경계(위/아래)의 사다리꼴 폭을 계산해 연속적으로 좁아지는 깔때기 모양을 만든다
   const boundaries = rows.map(r => widthFor((r.occupiedMinutes ?? 0) / maxVal, width))

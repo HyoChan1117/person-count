@@ -59,7 +59,7 @@
           v-for="c in filteredClassrooms"
           :key="c.id"
           interactive
-          class="group flex min-h-[17rem] flex-col"
+          class="group flex min-h-[13rem] flex-col"
           :class="actionMeta ? 'cursor-pointer hover:!border-fg' : ''"
           :role="actionMeta ? 'button' : undefined"
           :tabindex="actionMeta ? 0 : undefined"
@@ -76,7 +76,7 @@
             >삭제</button>
           </div>
 
-          <dl class="mt-card grid grid-cols-2 gap-gutter">
+          <dl class="mt-6 grid grid-cols-2 gap-gutter">
             <div>
               <dt class="text-sm text-fg-muted">CCTV</dt>
               <dd class="mt-1 text-3xl font-bold tabular-nums text-fg">{{ c.cameras.length }}<span class="ml-1 text-base font-normal text-fg-muted">대</span></dd>
@@ -86,19 +86,6 @@
               <dd class="mt-1 text-3xl font-bold tabular-nums text-fg">{{ seatLineCount(c) }}<span class="ml-1 text-base font-normal text-fg-muted">대</span></dd>
             </div>
           </dl>
-
-          <!-- 설정 진행률: 좌석 라인 설정이 끝난 카메라 비율 -->
-          <div class="mt-card">
-            <div class="flex items-center justify-between text-sm text-fg-muted">
-              <span>설정 진행률</span>
-              <span class="tabular-nums text-fg">{{ progressPct(c) }}%</span>
-            </div>
-            <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-line">
-              <div class="h-full rounded-full bg-fg-muted transition-[width] duration-500" :style="{ width: progressPct(c) + '%' }" />
-            </div>
-          </div>
-
-          <div class="flex-1" />
 
           <!-- 액션: 보기(모니터링·대시보드)를 먼저, 관리자 설정은 아래 -->
           <div v-if="!actionMeta" class="mt-card space-y-2 border-t border-line pt-card">
@@ -195,12 +182,6 @@ const filteredClassrooms = computed(() => {
 
 function seatLineCount(classroom) {
   return classroom.cameras.filter(c => Object.keys(c.seat_lines ?? {}).length > 0).length
-}
-
-// 좌석 라인(seat_lines) 설정이 끝난 카메라 비율
-function progressPct(classroom) {
-  if (!classroom.cameras.length) return 0
-  return Math.round(seatLineCount(classroom) / classroom.cameras.length * 100)
 }
 
 async function createClassroom() {

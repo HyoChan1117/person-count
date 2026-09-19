@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import asyncio
+import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -11,6 +12,19 @@ from app.routers import classrooms, analysis, prompts, slack, face
 from app.routers import auth as auth_router
 
 OCCUPANCY_MONITOR_INTERVAL = int(os.getenv("OCCUPANCY_MONITOR_INTERVAL", "600"))
+
+
+class _QuietAccessLogFilter(logging.Filter):
+    QUIET_PATHS = ("/api/face/places/",)
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        message = record.getMessage()
+        if "/patrol/status" in message and any(path in message for path in self.QUIET_PATHS):
+            return False
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(_QuietAccessLogFilter())
 
 
 def _seconds_until_next_boundary(interval_seconds: int) -> float:

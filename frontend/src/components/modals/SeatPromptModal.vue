@@ -1,65 +1,58 @@
 <template>
-  <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="$emit('close')">
-    <div class="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-xl mx-4 flex flex-col max-h-[90vh]">
-      <!-- 헤더 -->
-      <div class="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4" @click.self="emit('close')">
+    <div class="ds-text flex max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-card border border-line bg-card shadow-xl">
+      <div class="flex items-start justify-between gap-4 border-b border-line px-card py-5">
         <div>
-          <h2 class="font-bold text-neutral-800 dark:text-neutral-100">YOLO 설정 — {{ classroom.name }}</h2>
-          <p class="text-xs text-neutral-400 dark:text-neutral-600 mt-0.5">모델 및 감지 임계값을 설정하세요</p>
+          <p class="text-xs font-semibold uppercase tracking-wide text-fg-muted">AI 분석 설정</p>
+          <h2 class="mt-1 text-xl font-bold text-fg">YOLO 설정</h2>
+          <p class="mt-1 text-sm text-fg-muted">{{ classroom.name }}의 모델과 감지 임계값을 설정하세요.</p>
         </div>
-        <button @click="$emit('close')" class="text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 text-xl leading-none">✕</button>
+        <button type="button" class="icon-button" aria-label="닫기" @click="emit('close')">×</button>
       </div>
 
-      <!-- 본문 -->
-      <div class="flex-1 overflow-y-auto px-6 py-5 space-y-4">
-
-        <!-- YOLO 모델 선택 -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">YOLO 감지 모델</label>
-          <div class="grid grid-cols-2 gap-2">
+      <div class="flex-1 space-y-6 overflow-y-auto px-card py-5">
+        <section class="space-y-3">
+          <h3 class="section-title">YOLO 감지 모델</h3>
+          <div class="grid gap-2 sm:grid-cols-2">
             <label
               v-for="opt in MODEL_OPTIONS"
               :key="opt.value"
               class="model-option"
               :class="{ 'model-option--selected': selectedModel === opt.value }"
             >
-              <input type="radio" :value="opt.value" v-model="selectedModel" class="sr-only" />
-              <div class="font-medium text-sm">{{ opt.label }}</div>
-              <div class="text-[11px] text-neutral-400 dark:text-neutral-600 mt-0.5">{{ opt.desc }}</div>
+              <input v-model="selectedModel" type="radio" :value="opt.value" class="sr-only" />
+              <span class="text-sm font-semibold text-fg">{{ opt.label }}</span>
+              <span class="mt-1 block text-xs text-fg-muted">{{ opt.desc }}</span>
             </label>
           </div>
-        </div>
+        </section>
 
-        <!-- YOLO 감지 임계값 -->
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <label class="text-sm font-medium text-neutral-700 dark:text-neutral-300">YOLO 감지 임계값</label>
+        <section class="space-y-2">
+          <div class="flex items-center justify-between gap-3">
+            <h3 class="section-title">YOLO 감지 임계값</h3>
             <div class="flex items-center gap-2">
-              <span class="text-sm font-mono font-semibold text-violet-600">{{ confThreshold.toFixed(2) }}</span>
-              <button
-                @click="confThreshold = 0.30"
-                class="text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 underline underline-offset-2"
-              >기본값 (0.30)</button>
+              <span class="font-mono text-sm font-semibold text-fg">{{ confThreshold.toFixed(2) }}</span>
+              <button type="button" class="reset-link" @click="confThreshold = 0.30">기본값 0.30</button>
             </div>
           </div>
           <input
-            type="range"
             v-model.number="confThreshold"
-            min="0.10" max="0.90" step="0.05"
-            class="w-full accent-violet-500"
+            type="range"
+            min="0.10"
+            max="0.90"
+            step="0.05"
+            class="w-full accent-fg"
           />
-          <div class="flex justify-between text-[10px] text-neutral-400 dark:text-neutral-600 mt-1">
-            <span>0.10 — 민감 (오탐 증가)</span>
-            <span>0.90 — 보수적 (미탐 증가)</span>
+          <div class="flex justify-between text-[11px] text-fg-muted">
+            <span>0.10 민감</span>
+            <span>0.90 보수적</span>
           </div>
-        </div>
-
+        </section>
       </div>
 
-      <!-- 푸터 -->
-      <div class="flex gap-2 justify-end px-6 py-4 border-t border-neutral-100 dark:border-neutral-800">
-        <button @click="$emit('close')" class="btn-ghost">취소</button>
-        <button @click="handleSave" :disabled="saving" class="btn-primary">
+      <div class="flex items-center justify-end gap-2 border-t border-line bg-canvas px-card py-4">
+        <button type="button" class="btn-ghost" @click="emit('close')">취소</button>
+        <button type="button" class="btn-primary" :disabled="saving" @click="handleSave">
           {{ saving ? '저장 중...' : '저장' }}
         </button>
       </div>
@@ -72,7 +65,7 @@ import { ref } from 'vue'
 import { useClassroomStore } from '@/stores/classroomStore.js'
 
 const MODEL_OPTIONS = [
-  { value: 'yolo26x-pose', label: 'YOLO26x-pose', desc: '강의실 — 머리+몸 전체 감지 (고정밀)' },
+  { value: 'yolo26x-pose', label: 'YOLO26x-pose', desc: '강의실 머리와 몸 전체 감지 (고정밀)' },
 ]
 
 const props = defineProps({
@@ -81,7 +74,7 @@ const props = defineProps({
 const emit = defineEmits(['close'])
 
 const classroomStore = useClassroomStore()
-const selectedModel = ref(props.classroom.yolo_model ?? 'yolov8x')
+const selectedModel = ref(props.classroom.yolo_model ?? 'yolo26x-pose')
 const confThreshold = ref(props.classroom.conf_threshold ?? 0.30)
 const saving = ref(false)
 
@@ -100,19 +93,31 @@ async function handleSave() {
 </script>
 
 <style scoped>
-.textarea {
-  @apply border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 resize-none;
+.section-title {
+  @apply text-sm font-semibold text-fg;
 }
-.btn-primary {
-  @apply bg-violet-600 text-white text-sm px-5 py-2 rounded-lg hover:bg-violet-700 disabled:opacity-50 transition;
+
+.icon-button {
+  @apply grid h-9 w-9 place-items-center rounded-lg border border-transparent text-2xl leading-none text-fg-muted transition-colors hover:border-line hover:bg-line/40 hover:text-fg;
 }
-.btn-ghost {
-  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm px-5 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition;
-}
+
 .model-option {
-  @apply cursor-pointer border border-neutral-200 dark:border-neutral-800 rounded-xl p-3 transition hover:border-violet-300 hover:bg-violet-50;
+  @apply cursor-pointer rounded-lg border border-line bg-card p-3 transition-colors hover:bg-line/40;
 }
+
 .model-option--selected {
-  @apply border-violet-500 bg-violet-50 ring-1 ring-violet-400;
+  @apply !border-slate-400 !bg-slate-100/70 dark:!border-slate-500 dark:!bg-slate-800/70;
+}
+
+.reset-link {
+  @apply text-xs font-medium text-fg-muted underline underline-offset-2 transition-colors hover:text-fg;
+}
+
+.btn-primary {
+  @apply rounded-lg !bg-slate-900 px-5 py-2.5 text-sm font-semibold !text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40 dark:!bg-slate-100 dark:!text-slate-950;
+}
+
+.btn-ghost {
+  @apply rounded-lg border border-line px-5 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg;
 }
 </style>

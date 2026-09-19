@@ -70,7 +70,7 @@ function densityAt(cy, startRow, endRow) {
 function occupiedColor(ratio) {
   if (ratio >= 0.67) return '#ef4444'
   if (ratio >= 0.34) return '#f59e0b'
-  return '#8b5cf6'
+  return '#147b70'
 }
 
 // 균일한 밀도로 찍는 단순 디더 채우기 (미배정/대기중 칸)
@@ -137,7 +137,7 @@ function drawChart() {
 
     if (props.selectedHour === h.hour) {
       ctx.save()
-      ctx.strokeStyle = '#8b5cf6'
+      ctx.strokeStyle = '#566783'
       ctx.lineWidth = 2
       ctx.beginPath()
       ctx.roundRect(x + 1, 1, colW - 2, height - 2, 3)

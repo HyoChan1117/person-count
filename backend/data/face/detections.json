@@ -143,7 +143,331 @@
       "score": 0.159,
       "authorized": null,
       "ts": "2026-09-19T18:01:11"
+    },
+    {
+      "id": 66,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.135,
+      "authorized": null,
+      "ts": "2026-09-19T18:20:56"
+    },
+    {
+      "id": 67,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.139,
+      "authorized": null,
+      "ts": "2026-09-19T18:20:56"
+    },
+    {
+      "id": 68,
+      "place_id": 5,
+      "zone_name": "4-2번 구역 · 1번 자리",
+      "name": null,
+      "score": 0.048,
+      "authorized": null,
+      "ts": "2026-09-19T18:21:15"
+    },
+    {
+      "id": 69,
+      "place_id": 5,
+      "zone_name": "1번 구역 · 28번 자리",
+      "name": null,
+      "score": 0.142,
+      "authorized": null,
+      "ts": "2026-09-19T19:10:16"
+    },
+    {
+      "id": 70,
+      "place_id": 5,
+      "zone_name": "1번 구역 · 28번 자리",
+      "name": null,
+      "score": 0.046,
+      "authorized": null,
+      "ts": "2026-09-19T19:30:18"
+    },
+    {
+      "id": 71,
+      "place_id": 5,
+      "zone_name": "1번 구역 · 28번 자리",
+      "name": null,
+      "score": 0.125,
+      "authorized": null,
+      "ts": "2026-09-19T19:40:17"
+    },
+    {
+      "id": 72,
+      "place_id": 5,
+      "zone_name": "1번 구역 · 28번 자리",
+      "name": null,
+      "score": 0.049,
+      "authorized": null,
+      "ts": "2026-09-19T19:40:20"
+    },
+    {
+      "id": 73,
+      "place_id": 5,
+      "zone_name": "1번 구역 · 28번 자리",
+      "name": null,
+      "score": 0.075,
+      "authorized": null,
+      "ts": "2026-09-19T20:00:15"
+    },
+    {
+      "id": 74,
+      "place_id": 5,
+      "zone_name": "1번 구역 · 28번 자리",
+      "name": null,
+      "score": 0.124,
+      "authorized": null,
+      "ts": "2026-09-19T20:00:19"
+    },
+    {
+      "id": 75,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.182,
+      "authorized": null,
+      "ts": "2026-09-19T20:40:55"
+    },
+    {
+      "id": 76,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.194,
+      "authorized": null,
+      "ts": "2026-09-19T20:41:01"
+    },
+    {
+      "id": 77,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.008,
+      "authorized": null,
+      "ts": "2026-09-19T20:51:01"
+    },
+    {
+      "id": 78,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.018,
+      "authorized": null,
+      "ts": "2026-09-19T20:51:04"
+    },
+    {
+      "id": 79,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.055,
+      "authorized": null,
+      "ts": "2026-09-19T21:00:58"
+    },
+    {
+      "id": 80,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.084,
+      "authorized": null,
+      "ts": "2026-09-19T21:01:02"
+    },
+    {
+      "id": 81,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.281,
+      "authorized": null,
+      "ts": "2026-09-19T21:21:00"
+    },
+    {
+      "id": 82,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.282,
+      "authorized": null,
+      "ts": "2026-09-19T21:21:04"
+    },
+    {
+      "id": 83,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.639,
+      "authorized": true,
+      "ts": "2026-09-19T22:13:33"
+    },
+    {
+      "id": 84,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.668,
+      "authorized": true,
+      "ts": "2026-09-19T22:21:05"
+    },
+    {
+      "id": 85,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.668,
+      "authorized": true,
+      "ts": "2026-09-19T22:21:07"
+    },
+    {
+      "id": 86,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.713,
+      "authorized": true,
+      "ts": "2026-09-19T22:31:00"
+    },
+    {
+      "id": 87,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.673,
+      "authorized": true,
+      "ts": "2026-09-19T22:31:05"
+    },
+    {
+      "id": 88,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.763,
+      "authorized": true,
+      "ts": "2026-09-19T22:41:01"
+    },
+    {
+      "id": 89,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.757,
+      "authorized": true,
+      "ts": "2026-09-19T22:41:03"
+    },
+    {
+      "id": 90,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.274,
+      "authorized": null,
+      "ts": "2026-09-19T22:50:57"
+    },
+    {
+      "id": 91,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.336,
+      "authorized": null,
+      "ts": "2026-09-19T22:50:58"
+    },
+    {
+      "id": 92,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.821,
+      "authorized": true,
+      "ts": "2026-09-19T23:01:01"
+    },
+    {
+      "id": 93,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.814,
+      "authorized": true,
+      "ts": "2026-09-19T23:01:02"
+    },
+    {
+      "id": 94,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.723,
+      "authorized": true,
+      "ts": "2026-09-19T23:10:53"
+    },
+    {
+      "id": 95,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.683,
+      "authorized": true,
+      "ts": "2026-09-19T23:10:56"
+    },
+    {
+      "id": 96,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.662,
+      "authorized": true,
+      "ts": "2026-09-19T23:16:36"
+    },
+    {
+      "id": 97,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.633,
+      "authorized": true,
+      "ts": "2026-09-19T23:20:31"
+    },
+    {
+      "id": 98,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": null,
+      "score": 0.135,
+      "authorized": null,
+      "ts": "2026-09-19T23:27:47"
+    },
+    {
+      "id": 99,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.823,
+      "authorized": true,
+      "ts": "2026-09-19T23:29:32"
+    },
+    {
+      "id": 100,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.69,
+      "authorized": true,
+      "ts": "2026-09-19T23:30:41"
+    },
+    {
+      "id": 101,
+      "place_id": 5,
+      "zone_name": "3-2번 구역 · 8번 자리",
+      "name": "김효찬",
+      "score": 0.691,
+      "authorized": true,
+      "ts": "2026-09-19T23:30:42"
     }
   ],
-  "next_id": 66
+  "next_id": 102
 }

@@ -1,13 +1,18 @@
 <template>
   <div class="ds-root flex h-full flex-col overflow-hidden">
 
-    <!-- Top bar -->
-    <div class="flex shrink-0 items-center gap-gutter border-b border-line bg-card px-card py-3">
-      <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
-      <span class="text-line">|</span>
-      <span class="text-sm font-semibold text-fg">{{ classroom?.name }}</span>
-      <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
-      <div class="ml-auto flex items-center gap-2">
+    <!-- Page header -->
+    <header class="shrink-0 bg-canvas p-section pb-gutter">
+      <div class="mx-auto flex w-full max-w-[1680px] items-end justify-between gap-section">
+        <div class="min-w-0">
+          <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
+          <div class="mt-1 flex items-center gap-2">
+            <h1 class="text-3xl font-bold tracking-tight text-fg">카메라 설정</h1>
+            <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
+          </div>
+          <p class="mt-1 text-lg text-fg-muted">{{ classroom?.name }}의 CCTV와 좌석 선을 설정합니다</p>
+        </div>
+        <div class="flex shrink-0 items-center gap-2">
         <button
           @click="toggleMock"
           class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted"
@@ -18,16 +23,17 @@
         <router-link :to="`/dashboard/${classroomId}`" class="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg">
           대시보드
         </router-link>
+        </div>
       </div>
-    </div>
+    </header>
 
-    <ErrorNotice v-if="cStore.error" legacy class="mx-4 mt-3 shrink-0" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(classroomId)" />
+    <ErrorNotice v-if="cStore.error" legacy class="mx-auto mt-gutter w-full max-w-[1680px] shrink-0" title="교실 정보를 불러오지 못했습니다" :message="cStore.error" @retry="cStore.fetchOne(classroomId)" />
 
     <!-- Main -->
-    <div class="flex-1 flex min-h-0">
+    <div class="mx-auto grid min-h-0 w-full max-w-[1680px] flex-1 grid-cols-[18rem_minmax(0,1fr)] gap-gutter overflow-hidden bg-canvas p-gutter">
 
       <!-- Left: camera list -->
-      <div class="flex w-60 shrink-0 flex-col border-r border-line bg-card">
+      <div class="flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-card shadow-card">
         <div class="border-b border-line p-4">
           <button @click="showAddForm = true" class="w-full rounded-lg bg-fg px-3 py-2.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted">
             + 카메라 추가
@@ -74,7 +80,7 @@
       </div>
 
       <!-- Right: snapshot + seat line editor -->
-      <div class="flex min-w-0 flex-1 flex-col bg-canvas">
+      <div class="flex min-w-0 flex-col overflow-hidden rounded-card border border-line bg-card shadow-card">
 
         <!-- No camera selected -->
         <div v-if="!selectedCam" class="flex flex-1 items-center justify-center text-fg-muted">
@@ -93,35 +99,10 @@
             <div class="flex items-center gap-1.5">
               <span class="h-1.5 w-1.5 shrink-0 rounded-full" :class="frameImage ? 'bg-state-occupied' : 'bg-state-empty'" />
               <span class="text-sm font-semibold text-fg">{{ selectedCam.name }}</span>
-              <span class="ml-1 font-mono text-xs text-fg-muted">{{ selectedCam.ip_address }}</span>
-            </div>
-
-            <!-- 로그인 정보 입력 및 저장 -->
-            <div class="flex items-center gap-1.5 text-xs text-fg-muted">
-              <span>아이디</span>
-              <input v-model="editCreds.username" placeholder="없음" class="w-20 rounded-md border border-line bg-canvas px-2 py-1 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted" />
-              <span>비밀번호</span>
-              <input v-model="editCreds.password" type="password" placeholder="없음" class="w-24 rounded-md border border-line bg-canvas px-2 py-1 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted" />
               <button
-                @click="applyCredentials"
-                :disabled="savingCreds"
-                class="rounded-md border border-line px-2 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg disabled:opacity-50"
-              >적용</button>
-            </div>
-
-            <!-- 뷰 그룹 입력 및 저장 -->
-            <div class="flex items-center gap-1.5 text-xs text-fg-muted">
-              <span>뷰 그룹</span>
-              <input
-                v-model="editingGroup"
-                placeholder="없음"
-                class="w-16 rounded-md border border-line bg-canvas px-2 py-1 text-xs text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted"
-              />
-              <button
-                @click="saveViewGroup"
-                :disabled="savingGroup"
-                class="rounded-md border border-line px-2 py-1 text-xs font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg disabled:opacity-50"
-              >저장</button>
+                @click="showEditForm = true"
+                class="ml-2 rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg"
+              >수정</button>
             </div>
 
             <div class="ml-auto flex flex-wrap items-center gap-2">
@@ -136,23 +117,6 @@
                     : 'border-state-unknown/30 text-state-unknown hover:bg-state-unknown/10']"
               >좌석 선{{ seatRoiMode ? ' 종료' : '' }}</button>
 
-              <!-- 배경 저장 버튼 -->
-              <div class="mx-1 h-4 w-px bg-line" />
-              <button
-                v-if="frameImage"
-                @click="saveBgReference"
-                :disabled="savingBg"
-                class="rounded-lg bg-state-unknown px-3 py-1.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:opacity-50"
-                title="현재 프레임을 빈 강의실 기준으로 저장"
-              >{{ savingBg ? '저장 중..' : '빈 교실 저장' }}</button>
-              <label
-                :class="['cursor-pointer select-none rounded-lg bg-state-unknown px-3 py-1.5 text-sm font-semibold text-canvas transition-opacity',
-                  savingBg ? 'opacity-50 pointer-events-none' : 'hover:opacity-90']"
-                title="이미지 파일로 빈 교실 기준 업로드"
-              >
-                빈 이미지 업로드
-                <input type="file" accept="image/*" class="hidden" @change="uploadBgReference" :disabled="savingBg" />
-              </label>
               <button
                 v-if="bgHasReference"
                 @click="runBgDetect"
@@ -234,7 +198,7 @@
           </div>
 
           <!-- Canvas area -->
-          <div class="flex flex-1 items-center justify-center overflow-hidden bg-canvas p-section" ref="canvasContainer">
+          <div class="flex flex-1 items-start justify-center overflow-auto bg-canvas p-gutter" ref="canvasContainer">
             <div v-if="capturing" class="text-sm text-fg-muted">스냅샷 캡처 중..</div>
             <div v-else-if="captureError" class="text-sm text-state-alert">{{ captureError }}</div>
             <div v-else-if="!frameImage" class="text-center text-sm text-fg-muted">
@@ -326,6 +290,51 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Edit camera modal -->
+    <Teleport to="body">
+      <div
+        v-if="showEditForm && selectedCam"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6"
+        @click.self="showEditForm = false"
+      >
+        <div class="ds-text w-full max-w-lg overflow-hidden rounded-card border border-line bg-card shadow-xl">
+          <div class="border-b border-line px-card py-5">
+            <p class="text-sm font-semibold text-fg-muted">카메라 정보</p>
+            <h2 class="mt-1 text-2xl font-bold text-fg">{{ selectedCam.name }} 수정</h2>
+          </div>
+          <form class="space-y-4 p-card" @submit.prevent="saveCameraSettings">
+            <div>
+              <label class="mb-1 block text-sm font-medium text-fg-muted">IP 주소</label>
+              <input v-model="editCameraForm.ip" placeholder="예: 192.168.0.100" class="input w-full" />
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label class="mb-1 block text-sm font-medium text-fg-muted">아이디</label>
+                <input v-model="editCreds.username" placeholder="예: admin" class="input w-full" />
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-medium text-fg-muted">비밀번호</label>
+                <input v-model="editCreds.password" type="password" placeholder="비밀번호" class="input w-full" />
+              </div>
+            </div>
+
+            <div>
+              <label class="mb-1 block text-sm font-medium text-fg-muted">뷰 그룹</label>
+              <input v-model="editingGroup" placeholder="예: A" class="input w-full" />
+            </div>
+
+            <div class="flex justify-end gap-2 border-t border-line pt-5">
+              <button type="button" @click="showEditForm = false" class="btn-ghost">취소</button>
+              <button type="submit" :disabled="savingCameraSettings" class="btn-primary">
+                {{ savingCameraSettings ? '저장 중..' : '저장' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -338,7 +347,7 @@ import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import NavIcon from '@/components/ui/NavIcon.vue'
 import api from '@/api'
 
-const SEAT_ROI_COLORS = ['#ef4444','#3b82f6','#22c55e','#f97316','#a855f7','#06b6d4','#ec4899','#84cc16']
+const SEAT_ROI_COLORS = ['#c7403d','#147b70','#9a6a0e','#0f766e','#5b6b82','#0369a1','#b45309','#4d7c0f']
 
 const route = useRoute()
 const cStore = useClassroomStore()
@@ -401,12 +410,21 @@ function injectCredentials(url, username, password) {
   return bare.replace(/^rtsp:\/\//, `rtsp://${auth}`)
 }
 
+function replaceRtspHost(url, ip) {
+  if (!ip) return url
+  if (!url) return `rtsp://${ip}:554/stream1`
+  return url.replace(/^(rtsp:\/\/(?:[^@/]+@)?)([^/:]+)(.*)$/i, `$1${ip}$3`)
+}
+
 // Camera selection
 const selectedCam = ref(null)
+const showEditForm = ref(false)
+const editCameraForm = ref({ ip: '' })
 const editingGroup = ref('')
 const savingGroup = ref(false)
 const editCreds = ref({ username: '', password: '' })
 const savingCreds = ref(false)
+const savingCameraSettings = ref(false)
 
 // 배경 차분 상태
 const bgHasReference = ref(false)
@@ -521,6 +539,7 @@ async function runBgDetect() {
 
 function selectCamera(cam) {
   selectedCam.value = cam
+  editCameraForm.value = { ip: cam.ip_address ?? '' }
   editingGroup.value = cam.view_group ?? ''
   const creds = parseRtspCredentials(cam.rtsp_url ?? '')
   editCreds.value = { username: creds.username, password: creds.password }
@@ -536,6 +555,40 @@ function selectCamera(cam) {
     fetchBgStatus(cam.camera_id)
   }
   captureSnapshot()
+}
+
+async function saveCameraSettings() {
+  if (!selectedCam.value) return
+  savingCameraSettings.value = true
+  try {
+    const ip = editCameraForm.value.ip.trim()
+    const rtspWithHost = replaceRtspHost(selectedCam.value.rtsp_url ?? '', ip)
+    const rtspUrl = injectCredentials(rtspWithHost, editCreds.value.username, editCreds.value.password)
+    const patch = {
+      ip_address: ip,
+      rtsp_url: rtspUrl,
+      view_group: editingGroup.value.trim() || null,
+    }
+
+    if (mockActive.value) {
+      const cam = mockCameraList.value.find(c => c.camera_id === selectedCam.value.camera_id)
+      if (cam) Object.assign(cam, patch)
+      selectedCam.value = cam
+      showEditForm.value = false
+      return
+    }
+
+    const updated = cameras.value.map(c =>
+      c.camera_id === selectedCam.value.camera_id ? { ...c, ...patch } : c
+    )
+    await cStore.saveClassroom(classroomId.value, { cameras: updated })
+    selectedCam.value = cameras.value.find(c => c.camera_id === selectedCam.value.camera_id)
+    showEditForm.value = false
+  } catch (e) {
+    alert('저장 실패: ' + (e.response?.data?.detail ?? e.message))
+  } finally {
+    savingCameraSettings.value = false
+  }
 }
 
 async function applyCredentials() {

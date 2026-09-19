@@ -1,19 +1,19 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
-    <div class="max-w-7xl mx-auto">
+  <div class="ds-root h-full overflow-y-auto bg-canvas p-section">
+    <div class="mx-auto max-w-[1680px]">
 
       <!-- 헤더 -->
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+      <div class="mb-section flex flex-col gap-gutter sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">홈</h1>
-          <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">지정한 교실의 YOLO 분석과 모니터링을 한 번에 확인하세요</p>
+          <h1 class="text-3xl font-bold tracking-tight text-fg">홈</h1>
+          <p class="mt-1 text-lg text-fg-muted">지정한 교실의 YOLO 분석과 모니터링을 한 번에 확인하세요</p>
         </div>
 
         <div class="flex items-center gap-2">
           <label class="text-xs text-neutral-400 dark:text-neutral-600 shrink-0">표시할 교실</label>
           <select
             v-model="selectedId"
-            class="text-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400 min-w-[9rem]"
+            class="min-w-[9rem] rounded-lg border border-line bg-card px-3 py-2 text-sm text-fg focus:outline-none focus-visible:border-fg-muted"
           >
             <option v-if="!cStore.classrooms.length" :value="null">등록된 교실 없음</option>
             <option v-for="c in cStore.classrooms" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -24,7 +24,7 @@
       <!-- 교실 미지정 -->
       <div v-if="!selectedId" class="flex flex-col items-center justify-center py-28 text-neutral-400 dark:text-neutral-600 gap-3">
         <div class="w-14 h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-2xl">🏫</div>
-        <p class="text-sm">표시할 교실이 없습니다. <router-link to="/classrooms" class="text-violet-600 hover:underline">교실을 추가</router-link>해보세요.</p>
+        <p class="text-sm">표시할 교실이 없습니다. <router-link to="/classrooms" class="font-medium text-fg underline underline-offset-2">교실을 추가</router-link>해보세요.</p>
       </div>
 
       <template v-else>
@@ -32,9 +32,9 @@
         <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm p-6 lg:p-8 mb-6">
           <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center text-xl shrink-0">🪑</div>
+              <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-line text-xl">🪑</div>
               <div class="min-w-0">
-                <div class="text-xs font-medium text-violet-500 uppercase tracking-wide">YOLO 분석</div>
+                <div class="text-xs font-medium uppercase tracking-wide text-fg-muted">YOLO 분석</div>
                 <div class="text-base font-semibold text-neutral-800 dark:text-neutral-100 truncate">{{ classroom?.name }} 좌석 점유</div>
               </div>
             </div>
@@ -44,18 +44,18 @@
           </div>
 
           <div v-if="seatLoading && !seatResult" class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 text-sm gap-3">
-            <div class="w-9 h-9 rounded-full border-2 border-neutral-200 dark:border-neutral-800 border-t-violet-500 animate-spin" />
+            <div class="h-9 w-9 animate-spin rounded-full border-2 border-line border-t-fg-muted" />
             분석 중...
           </div>
 
           <div v-else-if="seatResult">
             <div class="flex items-end gap-2 mb-4">
-              <span class="text-4xl font-bold text-violet-600 leading-none">{{ seatResult.total_occupied }}</span>
+              <span class="text-4xl font-bold leading-none text-state-occupied">{{ seatResult.total_occupied }}</span>
               <span class="text-base text-neutral-400 dark:text-neutral-600 pb-1">/ {{ seatResult.total_seats }}석</span>
             </div>
             <div class="w-full h-2.5 bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden mb-6">
               <div
-                class="h-full bg-violet-500 rounded-full transition-all duration-500"
+                class="h-full rounded-full bg-state-occupied transition-all duration-500"
                 :style="{ width: seatResult.total_seats ? `${Math.round(seatResult.total_occupied / seatResult.total_seats * 100)}%` : '0%' }"
               />
             </div>
@@ -74,7 +74,7 @@
                     </template>
                   </div>
                 </div>
-                <p class="text-[11px] mb-2" :class="patrolState?.running ? 'text-violet-600' : 'text-neutral-400 dark:text-neutral-600'">
+                <p class="mb-2 text-[11px]" :class="patrolState?.running ? 'text-state-occupied' : 'text-neutral-400 dark:text-neutral-600'">
                   <template v-if="patrolState?.running">
                     얼굴 인식 순찰 중... {{ patrolState.zone_index }}/{{ patrolState.total_zones }} 구역 ({{ patrolState.zone }})
                   </template>
@@ -89,7 +89,7 @@
                   <div v-for="cam in seatResult.cameras" :key="cam.camera_id" class="rounded-xl border border-neutral-200 dark:border-neutral-800 p-4">
                     <div class="flex items-center justify-between mb-2.5">
                       <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400">{{ cam.name }}</span>
-                      <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-600">{{ cam.occupied_count }}/{{ cam.total }}석</span>
+                      <span class="rounded-full border border-line bg-canvas px-2 py-0.5 text-xs font-bold text-fg">{{ cam.occupied_count }}/{{ cam.total }}석</span>
                     </div>
                     <div class="flex flex-wrap gap-1.5">
                       <span v-for="s in cam.occupied" :key="'occ-'+s" class="text-xs px-2 py-0.5 rounded-md font-medium bg-red-50 text-red-600 border border-red-100">{{ s }}</span>
@@ -122,13 +122,13 @@
         <div class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm p-6 lg:p-8">
           <div class="flex items-center justify-between gap-3 mb-6 flex-wrap">
             <div class="flex items-center gap-3 min-w-0">
-              <div class="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center text-xl shrink-0">📊</div>
+              <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-line text-xl">📊</div>
               <div class="min-w-0">
-                <div class="text-xs font-medium text-blue-500 uppercase tracking-wide">모니터링</div>
+                <div class="text-xs font-medium uppercase tracking-wide text-fg-muted">모니터링</div>
                 <div class="text-base font-semibold text-neutral-800 dark:text-neutral-100">오늘 점유 기록</div>
               </div>
             </div>
-            <router-link :to="`/monitoring/${selectedId}`" class="text-sm text-neutral-400 dark:text-neutral-600 hover:text-blue-600 transition shrink-0">전체 보기 →</router-link>
+            <router-link :to="`/monitoring/${selectedId}`" class="shrink-0 text-sm text-fg-muted transition hover:text-fg">전체 보기 →</router-link>
           </div>
 
           <div v-if="monLoading" class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 text-sm gap-3">
@@ -153,8 +153,8 @@
                   @click="toggleHour(h.hour)"
                   class="w-16 bg-neutral-50 dark:bg-neutral-950 rounded-lg border py-2 text-center transition"
                   :class="[
-                    !h.scheduled || h.occupied === null ? 'border-neutral-100 dark:border-neutral-800 text-neutral-300 dark:text-neutral-700 cursor-not-allowed' : 'border-neutral-200 dark:border-neutral-800 hover:border-blue-300',
-                    selectedHour === h.hour ? '!border-blue-500 ring-1 ring-blue-500 bg-white dark:bg-neutral-900' : '',
+                    !h.scheduled || h.occupied === null ? 'border-neutral-100 dark:border-neutral-800 text-neutral-300 dark:text-neutral-700 cursor-not-allowed' : 'border-neutral-200 dark:border-neutral-800 hover:border-fg-muted/50',
+                    selectedHour === h.hour ? '!border-fg-muted ring-1 ring-fg-muted bg-white dark:bg-neutral-900' : '',
                   ]"
                 >
                   <div class="text-xs font-semibold" :class="h.scheduled && h.occupied !== null ? 'text-neutral-700 dark:text-neutral-300' : 'text-neutral-300 dark:text-neutral-700'">{{ h.time }}</div>
@@ -164,9 +164,9 @@
                 </button>
               </div>
 
-              <div v-if="selectedHourData" class="bg-blue-50/60 dark:bg-blue-500/10 border border-blue-100 rounded-xl px-4 py-3">
+              <div v-if="selectedHourData" class="rounded-xl border border-line bg-canvas px-4 py-3">
                 <div class="flex items-center gap-2 mb-2">
-                  <span class="font-semibold text-blue-700 text-sm">{{ selectedHourData.time }}</span>
+                  <span class="text-sm font-semibold text-fg">{{ selectedHourData.time }}</span>
                   <span class="text-xs text-neutral-500 dark:text-neutral-400">점유 {{ selectedHourData.occupied }}석 / {{ selectedHourData.total }}석</span>
                 </div>
                 <div v-if="selectedHourData.seats?.length" class="flex flex-wrap gap-1.5">
@@ -213,6 +213,7 @@ const classroom = computed(() => cStore.current)
 
 const STORAGE_KEY = 'home-classroom-id'
 const selectedId = ref(null)
+let occupancyEvents = null
 
 onMounted(async () => {
   await cStore.fetchAll()
@@ -225,6 +226,7 @@ onMounted(async () => {
 })
 
 watch(selectedId, async (id) => {
+  stopOccupancyEvents()
   seatResult.value = null
   mapData.value = null
   seatStats.value = {}
@@ -241,7 +243,50 @@ watch(selectedId, async (id) => {
   fetchSeatOccupancy()
   fetchMonitoring()
   fetchSeatFaces()
+  startOccupancyEvents(id)
 })
+
+function stopOccupancyEvents() {
+  occupancyEvents?.close()
+  occupancyEvents = null
+}
+
+function startOccupancyEvents(id) {
+  stopOccupancyEvents()
+  if (!window.EventSource) return
+  occupancyEvents = new EventSource(`/api/analysis/${id}/occupancy-events`)
+  occupancyEvents.addEventListener('occupancy', (event) => {
+    if (document.hidden || Number(selectedId.value) !== Number(id)) return
+    const payload = JSON.parse(event.data)
+    applySnapshotOccupancy(payload.seats ?? {})
+    fetchMonitoring()
+    fetchSeatFaces()
+  })
+}
+
+function applySnapshotOccupancy(seats) {
+  const seatIds = allSeatIds.value
+  const occupied = new Set(Object.entries(seats).filter(([, state]) => state === 'occupied').map(([sid]) => sid))
+  const total = seatIds.length || Object.keys(seats).length
+  const cameras = (classroom.value?.cameras ?? []).map((cam) => {
+    const ids = getCameraSeatIds(cam)
+    const occ = ids.filter((sid) => occupied.has(sid))
+    return {
+      camera_id: cam.camera_id,
+      name: cam.name,
+      total: ids.length,
+      occupied_count: occ.length,
+      occupied: occ,
+      empty: ids.filter((sid) => !occupied.has(sid)),
+    }
+  })
+  seatResult.value = {
+    total_occupied: occupied.size,
+    total_seats: total,
+    cameras,
+  }
+  drawOccupancyMap()
+}
 
 // ── YOLO 좌석 점유 분석 (홈 접속 시 자동 실행) ────────────────────────────────
 
@@ -250,6 +295,7 @@ const seatResult = ref(null)
 
 async function fetchSeatOccupancy() {
   if (!selectedId.value) return
+  if (seatLoading.value) return
   seatLoading.value = true
   try {
     const { data } = await api.get(`/analysis/${selectedId.value}/seat-occupancy`)
@@ -277,10 +323,16 @@ async function refreshAll() {
 
 function pollPatrol() {
   clearInterval(patrolTimer)
+  let lastSeatsLogged = patrolState.value?.seats_logged ?? 0
   patrolTimer = setInterval(async () => {
     try {
       const { data } = await api.get(`/face/places/${facePlaceId.value}/patrol/status`)
+      const seatsChanged = (data.seats_logged ?? 0) !== lastSeatsLogged
       patrolState.value = data
+      if (seatsChanged) {
+        lastSeatsLogged = data.seats_logged ?? 0
+        await fetchSeatFaces()
+      }
       if (!data.running) {
         clearInterval(patrolTimer)
         await fetchSeatFaces()   // 끝난 순찰 결과로 배치도를 갱신
@@ -321,6 +373,7 @@ async function fetchMapData() {
   try {
     const { data } = await api.get(`/classrooms/${selectedId.value}/map-data`)
     mapData.value = data
+    drawOccupancyMap()
   } catch {
     mapData.value = null
   }
@@ -518,6 +571,7 @@ const monLoading = ref(false)
 const seatStats = ref({})
 const hourlyStats = ref([])
 const selectedHour = ref(null)
+let pendingMonitoringRefresh = false
 
 const selectedHourData = computed(() => hourlyStats.value.find(h => h.hour === selectedHour.value) ?? null)
 function toggleHour(hour) {
@@ -526,6 +580,10 @@ function toggleHour(hour) {
 
 async function fetchMonitoring() {
   if (!selectedId.value) return
+  if (monLoading.value) {
+    pendingMonitoringRefresh = true
+    return
+  }
   monLoading.value = true
   selectedHour.value = null
   try {
@@ -540,16 +598,27 @@ async function fetchMonitoring() {
     hourlyStats.value = []
   } finally {
     monLoading.value = false
+    if (pendingMonitoringRefresh) {
+      pendingMonitoringRefresh = false
+      fetchMonitoring()
+    }
   }
 }
 
 const allSeatIds = computed(() => {
   const ids = new Set()
   for (const cam of classroom.value?.cameras ?? []) {
-    for (const sid of cam.seat_ids ?? []) ids.add(sid)
+    for (const sid of getCameraSeatIds(cam)) ids.add(sid)
   }
   return [...ids].sort((a, b) => Number(a) - Number(b))
 })
+
+function getCameraSeatIds(cam) {
+  const seatIds = cam?.seat_ids?.length
+    ? cam.seat_ids
+    : Object.keys(cam?.seat_lines ?? {})
+  return seatIds.map(String)
+}
 
 const hasMonitoringData = computed(() => Object.keys(seatStats.value).length > 0)
 
@@ -571,11 +640,14 @@ const topSeats = computed(() => {
 })
 
 // 화면을 벗어나면 진행 상황 폴링만 멈춘다 (순찰 자체는 끝까지 돌게 둔다)
-onUnmounted(() => clearInterval(patrolTimer))
+onUnmounted(() => {
+  clearInterval(patrolTimer)
+  stopOccupancyEvents()
+})
 </script>
 
 <style scoped>
 .btn-primary {
-  @apply inline-flex items-center gap-1.5 bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply inline-flex items-center gap-1.5 rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
 }
 </style>

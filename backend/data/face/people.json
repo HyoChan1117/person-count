@@ -6,7 +6,14 @@
       "authorized": true,
       "samples": 6,
       "enrolled_at": "2026-09-17T16:42:37"
+    },
+    {
+      "id": 7,
+      "name": "김효찬",
+      "authorized": true,
+      "samples": 7,
+      "enrolled_at": "2026-09-19T21:05:11"
     }
   ],
-  "next_id": 7
+  "next_id": 8
 }

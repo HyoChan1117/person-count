@@ -7,8 +7,8 @@
         <header class="flex items-end justify-between gap-section">
           <div class="min-w-0">
             <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
-            <h1 class="mt-1 text-3xl font-bold tracking-tight text-fg">{{ classroom?.name || '좌석 모니터링' }}</h1>
-            <p class="mt-1 text-lg text-fg-muted">배치도 위 좌석 상태와 {{ intervalMin }}분 단위 스냅샷</p>
+            <h1 class="mt-1 text-3xl font-bold tracking-tight text-fg">모니터링</h1>
+            <p class="mt-1 text-lg text-fg-muted">{{ classroom?.name }} 배치도 위 좌석 상태와 {{ intervalMin }}분 단위 스냅샷</p>
           </div>
           <div class="flex shrink-0 items-center gap-gutter">
             <!-- 요일 선택 (매주 월요일 00시에 기록이 초기화되므로 이번 주 요일 단위로 조회) -->
@@ -252,36 +252,43 @@ const selectedSeatParticipation = computed(() => {
   const lessons = (classroom.value?.schedule?.[selectedDateWeekdayKey.value] ?? [])
     .map(normalizeScheduleEntry)
     .filter((lesson) => Number.isFinite(lesson.hour))
+    .sort((a, b) => a.hour - b.hour)
   const scheduledHours = new Set(lessons.map((lesson) => lesson.hour))
   if (!scheduledHours.size) {
-    return { status: 'none', label: '수업 시간표 없음', detail: '선택한 날짜에 등록된 수업 시간이 없습니다.' }
+    return { status: 'none', label: '수업 시간표 없음', detail: '선택한 날짜에 등록된 수업 시간이 없습니다.', missedHours: [] }
   }
 
   const occupiedHours = hourlyStats.value
     .filter((h) => scheduledHours.has(h.hour) && (h.seats ?? []).includes(selectedSeat.value))
     .map((h) => h.hour)
 
+  const occupied = new Set(occupiedHours)
+  const occupiedLessons = lessons.filter((lesson) => occupied.has(lesson.hour))
+  const missedLessons = lessons.filter((lesson) => !occupied.has(lesson.hour))
+  const formatLesson = (lesson) => {
+    const time = `${String(lesson.hour).padStart(2, '0')}:00`
+    const title = lesson.title ? ` ${lesson.title}` : ''
+    const professor = lesson.professor ? ` · ${lesson.professor}` : ''
+    return `${time}${title}${professor}`
+  }
+
   if (occupiedHours.length === 0) {
     return {
       status: 'absent',
       label: '미참여',
       detail: `등록된 수업 ${lessons.length}개 중 점유된 시간이 없습니다.`,
+      hours: [],
+      missedHours: missedLessons.map(formatLesson),
     }
   }
 
-  const occupied = new Set(occupiedHours)
-  const occupiedLessons = lessons.filter((lesson) => occupied.has(lesson.hour))
   const status = occupiedLessons.length >= lessons.length ? 'present' : 'partial'
   return {
     status,
     label: status === 'present' ? '참여' : '부분 참여',
     detail: `수업 ${lessons.length}개 중 ${occupiedLessons.length}개 시간에 점유`,
-    hours: occupiedLessons.map((lesson) => {
-      const time = `${String(lesson.hour).padStart(2, '0')}:00`
-      const title = lesson.title ? ` ${lesson.title}` : ''
-      const professor = lesson.professor ? ` · ${lesson.professor}` : ''
-      return `${time}${title}${professor}`
-    }),
+    hours: occupiedLessons.map(formatLesson),
+    missedHours: missedLessons.map(formatLesson),
   }
 })
 

@@ -18,15 +18,44 @@ import numpy as np
 from app import detection_storage, face_storage, ptz_storage, seat_log_storage
 from app.services import ptz_camera
 
-SETTLE_TIMEOUT = 8.0      # 구역에서 멈출 때까지 최대 대기(초)
-SETTLE_TOLERANCE = 15     # 팬/틸트 도달 판정 허용 오차 (0.1도 단위)
-SETTLE_POLL_INTERVAL = 0.25
-SETTLE_STABLE_POLLS = 2   # 연속 이만큼 좌표가 같아야 "멈췄다"고 본다
-SETTLE_EXTRA = 1.5        # 정지 후 영상 흔들림이 가라앉을 때까지 추가 대기
-SHOTS_PER_ZONE = 5        # 구역당 촬영 시도 장수
-SHOT_INTERVAL = 0.4
-ZONE_REST = 1.0           # 다음 구역으로 넘어가기 전 여유
+SETTLE_TIMEOUT = 5.0      # 구역에서 멈출 때까지 최대 대기(초)
+SETTLE_TOLERANCE = 12     # 팬/틸트 도달 판정 허용 오차 (0.1도 단위)
+SETTLE_POLL_INTERVAL = 0.2
+SETTLE_STABLE_POLLS = 3   # 연속 이만큼 좌표가 같아야 "멈췄다"고 본다
+SETTLE_EXTRA = 2.0        # 정지 후 영상 흔들림이 가라앉을 때까지 추가 대기
+SHOTS_PER_ZONE = 1        # 구역당 촬영 시도 장수
+SHOT_INTERVAL = 0.0
+ZONE_REST = 0.0           # 다음 구역으로 넘어가기 전 여유
 COOLDOWN_SEC = 120.0      # 같은 대상을 다시 기록하기까지의 최소 간격
+
+
+def wait_until_settled(cam: dict, zone: dict, stop_event: threading.Event | None = None) -> None:
+    """카메라가 목표 구역에서 실제로 멈출 때까지 빠르게 기다린다."""
+    deadline = time.time() + SETTLE_TIMEOUT
+    last = None
+    stable = 0
+    while time.time() < deadline and not (stop_event and stop_event.is_set()):
+        try:
+            pos = ptz_camera.get_position(cam)
+        except Exception:
+            break
+        if pos["pan"] is None:
+            break
+
+        current = (pos["pan"], pos["tilt"], pos["zoom"])
+        near = (abs(pos["pan"] - zone["pan"]) <= SETTLE_TOLERANCE
+                and abs(pos["tilt"] - zone["tilt"]) <= SETTLE_TOLERANCE)
+        stable = stable + 1 if (current == last and near) else 0
+        if stable >= SETTLE_STABLE_POLLS:
+            break
+        last = current
+        time.sleep(SETTLE_POLL_INTERVAL)
+
+    # 좌표가 멈춘 뒤에도 영상 쪽 흔들림이 남아 있어 잠시 더 기다린다.
+    if stop_event:
+        stop_event.wait(SETTLE_EXTRA)
+    else:
+        time.sleep(SETTLE_EXTRA)
 
 
 class _Patrol:
@@ -95,34 +124,23 @@ class _Patrol:
 
             self._wait_until_settled(cam, zone)
 
-            # 여러 장 중 자리에 사람이 가장 많이 잡힌 프레임을 그 구역의 결과로 삼는다.
-            # (한 장만 보면 눈 깜빡임·가림 때문에 놓치는 자리가 생긴다)
-            best_frame, best_matches, best_hits = None, [], -1
-            for i in range(SHOTS_PER_ZONE):
-                if self.stop_event.is_set():
-                    return
-                # fresh=True: 이동 전 장면이 섞이지 않도록 매번 새로 디코딩된 프레임만 쓴다
-                frame = capture_rtsp_frame(rtsp, timeout_ms=3000, fresh=True)
-                if frame is None:
-                    continue
-                matches = self._analyze(frame, zone, face_db)
-                hits = sum(1 for m in matches if m["roi"]) if zone.get("rois") else len(matches)
-                if hits > best_hits:
-                    best_frame, best_matches, best_hits = frame, matches, hits
-                if hits and hits >= len(zone.get("rois") or [1]):
-                    break   # 모든 자리가 채워졌으면 더 찍을 이유가 없다
-                if i < SHOTS_PER_ZONE - 1:
-                    time.sleep(SHOT_INTERVAL)
+            if self.stop_event.is_set():
+                return
+            # fresh=True: 이동 전 장면이 섞이지 않도록 새로 디코딩된 프레임만 쓴다.
+            frame = capture_rtsp_frame(rtsp, timeout_ms=3000, fresh=True)
+            matches = self._analyze(frame, zone, face_db) if frame is not None else []
 
-            if best_frame is not None:
-                self._record(best_frame, best_matches, zone)
-            self._collect_seats(zone, best_matches)
+            if frame is not None:
+                self._record(frame, matches, zone)
+            self._collect_seats(zone, matches)
+            if self._seats:
+                seat_log_storage.append_snapshot(self.place_id, self._seats)
+                self.state["seats_logged"] = len(self._seats)
 
             # 마지막 구역 뒤에는 쉴 필요가 없다 (그 자리에서 순찰이 끝난다)
             if index < len(zones) and self.stop_event.wait(ZONE_REST):
                 return
 
-        seat_log_storage.append_snapshot(self.place_id, self._seats)
         self.state["seats_logged"] = len(self._seats)
         self.state["completed"] = True
 
@@ -132,28 +150,7 @@ class _Patrol:
         오차 범위에 들어왔다고 멈춘 것은 아니다 — 지나쳤다가 되돌아오는 중일 수 있다.
         그래서 목표 근처인 동시에 연속 조회에서 좌표(줌 포함)가 변하지 않아야 정지로 본다.
         """
-        deadline = time.time() + SETTLE_TIMEOUT
-        last = None
-        stable = 0
-        while time.time() < deadline and not self.stop_event.is_set():
-            try:
-                pos = ptz_camera.get_position(cam)
-            except Exception:
-                break
-            if pos["pan"] is None:
-                break
-
-            current = (pos["pan"], pos["tilt"], pos["zoom"])
-            near = (abs(pos["pan"] - zone["pan"]) <= SETTLE_TOLERANCE
-                    and abs(pos["tilt"] - zone["tilt"]) <= SETTLE_TOLERANCE)
-            stable = stable + 1 if (current == last and near) else 0
-            if stable >= SETTLE_STABLE_POLLS:
-                break
-            last = current
-            time.sleep(SETTLE_POLL_INTERVAL)
-
-        # 좌표가 멈춘 뒤에도 영상 쪽 흔들림이 남아 있어 잠시 더 기다린다
-        self.stop_event.wait(SETTLE_EXTRA)
+        wait_until_settled(cam, zone, self.stop_event)
 
     # ── 판정 ─────────────────────────────────────────────────────────────────
 
@@ -224,9 +221,6 @@ class _Patrol:
         """기록 대상 인물이 있으면 사진과 함께 남긴다. 기록했으면 True."""
         recorded = False
         for m in matches:
-            if m["authorized"] and not self.record_all:
-                continue   # 평소에는 허가된 사람을 기록하지 않는다
-
             key = (f"{zone['name']}|{m['roi']['name']}" if m["roi"]
                    else self._cooldown_key(zone, m["face"], m["name"]))
             now = time.time()

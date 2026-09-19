@@ -1,34 +1,33 @@
 <template>
-  <div class="h-full overflow-y-auto bg-neutral-50 dark:bg-neutral-950 p-6 lg:p-8">
-    <div class="max-w-3xl mx-auto">
+  <div class="ds-root h-full overflow-y-auto bg-canvas p-section">
+    <div class="mx-auto flex w-full max-w-[1680px] flex-col gap-section">
 
       <!-- 헤더 -->
-      <div class="mb-8">
-        <router-link to="/face" class="inline-flex items-center gap-1 text-xs text-neutral-400 dark:text-neutral-600 hover:text-neutral-600 dark:hover:text-neutral-300 transition mb-2">
+      <div class="flex flex-col gap-gutter">
+        <router-link to="/face" class="text-sm text-fg-muted transition-colors hover:text-fg">
           ← 얼굴 인식
         </router-link>
         <div class="flex items-center justify-between gap-3">
           <div>
-            <p class="text-[10px] font-semibold tracking-widest text-neutral-400 dark:text-neutral-600 uppercase mb-0.5">PTZ Camera</p>
-            <div class="flex items-center gap-2">
-              <h1 class="text-2xl font-bold text-neutral-900 dark:text-neutral-50 tracking-tight">카메라 설정</h1>
-              <span v-if="mockActive" class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">목데이터</span>
+            <div class="mt-1 flex items-center gap-2">
+              <h1 class="text-3xl font-bold tracking-tight text-fg">카메라 설정</h1>
+              <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
             </div>
-            <p class="text-sm text-neutral-500 dark:text-neutral-400 mt-0.5">{{ place?.name }}의 PTZ 카메라 접속 정보</p>
+            <p class="mt-1 text-lg text-fg-muted">{{ place?.name }}의 PTZ 카메라 접속 정보</p>
           </div>
           <button
             @click="toggleMock"
-            class="text-xs px-3 py-1.5 rounded-lg transition font-medium border shrink-0"
+            class="shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
             :class="mockActive
-              ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-              : 'bg-white dark:bg-neutral-900 border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:border-neutral-300 dark:hover:border-neutral-700'"
+              ? 'border-state-unknown bg-state-unknown text-canvas hover:opacity-90'
+              : 'border-line text-fg-muted hover:bg-line/40 hover:text-fg'"
           >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
         </div>
       </div>
 
       <div v-if="!place" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
 
-      <div v-else class="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-sm p-6 lg:p-8">
+      <div v-else class="w-full max-w-5xl rounded-card border border-line bg-card p-card shadow-card">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
           <div>
             <label class="label">장소 이름</label>
@@ -44,7 +43,7 @@
           </div>
         </div>
 
-        <div class="border-t border-neutral-100 dark:border-neutral-800 pt-6">
+        <div class="border-t border-line pt-6">
           <div class="flex items-center gap-2 mb-3">
             <span class="w-1.5 h-1.5 rounded-full shrink-0" :class="camera.ip ? 'bg-emerald-400' : 'bg-neutral-300 dark:bg-neutral-700'" />
             <label class="label !mb-0">PTZ 카메라</label>
@@ -85,7 +84,7 @@
           </div>
         </div>
 
-        <div class="flex items-center gap-2 mt-8 pt-6 border-t border-neutral-100 dark:border-neutral-800">
+        <div class="mt-8 flex items-center gap-2 border-t border-line pt-6">
           <button @click="save" :disabled="saving" class="btn-primary">
             {{ saving ? '저장 중...' : '저장' }}
           </button>
@@ -209,18 +208,18 @@ onMounted(fetchPlace)
 
 <style scoped>
 .label {
-  @apply block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5;
+  @apply mb-1.5 block text-xs font-medium text-fg-muted;
 }
 .input {
-  @apply w-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-neutral-900 dark:text-neutral-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400 dark:focus:ring-violet-500;
+  @apply w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted;
 }
 .hint {
-  @apply text-[11px] text-neutral-400 dark:text-neutral-600 mt-1;
+  @apply mt-1 text-[11px] text-fg-muted;
 }
 .btn-primary {
-  @apply bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-violet-700 transition disabled:opacity-50;
+  @apply rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
 }
 .btn-ghost {
-  @apply bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 text-sm font-medium px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition disabled:opacity-50;
+  @apply rounded-lg border border-line px-4 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg disabled:opacity-50;
 }
 </style>

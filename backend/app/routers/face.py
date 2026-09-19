@@ -229,13 +229,12 @@ async def test_zone(place_id: int, zone_id: int):
     face_db = _face_db()
 
     from app.services.frame_capture import capture_rtsp_frame
-    from app.services.patrol import _Patrol, SETTLE_EXTRA
+    from app.services.patrol import _Patrol, wait_until_settled
 
     def _run():
         ptz_camera.move_absolute(cam, zone["pan"], zone["tilt"], zone["zoom"])
         # 순찰과 같은 조건이 되도록 이동·안정화를 기다린 뒤 새 프레임으로 찍는다
-        import time
-        time.sleep(2.0 + SETTLE_EXTRA)
+        wait_until_settled(cam, zone)
         frame = capture_rtsp_frame(ptz_camera.rtsp_url(cam), timeout_ms=5000, fresh=True)
         if frame is None:
             return None, []

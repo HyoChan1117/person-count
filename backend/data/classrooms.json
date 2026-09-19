@@ -688,50 +688,154 @@
         }
       ],
       "created_at": "2026-06-08T22:46:55.565831",
-      "updated_at": "2026-09-19T17:33:43.715373",
+      "updated_at": "2026-09-19T22:16:08.643802",
       "prompt": "각 사람이 좌석에 앉아 있는지(seated), 서 있는지(standing) 판단하세요.",
       "seat_prompt": "1. YOLO가 놓친 앉아있는 사람이 없는지 반드시 재확인합니다.\n2. 하체가 보이지 않거나 머리와 등만 보여도 앉아있는 사람으로 판단합니다.\n3. 사람인지 불확실하더라도 앉아있을 가능성이 있으면 점유로 판단합니다.",
       "yolo_model": "yolo26x-pose",
-      "conf_threshold": 0.2,
+      "conf_threshold": 0.3,
       "yolo_llm_model": "claude-opus-5",
       "yolo_llm_conf_threshold": 0.2,
       "yolo_llm_yolo_model": "yolo26x",
       "schedule": {
         "mon": [
-          11,
-          12,
-          16,
-          17
+          {
+            "hour": 11,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 12,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 16,
+            "title": "공학기술 커뮤니케이션",
+            "professor": "전상표"
+          },
+          {
+            "hour": 17,
+            "title": "공학기술 커뮤니케이션",
+            "professor": "전상표"
+          }
         ],
         "tue": [
-          9,
-          10,
-          11,
-          12,
-          14,
-          15
+          {
+            "hour": 9,
+            "title": "AI Agent 설계 및 구축",
+            "professor": "정영철"
+          },
+          {
+            "hour": 10,
+            "title": "AI Agent 설계 및 구축",
+            "professor": "정영철"
+          },
+          {
+            "hour": 11,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 12,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 14,
+            "title": "일본어 회화(VI)",
+            "professor": "후까가요코"
+          },
+          {
+            "hour": 15,
+            "title": "일본어 회화(VI)",
+            "professor": "후까가요코"
+          }
         ],
         "wed": [
-          9,
-          10,
-          11,
-          12,
-          14,
-          15
+          {
+            "hour": 9,
+            "title": "실무 일본어(II)",
+            "professor": "후까가요코"
+          },
+          {
+            "hour": 10,
+            "title": "실무 일본어(II)",
+            "professor": "후까가요코"
+          },
+          {
+            "hour": 11,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 12,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 14,
+            "title": "공학기술 커뮤니케이션",
+            "professor": "전상표"
+          },
+          {
+            "hour": 15,
+            "title": "공학기술 커뮤니케이션",
+            "professor": "전상표"
+          }
         ],
         "thu": [
-          9,
-          10,
-          11,
-          12,
-          15
+          {
+            "hour": 9,
+            "title": "AI Agent 설계 및 구축",
+            "professor": "정영철"
+          },
+          {
+            "hour": 10,
+            "title": "AI Agent 설계 및 구축",
+            "professor": "정영철"
+          },
+          {
+            "hour": 11,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 12,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 15,
+            "title": "일본어 회화(VI)",
+            "professor": "후까가요코"
+          }
         ],
         "fri": [
-          11,
-          12,
-          15,
-          16,
-          17
+          {
+            "hour": 11,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 12,
+            "title": "K-move 특강",
+            "professor": "후까가요코, 신키나오에"
+          },
+          {
+            "hour": 15,
+            "title": "AI 데이터처리",
+            "professor": "신현호"
+          },
+          {
+            "hour": 16,
+            "title": "AI 데이터처리",
+            "professor": "신현호"
+          },
+          {
+            "hour": 17,
+            "title": "AI 데이터처리",
+            "professor": "신현호"
+          }
         ]
       }
     }

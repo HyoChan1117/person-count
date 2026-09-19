@@ -46,10 +46,13 @@
         </ul>
       </div>
 
+    </nav>
+
+    <div class="shrink-0 p-3">
       <button type="button" :class="[ITEM, ITEM_OFF, 'w-full text-left']" @click="showPromptModal = true">
         <NavIcon name="settings" /> 시스템 프롬프트
       </button>
-    </nav>
+    </div>
 
     <!-- 테마 / 관리자 -->
     <div class="shrink-0 space-y-3 border-t border-line p-4">

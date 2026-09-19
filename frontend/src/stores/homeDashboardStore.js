@@ -10,6 +10,7 @@ const ALERT_WINDOW_MS = 24 * 3600 * 1000
 const COLLECT_SEC = Number(import.meta.env.VITE_COLLECT_INTERVAL_SEC) || 600
 // seat-occupancy는 호출할 때마다 실시간 추론을 돌리므로 실서버에서는 길게 잡는다.
 const REFRESH_MS = isDemoMode ? 5000 : 120000
+const PATROL_REFRESH_MS = 1000
 // 응답이 오지 않는 요청 하나가 갱신 전체를 붙잡지 않게 요청별로 제한한다(api.js 전역 timeout은 긴 분석 화면을 끊을 수 있어 쓰지 않는다).
 // 카메라가 응답하지 않을 때 seat-occupancy 한 번이 약 15초 걸린 실측이 있어 그보다 넉넉하게 잡는다.
 const TIMEOUT = { list: 10000, status: 10000, occupancy: 40000 }
@@ -41,10 +42,14 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
   const seen = ref(loadSeen())
   let clockTimer = null
   let pollTimer = null
+  let patrolTimer = null
 
   async function loadRoom(c) {
     // 한 좌석이 카메라 두 대의 seat_ids에 함께 들어 있을 수 있다(실제 301호: 4석). 좌석은 한 번만 센다.
-    const ids = [...new Set(c.cameras.flatMap((cam) => cam.seat_ids ?? []))]
+    const ids = [...new Set(c.cameras.flatMap((cam) => {
+      const seatIds = cam.seat_ids?.length ? cam.seat_ids : Object.keys(cam.seat_lines ?? {})
+      return seatIds.map(String)
+    }))]
     const base = { id: c.id, name: c.name, total: ids.length }
     try {
       const { data } = await api.get(`/analysis/${c.id}/seat-occupancy`, { timeout: TIMEOUT.occupancy })
@@ -81,6 +86,26 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
 
   // 갱신은 겹치지 않는다: 실서버는 교실을 차례로 추론하느라 한 번이 오래 걸릴 수 있어, 진행 중이면 다음 주기를 건너뛴다.
   // 일부 요청이 실패해도 나머지는 갱신하고, 실패한 부분은 이전 값을 유지한 채 stale로 표시한다.
+  let patrolRefreshing = false
+  async function refreshPatrols() {
+    if (patrolRefreshing || !places.value.length) return
+    patrolRefreshing = true
+    try {
+      const settled = await Promise.allSettled(places.value.map(async (p) => {
+        const statusRes = await api.get(`/face/places/${p.id}/patrol/status`, { timeout: TIMEOUT.status })
+        let detections = p.detections
+        if ((statusRes.data.detections ?? 0) !== (p.status?.detections ?? 0)) {
+          const detRes = await api.get(`/face/places/${p.id}/detections`, { timeout: TIMEOUT.status })
+          detections = detRes.data.detections.map((d) => ({ ...d, key: `${p.id}:${d.id}`, placeId: p.id, placeName: p.name }))
+        }
+        return { ...p, status: statusRes.data, detections }
+      }))
+      places.value = places.value.map((p, i) => settled[i]?.status === 'fulfilled' ? settled[i].value : p)
+    } finally {
+      patrolRefreshing = false
+    }
+  }
+
   let refreshing = false
   async function refresh() {
     if (refreshing) return
@@ -135,13 +160,16 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
     refresh()
     clockTimer = setInterval(() => { now.value = Date.now() }, 1000)
     pollTimer = setInterval(refresh, REFRESH_MS)
+    patrolTimer = setInterval(refreshPatrols, PATROL_REFRESH_MS)
   }
 
   function stop() {
     clearInterval(clockTimer)
     clearInterval(pollTimer)
+    clearInterval(patrolTimer)
     clockTimer = null
     pollTimer = null
+    patrolTimer = null
   }
 
   function markSeen(key) {
