@@ -21,6 +21,32 @@
         </label>
       </div>
 
+      <!-- 10분 주기 정기 순찰 on/off. 꺼도 위의 '순찰 시작'으로 직접 돌릴 수 있다.
+           상태색 4가지는 좌석/경고 전용이라 여기서는 중립 토큰(fg/line)만 쓴다. -->
+      <div class="flex items-center justify-between gap-gutter border-t border-line pt-4">
+        <div class="min-w-0">
+          <p class="text-label text-fg">자동 순찰</p>
+          <p class="mt-0.5 text-sm text-fg-muted">
+            {{ autoPatrol ? '10분마다 한 바퀴씩 자동으로 돕니다' : '꺼짐 · 수동으로만 순찰합니다' }}
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          :aria-checked="autoPatrol"
+          aria-label="자동 순찰"
+          :disabled="busy"
+          class="relative h-7 w-12 shrink-0 rounded-full border transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted"
+          :class="autoPatrol ? 'border-fg bg-fg' : 'border-line bg-line/50'"
+          @click="emit('toggle-auto')"
+        >
+          <span
+            class="absolute top-1/2 h-5 w-5 -translate-y-1/2 rounded-full transition-all"
+            :class="autoPatrol ? 'left-[1.375rem] bg-canvas' : 'left-1 bg-fg-muted'"
+          />
+        </button>
+      </div>
+
       <div class="grid grid-cols-2 gap-gutter">
         <div>
           <p class="text-label text-fg-muted">현재 구역</p>
@@ -57,6 +83,8 @@
       </div>
 
       <p v-if="status.error" class="rounded-lg border border-line px-3 py-2 text-sm text-fg">순찰이 중단되었습니다 — {{ status.error }}</p>
+      <p v-else-if="returning" class="text-sm text-fg-muted">순찰을 중지했습니다. 카메라를 초기 위치로 되돌리는 중...</p>
+      <p v-else-if="returnedZone && !status.running" class="text-sm text-fg-muted">순찰을 중지하고 카메라를 초기 위치로 되돌렸습니다 — {{ returnedZone }}</p>
       <p v-else-if="status.completed && !status.running" class="text-sm text-fg-muted">한 바퀴를 모두 돌았습니다. 카메라는 마지막 구역({{ zoneText }})에 멈춰 있습니다.</p>
     </template>
   </UiCard>
@@ -78,9 +106,14 @@ const props = defineProps({
   passThrough: { type: Boolean, default: false },
   nextZone: { type: Object, default: null },
   busy: { type: Boolean, default: false },
+  // 중지 후 초기 고정 구역으로 되돌리는 중 / 되돌린 구역 이름
+  returning: { type: Boolean, default: false },
+  returnedZone: { type: String, default: '' },
+  // 10분 주기 정기 순찰 대상인지 (장소별 설정)
+  autoPatrol: { type: Boolean, default: true },
   recordAll: { type: Boolean, default: false },
 })
-const emit = defineEmits(['toggle', 'update:recordAll'])
+const emit = defineEmits(['toggle', 'toggle-auto', 'update:recordAll'])
 
 const stateText = computed(() => (props.status.running ? '순찰 중' : props.status.completed ? '순찰 완료' : '대기'))
 const zoneText = computed(() => zoneLabel(props.status, props.place?.zones))

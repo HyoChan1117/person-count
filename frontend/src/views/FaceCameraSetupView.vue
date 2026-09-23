@@ -1,6 +1,6 @@
 <template>
   <div class="ds-root h-full overflow-y-auto bg-canvas p-section">
-    <div class="mx-auto flex w-full max-w-[1680px] flex-col gap-section">
+    <div class="mx-auto flex min-h-full w-full max-w-[1680px] flex-col gap-section">
 
       <!-- 헤더 -->
       <div class="flex flex-col gap-gutter">
@@ -11,25 +11,17 @@
           <div>
             <div class="mt-1 flex items-center gap-2">
               <h1 class="text-3xl font-bold tracking-tight text-fg">카메라 설정</h1>
-              <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
             </div>
             <p class="mt-1 text-lg text-fg-muted">{{ place?.name }}의 PTZ 카메라 접속 정보</p>
           </div>
-          <button
-            @click="toggleMock"
-            class="shrink-0 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
-            :class="mockActive
-              ? 'border-state-unknown bg-state-unknown text-canvas hover:opacity-90'
-              : 'border-line text-fg-muted hover:bg-line/40 hover:text-fg'"
-          >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
         </div>
       </div>
 
       <div v-if="!place" class="text-center py-12 text-neutral-400 dark:text-neutral-600">불러오는 중...</div>
 
-      <div v-else class="w-full max-w-5xl rounded-card border border-line bg-card p-card shadow-card">
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
-          <div>
+      <div v-else class="flex w-full flex-1 flex-col rounded-card border border-line bg-card p-card shadow-card">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 mb-6">
+          <div class="xl:col-span-2">
             <label class="label">장소 이름</label>
             <input v-model="name" class="input" />
           </div>
@@ -51,7 +43,7 @@
           <p class="hint mb-4 -mt-2">IP를 비워 두면 PTZ 카메라가 없는 장소로 처리됩니다</p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           <div>
             <label class="label">카메라 IP</label>
             <input v-model="camera.ip" class="input font-mono" />
@@ -114,7 +106,6 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/api'
-import { useMockToggle } from '@/composables/useMockToggle'
 
 const route = useRoute()
 const placeId = route.params.id
@@ -129,20 +120,7 @@ const testing = ref(false)
 const saved = ref(false)
 const testResult = ref(null)
 
-// ── 목데이터 모드 ────────────────────────────────────────────────────────────
-
-const { mockActive, toggleMock } = useMockToggle(
-  () => {
-    testResult.value = null
-    place.value = place.value ?? { id: placeId, name: '샘플 감시 장소' }
-    name.value = place.value.name
-    camera.value = { ip: '192.168.0.50', username: 'admin', password: '', channel_code: '101', control_channel: 1, http_port: 80, rtsp_port: 554 }
-  },
-  () => {
-    testResult.value = null
-    fetchPlace()
-  },
-)
+const mockActive = ref(false)
 
 async function fetchPlace() {
   const [placeRes, classroomRes] = await Promise.all([

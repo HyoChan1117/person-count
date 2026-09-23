@@ -1,19 +1,15 @@
 {
   "people": [
     {
-      "id": 6,
-      "name": "김민석",
-      "authorized": true,
-      "samples": 6,
-      "enrolled_at": "2026-09-17T16:42:37"
-    },
-    {
-      "id": 7,
+      "id": 8,
       "name": "김효찬",
       "authorized": true,
-      "samples": 7,
-      "enrolled_at": "2026-09-19T21:05:11"
+      "samples": 11,
+      "enrolled_at": "2026-09-21T17:53:13",
+      "classroom_ids": [
+        1
+      ]
     }
   ],
-  "next_id": 8
+  "next_id": 9
 }

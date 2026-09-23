@@ -10,19 +10,11 @@
           </router-link>
           <div class="mt-1 flex items-center gap-2">
             <h1 class="text-3xl font-bold tracking-tight text-fg">인물 등록</h1>
-            <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
           </div>
           <p class="mt-1 text-lg text-fg-muted">얼굴을 등록해두면 순찰 중 허가된 사람인지 구분합니다</p>
         </div>
 
         <div class="flex items-center gap-2 shrink-0">
-          <button
-            @click="toggleMock"
-            class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
-            :class="mockActive
-              ? 'border-state-unknown bg-state-unknown text-canvas hover:opacity-90'
-              : 'border-line text-fg-muted hover:bg-line/40 hover:text-fg'"
-          >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
           <button
             @click="openForm('recognize')"
             class="inline-flex items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg"
@@ -54,6 +46,7 @@
             <div class="flex items-start justify-between gap-2 mb-2">
               <div class="min-w-0">
                 <div class="truncate font-semibold text-fg">{{ p.name }}</div>
+                <div class="truncate text-[11px] text-fg-muted">{{ classroomNames(p) }}</div>
                 <div class="text-[11px] text-fg-muted">사진 {{ p.samples }}장 · {{ p.enrolled_at?.slice(0, 10) }}</div>
               </div>
               <button
@@ -83,6 +76,20 @@
         <template v-if="purpose === 'enroll'">
           <label class="block text-sm text-neutral-600 dark:text-neutral-400 mb-1">이름</label>
           <input v-model="form.name" placeholder="예: 김민석" class="input w-full mb-4" />
+          <div class="mb-4">
+            <div class="mb-2 text-sm text-neutral-600 dark:text-neutral-400">교실</div>
+            <div class="max-h-36 space-y-1.5 overflow-y-auto rounded-lg border border-line bg-canvas p-2">
+              <label
+                v-for="room in cStore.classrooms"
+                :key="room.id"
+                class="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-fg-muted hover:bg-line/40 hover:text-fg"
+              >
+                <input v-model="form.classroom_ids" type="checkbox" :value="String(room.id)" class="h-4 w-4 accent-fg" />
+                <span class="truncate">{{ room.name }}</span>
+              </label>
+              <p v-if="!cStore.classrooms.length" class="px-2 py-3 text-xs text-fg-muted">등록된 교실이 없습니다.</p>
+            </div>
+          </div>
         </template>
         <p v-else class="text-xs text-neutral-500 dark:text-neutral-400 mb-4">
           촬영한 얼굴이 등록된 인물과 얼마나 일치하는지 확인합니다. 등록되지는 않습니다.
@@ -175,11 +182,9 @@
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import api from '@/api'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
-import { useMockToggle } from '@/composables/useMockToggle'
+import { useClassroomStore } from '@/stores/classroomStore.js'
 import BlurredImage from '@/components/ui/BlurredImage.vue'
 import ErrorNotice from '@/components/ui/ErrorNotice.vue'
-
-// ── 목데이터 모드 ────────────────────────────────────────────────────────────
 
 let mockPersonId = 1
 
@@ -191,17 +196,27 @@ function buildMockPeople() {
   ]
 }
 
-const { mockActive, toggleMock } = useMockToggle(
-  () => { people.value = buildMockPeople(); loading.value = false },
-  fetchPeople,
-)
+const mockActive = ref(false)
 
 const people = ref([])
 const loading = ref(true)
+const cStore = useClassroomStore()
 const showForm = ref(false)
 const submitting = ref(false)
 const error = ref('')
-const form = ref({ name: '', files: [] })
+const form = ref({ name: '', classroom_ids: [], files: [] })
+
+function personClassroomIds(person) {
+  if (Array.isArray(person.classroom_ids)) return person.classroom_ids
+  return person.classroom_id ? [person.classroom_id] : []
+}
+
+function classroomNames(person) {
+  const names = personClassroomIds(person).map((id) =>
+    cStore.classrooms.find(room => room.id === Number(id))?.name ?? `교실 #${id}`,
+  )
+  return names.length ? names.join(', ') : '교실 미지정'
+}
 
 // ── 웹캠 촬영 ────────────────────────────────────────────────────────────────
 
@@ -286,7 +301,7 @@ const matchResult = ref(null)
 
 function openForm(next = 'enroll') {
   purpose.value = next
-  form.value = { name: '', files: [] }
+  form.value = { name: '', classroom_ids: [], files: [] }
   error.value = ''
   camError.value = ''
   matchResult.value = null
@@ -349,7 +364,10 @@ async function submit() {
   }
 
   const body = new FormData()
-  if (purpose.value === 'enroll') body.append('name', form.value.name.trim())
+  if (purpose.value === 'enroll') {
+    body.append('name', form.value.name.trim())
+    for (const classroomId of form.value.classroom_ids) body.append('classroom_ids', classroomId)
+  }
   if (mode.value === 'webcam') {
     shots.value.forEach((s, i) => body.append('images', s.blob, `shot${i + 1}.jpg`))
   } else {
@@ -394,7 +412,10 @@ async function removePerson(person) {
   await fetchPeople()
 }
 
-onMounted(fetchPeople)
+onMounted(() => {
+  fetchPeople()
+  cStore.fetchAll()
+})
 
 onUnmounted(() => {
   stopWebcam()

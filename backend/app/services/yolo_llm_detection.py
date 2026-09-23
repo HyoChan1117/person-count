@@ -99,13 +99,13 @@ def _ensure_model() -> None:
 
 def _detect(frame: np.ndarray, conf_thresh: float, yolo_model: str | None = None):
     """YOLO로 사람 감지. yolo_model 지정 시 real_detection 경유, 없으면 yolo11n 사용. (count, boxes, result) 반환."""
-    from app.services.real_detection import infer_lock
+    from app.services.real_detection import infer_lock, yolo_device
 
     if yolo_model and yolo_model != "yolo11n":
         from app.services.real_detection import _get_yolo
         model = _get_yolo(yolo_model)
         with infer_lock:
-            result = model(frame, verbose=False, conf=conf_thresh, classes=[0])[0]
+            result = model(frame, verbose=False, device=yolo_device(), conf=conf_thresh, classes=[0])[0]
     else:
         _ensure_model()
         with infer_lock:

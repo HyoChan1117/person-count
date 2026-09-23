@@ -205,7 +205,14 @@ class _Patrol:
 
     def _collect_seats(self, zone: dict, matches: list[dict]) -> None:
         """자리 번호별 결과를 이번 순찰분에 쌓는다. 사람이 없으면 None으로 남긴다."""
-        found = {m["roi"]["name"]: m for m in matches if m["roi"]}
+        found: dict[str, dict] = {}
+        for m in matches:
+            if not m["roi"]:
+                continue
+            name = m["roi"]["name"]
+            current = found.get(name)
+            if current is None or self._seat_match_rank(m) > self._seat_match_rank(current):
+                found[name] = m
         for roi in zone.get("rois") or []:
             key = seat_log_storage.seat_key(roi["name"])
             m = found.get(roi["name"])
@@ -216,6 +223,15 @@ class _Patrol:
                 "score": round(m["score"], 3),
                 "zone": zone["name"],
             }
+
+    @staticmethod
+    def _seat_match_rank(match: dict) -> tuple[int, int, float]:
+        """Pick the best representative when multiple faces fall in the same seat ROI."""
+        return (
+            1 if match.get("authorized") else 0,
+            1 if match.get("name") else 0,
+            float(match.get("score") or 0),
+        )
 
     def _record(self, frame, matches: list[dict], zone: dict) -> bool:
         """기록 대상 인물이 있으면 사진과 함께 남긴다. 기록했으면 True."""
@@ -287,11 +303,13 @@ def start(place_id: int, record_all: bool = False) -> dict:
 def start_all() -> list[str]:
     """정기 수집용: 순찰할 수 있는 모든 장소를 한 바퀴 돌린다.
 
-    카메라가 없거나 자리 영역을 하나도 그리지 않은 장소는 건너뛴다.
+    카메라가 없거나 자리 영역을 하나도 그리지 않은 장소, 자동 순찰을 꺼 둔 장소는 건너뛴다.
     이미 돌고 있는 장소는 start()가 알아서 무시한다.
     """
     started = []
     for place in ptz_storage.get_all():
+        if not ptz_storage.auto_patrol_enabled(place):
+            continue
         if not place["camera"].get("ip"):
             continue
         if not any(z.get("rois") for z in place["zones"]):

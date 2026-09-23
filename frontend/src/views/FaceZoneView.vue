@@ -1,35 +1,27 @@
 <template>
-  <div class="ds-root h-full overflow-y-auto bg-canvas p-section">
-    <div class="mx-auto flex w-full max-w-[1680px] flex-col gap-section">
+  <div class="ds-root flex h-full flex-col overflow-hidden bg-canvas p-section">
+    <div class="mx-auto flex min-h-0 w-full max-w-[1680px] flex-1 flex-col gap-gutter overflow-hidden">
 
       <!-- 헤더 -->
-      <div class="flex flex-col gap-gutter sm:flex-row sm:items-end sm:justify-between">
+      <div class="flex shrink-0 flex-col gap-gutter sm:flex-row sm:items-end sm:justify-between">
         <div>
           <router-link to="/face" class="text-sm text-fg-muted transition-colors hover:text-fg">
             ← 얼굴 인식
           </router-link>
           <div class="mt-1 flex items-center gap-2">
             <h1 class="text-3xl font-bold tracking-tight text-fg">구역 등록</h1>
-            <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
           </div>
           <p class="mt-1 text-lg text-fg-muted">{{ place?.name }}의 PTZ 카메라를 움직여 순찰할 구역을 등록하세요</p>
         </div>
-        <div class="flex items-center gap-3 shrink-0">
-          <div v-if="position" class="tabular-nums text-sm text-fg-muted">
+        <div class="flex shrink-0 flex-wrap items-center gap-3">
+          <div v-if="position" class="rounded-lg border border-line bg-card px-3 py-2 font-mono text-xs tabular-nums text-fg-muted">
             현재 좌표 · 팬 {{ position.pan }} · 틸트 {{ position.tilt }} · 줌 {{ position.zoom }}
           </div>
-          <button
-            @click="toggleMock"
-            class="rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
-            :class="mockActive
-              ? 'border-state-unknown bg-state-unknown text-canvas hover:opacity-90'
-              : 'border-line text-fg-muted hover:bg-line/40 hover:text-fg'"
-          >{{ mockActive ? '🧪 목데이터 끄기' : '🧪 목데이터로 보기' }}</button>
         </div>
       </div>
 
       <!-- PTZ 카메라가 없는 장소 -->
-      <div v-if="place && !place.camera?.ip" class="rounded-card border border-line bg-card shadow-card">
+      <div v-if="place && !place.camera?.ip" class="flex min-h-0 flex-1 rounded-card border border-line bg-card shadow-card">
         <div class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-600 gap-3 text-center px-6">
           <div class="flex h-14 w-14 items-center justify-center rounded-card border border-line bg-canvas text-2xl">📷</div>
           <p class="text-sm">이 장소에는 PTZ 카메라가 없습니다.</p>
@@ -42,78 +34,78 @@
       </div>
 
       <template v-else>
-      <div v-if="cameraError" class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <div v-if="cameraError" class="shrink-0 rounded-lg border border-state-alert/30 bg-state-alert/10 px-4 py-3 text-sm text-state-alert">
         {{ cameraError }}
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+      <div class="grid min-h-0 flex-1 grid-cols-1 gap-gutter overflow-hidden xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
 
         <!-- 미리보기 + 제어 -->
-        <div class="xl:col-span-2 overflow-hidden rounded-card border border-line bg-card shadow-card">
-          <div class="flex items-center justify-between border-b border-line bg-card px-4 py-2.5">
-            <span class="text-sm font-medium text-neutral-600 dark:text-neutral-400 flex items-center gap-2">
-              <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> PTZ 카메라
+        <div class="flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-card shadow-card">
+          <div class="flex shrink-0 items-center justify-between border-b border-line px-card py-3">
+            <span class="flex items-center gap-2 text-sm font-semibold text-fg">
+              <span class="h-2 w-2 rounded-full bg-state-alert" /> PTZ 카메라
             </span>
-            <span class="text-xs text-neutral-400 dark:text-neutral-600">조준용 미리보기 (탐지 없음)</span>
+            <span class="text-xs text-fg-muted">조준용 미리보기 (탐지 없음)</span>
           </div>
           <!-- 조준용 미리보기에도 얼굴이 나올 수 있어 기본 블러. 조준하는 동안 유지되도록 자동 재블러는 끈다 -->
-          <BlurredImage :src="previewSrc" alt="PTZ 카메라 미리보기" :rounded="false" :auto-reblur-ms="0" class="w-full aspect-video" />
+          <BlurredImage :src="previewSrc" alt="PTZ 카메라 미리보기" :rounded="false" :auto-reblur-ms="0" class="min-h-0 w-full flex-1" />
 
           <!-- 방향 제어 (키보드로 조작, 아래 표시는 눌린 키를 보여준다) -->
-          <div class="p-5 flex flex-wrap items-center justify-center gap-6">
-            <div class="grid grid-cols-3 gap-1.5">
+          <div class="grid shrink-0 grid-cols-1 gap-gutter border-t border-line p-card lg:grid-cols-[auto_auto_minmax(14rem,22rem)] lg:items-center lg:justify-center">
+            <div class="grid grid-cols-3 gap-1.5 justify-self-center">
               <span />
-              <div class="pad" :class="{ 'pad-on': pressed.has('ArrowUp') }">↑</div>
+              <button type="button" class="pad" :class="{ 'pad-on': pressed.has('ArrowUp') }" aria-label="위로 이동" @pointerdown.prevent="pressControl('ArrowUp')" @pointerup.prevent="releaseControl('ArrowUp')" @pointerleave="releaseControl('ArrowUp')" @pointercancel="releaseControl('ArrowUp')">↑</button>
               <span />
-              <div class="pad" :class="{ 'pad-on': pressed.has('ArrowLeft') }">←</div>
-              <div class="pad !text-[11px] !text-neutral-400 dark:text-neutral-600">방향키</div>
-              <div class="pad" :class="{ 'pad-on': pressed.has('ArrowRight') }">→</div>
+              <button type="button" class="pad" :class="{ 'pad-on': pressed.has('ArrowLeft') }" aria-label="왼쪽으로 이동" @pointerdown.prevent="pressControl('ArrowLeft')" @pointerup.prevent="releaseControl('ArrowLeft')" @pointerleave="releaseControl('ArrowLeft')" @pointercancel="releaseControl('ArrowLeft')">←</button>
+              <div class="pad !cursor-default !text-[11px] !text-fg-muted">PTZ</div>
+              <button type="button" class="pad" :class="{ 'pad-on': pressed.has('ArrowRight') }" aria-label="오른쪽으로 이동" @pointerdown.prevent="pressControl('ArrowRight')" @pointerup.prevent="releaseControl('ArrowRight')" @pointerleave="releaseControl('ArrowRight')" @pointercancel="releaseControl('ArrowRight')">→</button>
               <span />
-              <div class="pad" :class="{ 'pad-on': pressed.has('ArrowDown') }">↓</div>
+              <button type="button" class="pad" :class="{ 'pad-on': pressed.has('ArrowDown') }" aria-label="아래로 이동" @pointerdown.prevent="pressControl('ArrowDown')" @pointerup.prevent="releaseControl('ArrowDown')" @pointerleave="releaseControl('ArrowDown')" @pointercancel="releaseControl('ArrowDown')">↓</button>
               <span />
             </div>
 
-            <div class="flex flex-col gap-1.5">
-              <div class="pad w-20 text-xs" :class="{ 'pad-on': pressed.has('+') }">줌 +</div>
-              <div class="pad w-20 text-xs" :class="{ 'pad-on': pressed.has('-') }">줌 −</div>
+            <div class="flex justify-center gap-1.5 lg:flex-col">
+              <button type="button" class="pad w-20 text-xs" :class="{ 'pad-on': pressed.has('+') }" aria-label="확대" @pointerdown.prevent="pressControl('+')" @pointerup.prevent="releaseControl('+')" @pointerleave="releaseControl('+')" @pointercancel="releaseControl('+')">줌 +</button>
+              <button type="button" class="pad w-20 text-xs" :class="{ 'pad-on': pressed.has('-') }" aria-label="축소" @pointerdown.prevent="pressControl('-')" @pointerup.prevent="releaseControl('-')" @pointerleave="releaseControl('-')" @pointercancel="releaseControl('-')">줌 −</button>
             </div>
 
-            <div class="flex flex-col gap-2">
+            <div class="flex min-w-0 flex-col gap-2">
               <input
                 v-model="newZoneName"
                 placeholder="구역 이름 (예: 앞줄 좌측)"
-                class="w-52 rounded-lg border border-line bg-canvas px-3 py-2 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted"
+                class="w-full rounded-lg border border-line bg-canvas px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted"
                 @keyup.enter="saveZone"
               />
               <button
                 @click="saveZone"
                 :disabled="saving"
-                class="rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                class="rounded-lg bg-fg px-4 py-2.5 text-sm font-semibold text-canvas transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >{{ saving ? '저장 중...' : '📍 이 위치 등록' }}</button>
             </div>
           </div>
-          <p class="px-5 pb-4 text-[11px] text-neutral-400 dark:text-neutral-600 text-center">
+          <p class="shrink-0 px-card pb-4 text-center text-[11px] text-fg-muted">
             방향키로 상하좌우, <span class="font-medium">+</span> / <span class="font-medium">−</span> 키로 줌을 조작합니다.
             누르고 있는 동안 움직이고 떼면 멈춥니다. (구역 이름 입력 중에는 동작하지 않습니다)
           </p>
         </div>
 
         <!-- 등록된 구역 -->
-        <div class="rounded-card border border-line bg-card p-card shadow-card">
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-sm font-semibold text-neutral-800 dark:text-neutral-100">순찰 구역</span>
-            <span class="text-xs text-neutral-400 dark:text-neutral-600">{{ zones.length }}개</span>
+        <div class="flex min-h-0 flex-col rounded-card border border-line bg-card p-card shadow-card">
+          <div class="mb-1 flex shrink-0 items-center justify-between">
+            <span class="text-sm font-semibold text-fg">순찰 구역</span>
+            <span class="rounded-full border border-line bg-canvas px-2 py-0.5 text-xs font-medium text-fg-muted">{{ zones.length }}개</span>
           </div>
-          <p class="text-[11px] text-neutral-400 dark:text-neutral-600 mb-3">
+          <p class="mb-3 shrink-0 text-[11px] text-fg-muted">
             위에서부터 이 순서대로 돌고 <span class="font-medium text-neutral-500 dark:text-neutral-400">마지막 구역에서 끝납니다</span>. 끌어서 순서를 바꿀 수 있고, 자리 영역이 없는 구역은 이동만 합니다.
           </p>
 
-          <div v-if="!zones.length" class="flex flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-600 gap-2 text-sm text-center">
+          <div v-if="!zones.length" class="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 py-12 text-center text-sm text-fg-muted">
             <div class="text-2xl">📍</div>
             아직 등록된 구역이 없습니다.<br>카메라를 움직여 위치를 등록해보세요.
           </div>
 
-          <div v-else class="space-y-2">
+          <div v-else class="min-h-0 flex-1 space-y-2 overflow-y-auto pr-1">
             <div
               v-for="(z, zi) in zones"
               :key="z.id"
@@ -123,7 +115,7 @@
               @dragend="dragFrom = null; dragOver = null"
               @drop.prevent="dropZone(zi)"
               @click="selectedZoneId = selectedZoneId === z.id ? null : z.id"
-              class="rounded-xl border p-3 transition group cursor-pointer"
+              class="group cursor-pointer rounded-lg border p-3 transition"
               :class="[
                 selectedZoneId === z.id ? 'border-fg-muted bg-line/40' : 'border-line hover:border-fg-muted/50',
                 dragFrom === zi ? 'opacity-40' : '',
@@ -132,10 +124,10 @@
             >
               <div class="flex items-center gap-2">
                 <span class="text-neutral-300 dark:text-neutral-700 cursor-grab select-none shrink-0" title="끌어서 순서 변경">⠿</span>
-                <span class="w-5 text-[11px] text-neutral-400 dark:text-neutral-600 tabular-nums shrink-0">{{ zi + 1 }}</span>
+                <span class="w-5 shrink-0 text-[11px] tabular-nums text-fg-muted">{{ zi + 1 }}</span>
                 <div class="flex-1 min-w-0">
-                  <div class="text-sm font-medium text-neutral-700 dark:text-neutral-300 truncate">{{ z.name }}</div>
-                  <div class="text-[11px] text-neutral-400 dark:text-neutral-600 tabular-nums">
+                  <div class="truncate text-sm font-medium text-fg">{{ z.name }}</div>
+                  <div class="text-[11px] tabular-nums text-fg-muted">
                     팬 {{ z.pan }} · 틸트 {{ z.tilt }} · 줌 {{ z.zoom }}
                     <span v-if="z.rois?.length" class="text-state-occupied"> · 자리 {{ z.rois.length }}개</span>
                     <span v-else class="text-neutral-400 dark:text-neutral-600"> · 이동만 (인식 안 함)</span>
@@ -143,12 +135,12 @@
                 </div>
                 <button
                   @click.stop="goto(z)"
-                  class="text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-2.5 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition shrink-0"
+                  class="shrink-0 rounded-lg border border-line px-2.5 py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg"
                 >이동</button>
                 <button
                   @click.stop="removeZone(z)"
                   title="구역 삭제"
-                  class="text-neutral-300 dark:text-neutral-700 hover:text-red-400 opacity-0 group-hover:opacity-100 transition px-1 shrink-0"
+                  class="shrink-0 px-1 text-fg-muted opacity-0 transition hover:text-state-alert group-hover:opacity-100"
                 >✕</button>
               </div>
 
@@ -161,7 +153,7 @@
                 <button
                   @click.stop="runZoneTest(z)"
                   :disabled="testing"
-                  class="flex-1 text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-700 transition disabled:opacity-50"
+                  class="flex-1 rounded-lg border border-line py-1.5 text-xs font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg disabled:opacity-50"
                 >{{ testing === z.id ? '확인 중...' : '인식 테스트' }}</button>
               </div>
             </div>
@@ -226,14 +218,13 @@ import api from '@/api'
 import RoiEditorModal from '@/components/modals/RoiEditorModal.vue'
 import BlurredImage from '@/components/ui/BlurredImage.vue'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
-import { useMockToggle } from '@/composables/useMockToggle'
 
 const SPEED = 100
 
 const route = useRoute()
 const placeId = route.params.id
 
-// ── 목데이터 모드 ────────────────────────────────────────────────────────────
+// ── 로컬 샘플 데이터 ─────────────────────────────────────────────────────────
 
 const mockPreviewImg = ref('')
 let mockNextZoneId = 1
@@ -246,19 +237,7 @@ function buildMockZones() {
   ]
 }
 
-const { mockActive, toggleMock } = useMockToggle(
-  () => {
-    mockPreviewImg.value = generateMockImageDataUrl('MOCK PTZ PREVIEW', 960, 540, '#18181b')
-    place.value = { id: placeId, name: place.value?.name ?? '샘플 감시 장소', camera: { ip: '192.168.0.50' } }
-    zones.value = buildMockZones()
-    position.value = { pan: 700, tilt: 150, zoom: 20 }
-    cameraError.value = ''
-  },
-  () => {
-    fetchPlace()
-    fetchPosition()
-  },
-)
+const mockActive = ref(false)
 
 const previewSrc = computed(() => (mockActive.value ? mockPreviewImg.value : `/api/face/places/${placeId}/ptz/preview`))
 const place = ref(null)
@@ -358,20 +337,30 @@ function sendPressedMove() {
   else move(pan, tilt, zoom)
 }
 
+function pressControl(key) {
+  if (!place.value?.camera?.ip) return
+  const normalized = normalizeKey(key)
+  if (!KEY_MOVES[normalized] || pressed.value.has(normalized)) return
+  pressed.value.add(normalized)
+  sendPressedMove()
+}
+
+function releaseControl(key) {
+  const normalized = normalizeKey(key)
+  if (!pressed.value.delete(normalized)) return
+  sendPressedMove()
+}
+
 function onKeyDown(e) {
   if (isTyping(e.target) || !place.value?.camera?.ip) return
   const key = normalizeKey(e.key)
   if (!KEY_MOVES[key]) return
   e.preventDefault()          // 방향키로 화면이 스크롤되지 않게
-  if (pressed.value.has(key)) return   // 자동 반복은 무시
-  pressed.value.add(key)
-  sendPressedMove()
+  pressControl(key)
 }
 
 function onKeyUp(e) {
-  const key = normalizeKey(e.key)
-  if (!pressed.value.delete(key)) return
-  sendPressedMove()
+  releaseControl(e.key)
 }
 
 // 키를 누른 채 창을 벗어나면 keyup을 못 받아 카메라가 계속 돈다
@@ -469,7 +458,7 @@ async function removeZone(zone) {
 
 function openRoiEditor(zone) {
   if (mockActive.value) {
-    alert('목데이터 모드에서는 자리 영역(ROI) 편집을 지원하지 않습니다. 실제 카메라 연결 후 이용해주세요.')
+    alert('자리 영역(ROI) 편집은 실제 카메라 연결 후 이용해주세요.')
     return
   }
   roiZone.value = zone

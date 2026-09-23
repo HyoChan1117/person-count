@@ -12,12 +12,17 @@
 from __future__ import annotations
 
 import json
+import os
 import re
+import threading
 from datetime import datetime
 from pathlib import Path
 
 _DIR = Path(__file__).parent.parent / "data" / "face"
 MAX_SNAPSHOTS = 500
+
+# 순찰은 구역마다 파일 전체를 다시 쓴다. 한 프로세스 안에서 두 순찰이 겹쳐 읽고-고쳐-쓰지 않도록 묶는다.
+_write_lock = threading.Lock()
 
 
 def _file(place_id: int) -> Path:
@@ -30,16 +35,32 @@ def seat_key(roi_name: str) -> str:
     return m.group() if m else roi_name
 
 
+def _write_atomic(path: Path, text: str) -> None:
+    """같은 폴더에 임시 파일로 먼저 쓴 뒤 교체한다.
+
+    파일을 곧바로 덮어쓰면 쓰는 도중에 프로세스가 끊길 때 JSON이 반만 남아 깨진다
+    (한 번 깨지면 이 파일을 읽는 순찰과 모니터링 화면이 모두 멈춘다).
+    줄바꿈이 운영체제마다 달라지지 않도록 바이트로 쓴다.
+    """
+    tmp = path.with_name(path.name + ".tmp")
+    with open(tmp, "wb") as f:
+        f.write(text.encode("utf-8"))
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
 def append_snapshot(place_id: int, seats: dict) -> dict:
     path = _file(place_id)
-    data = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {"snapshots": []}
-
     snapshot = {"ts": datetime.now().isoformat(timespec="seconds"), "seats": seats}
-    data["snapshots"].append(snapshot)
-    data["snapshots"] = data["snapshots"][-MAX_SNAPSHOTS:]
 
-    _DIR.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    with _write_lock:
+        data = json.loads(path.read_text(encoding="utf-8-sig")) if path.exists() else {"snapshots": []}
+        data["snapshots"].append(snapshot)
+        data["snapshots"] = data["snapshots"][-MAX_SNAPSHOTS:]
+
+        _DIR.mkdir(parents=True, exist_ok=True)
+        _write_atomic(path, json.dumps(data, ensure_ascii=False, indent=2))
     return snapshot
 
 
@@ -48,5 +69,5 @@ def get_snapshots(place_id: int, limit: int = 50) -> list[dict]:
     path = _file(place_id)
     if not path.exists():
         return []
-    snapshots = json.loads(path.read_text(encoding="utf-8"))["snapshots"]
+    snapshots = json.loads(path.read_text(encoding="utf-8-sig"))["snapshots"]
     return list(reversed(snapshots[-limit:]))

@@ -18,7 +18,9 @@ export function usePatrolPhase(status, zones) {
   const zoneChangedAt = ref(Date.now())
   let timer = null
 
-  watch(() => [status.value?.zone_index, status.value?.running], () => { zoneChangedAt.value = Date.now() })
+  // 배열을 돌려주면 값이 같아도 매번 새 참조라, 1초마다 상태를 새로 받을 때마다 기준 시각이 재설정돼
+  // 단계가 영원히 첫 단계(이동)에 머문다. 문자열로 합쳐 값이 실제로 바뀔 때만 다시 잰다.
+  watch(() => `${status.value?.zone_index}|${status.value?.running}`, () => { zoneChangedAt.value = Date.now() })
 
   watch(() => status.value?.running, (running) => {
     clearInterval(timer)

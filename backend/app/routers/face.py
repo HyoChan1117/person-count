@@ -10,7 +10,7 @@ import asyncio
 import cv2
 import numpy as np
 import requests
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi import Response
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
@@ -321,18 +321,30 @@ def _face_db():
 
 
 @router.get("/people")
-def list_people():
-    return {"people": face_storage.get_all()}
+def list_people(classroom_id: int | None = Query(default=None)):
+    return {"people": face_storage.get_all(classroom_id)}
 
 
 @router.post("/people")
-async def enroll_person(name: str = Form(...), images: list[UploadFile] = File(...)):
+async def enroll_person(
+    name: str = Form(...),
+    classroom_id: int | None = Form(default=None),
+    classroom_ids: list[int] | None = Form(default=None),
+    images: list[UploadFile] = File(...),
+):
     """사진 여러 장의 얼굴 임베딩을 평균내 등록한다. 같은 이름이면 재등록(갱신)."""
     face_db = _face_db()
 
     name = name.strip()
     if not name:
         raise HTTPException(400, "이름을 입력해주세요")
+    selected_classroom_ids = list(classroom_ids or [])
+    if classroom_id is not None and classroom_id not in selected_classroom_ids:
+        selected_classroom_ids.append(classroom_id)
+    selected_classroom_ids = sorted(set(selected_classroom_ids))
+    for selected_id in selected_classroom_ids:
+        if not storage.get_one(selected_id):
+            raise HTTPException(404, "Classroom not found")
 
     frames = []
     for upload in images:
@@ -351,7 +363,7 @@ async def enroll_person(name: str = Form(...), images: list[UploadFile] = File(.
     except Exception as e:
         raise HTTPException(500, f"얼굴 등록 처리 중 오류: {type(e).__name__}: {e}")
 
-    person = face_storage.upsert(name, found)
+    person = face_storage.upsert(name, found, classroom_ids=selected_classroom_ids)
 
     # 목록에 보여줄 썸네일: 얼굴이 검출된 첫 사진을 줄여서 저장
     face_storage.PHOTO_DIR.mkdir(parents=True, exist_ok=True)
@@ -459,6 +471,18 @@ def patrol_stop(place_id: int):
     from app.services import patrol
     patrol.stop(place_id)
     return {"ok": True}
+
+
+class AutoPatrolUpdate(BaseModel):
+    enabled: bool
+
+
+@router.put("/places/{place_id}/patrol/auto")
+def patrol_auto(place_id: int, body: AutoPatrolUpdate):
+    """10분 주기 정기 순찰 대상에서 이 장소를 넣고 뺀다(수동 순찰은 그대로 가능)."""
+    _get_place(place_id)
+    place = ptz_storage.set_auto_patrol(place_id, body.enabled)
+    return {"auto_patrol": ptz_storage.auto_patrol_enabled(place)}
 
 
 @router.get("/places/{place_id}/patrol/status")

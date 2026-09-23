@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import threading
 import time
 
@@ -23,13 +24,16 @@ import numpy as np
 from fastapi import Request
 
 from app.services.frame_capture import capture_rtsp_frame
-from app.services.real_detection import _get_yolo, infer_lock
+from app.services.real_detection import _get_yolo, infer_lock, yolo_device
 
 logger = logging.getLogger(__name__)
 
 _BOUNDARY = b"--frame"
-_EMIT_INTERVAL = 0.05  # 전송 주기: 추론보다 촘촘히 확인해 새 프레임이 나오는 즉시 내보낸다
-_INFER_INTERVAL = 0.066  # 추론 최소 간격(약 15fps): 이게 없으면 워커가 쉬지 않고 GPU를 점유해 다른 YOLO 요청까지 지연됨
+_EMIT_INTERVAL = float(os.getenv("LIVE_EMIT_INTERVAL", "0.05"))
+_CAPTURE_FPS = max(1.0, float(os.getenv("LIVE_CAPTURE_FPS", "12")))
+_CAPTURE_INTERVAL = 1.0 / _CAPTURE_FPS
+_INFER_FPS = max(0.5, float(os.getenv("LIVE_INFER_FPS", "4")))
+_INFER_INTERVAL = 1.0 / _INFER_FPS
 _JPEG_QUALITY = 75
 
 
@@ -42,6 +46,47 @@ def _placeholder_jpeg(text: str) -> bytes:
 
 _CONNECTING_JPEG = _placeholder_jpeg("connecting...")
 _ERROR_JPEG = _placeholder_jpeg("live view error")
+
+
+def _extract_person_boxes(result) -> list[tuple[int, int, int, int, float]]:
+    if result.boxes is None:
+        return []
+    boxes = []
+    for box in result.boxes:
+        cls = int(box.cls.item()) if box.cls is not None else 0
+        if cls != 0:
+            continue
+        x1, y1, x2, y2 = map(int, box.xyxy[0].tolist())
+        conf = float(box.conf.item()) if box.conf is not None else 0.0
+        boxes.append((x1, y1, x2, y2, conf))
+    return boxes
+
+
+def _draw_cached_detections(frame: np.ndarray, boxes: list[tuple[int, int, int, int, float]]) -> np.ndarray:
+    annotated = frame.copy()
+    for i, (x1, y1, x2, y2, conf) in enumerate(boxes, start=1):
+        cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 220, 80), 2)
+        cv2.putText(
+            annotated,
+            f"{i} {conf:.2f}",
+            (x1 + 4, max(18, y1 - 6)),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            (0, 220, 80),
+            2,
+        )
+    cv2.rectangle(annotated, (0, 0), (150, 28), (0, 0, 0), -1)
+    cv2.putText(annotated, f"person: {len(boxes)}", (8, 20),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    return annotated
+
+
+def _draw_count_badge(frame: np.ndarray, count: int) -> np.ndarray:
+    annotated = frame.copy()
+    cv2.rectangle(annotated, (0, 0), (150, 28), (0, 0, 0), -1)
+    cv2.putText(annotated, f"person: {count}", (8, 20),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+    return annotated
 
 
 class _LiveWorker:
@@ -68,6 +113,9 @@ class _LiveWorker:
 
     def _run(self):
         model = _get_yolo(self.model_name)
+        boxes: list[tuple[int, int, int, int, float]] = []
+        pose_jpeg: bytes | None = None
+        last_infer = 0.0
         while not self._stop:
             t0 = time.monotonic()
             frame = capture_rtsp_frame(self.rtsp_url, timeout_ms=2000)
@@ -75,13 +123,27 @@ class _LiveWorker:
                 time.sleep(0.3)
                 continue
             try:
-                with infer_lock:
-                    result = model.predict(frame, conf=self.conf_threshold, classes=[0], verbose=False)[0]
-                annotated = result.plot()
-                count = int((result.boxes.cls == 0).sum()) if result.boxes is not None else 0
-                cv2.rectangle(annotated, (0, 0), (150, 28), (0, 0, 0), -1)
-                cv2.putText(annotated, f"person: {count}", (8, 20),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                now = time.monotonic()
+                if now - last_infer >= _INFER_INTERVAL and infer_lock.acquire(blocking=False):
+                    try:
+                        result = model.predict(frame, device=yolo_device(), conf=self.conf_threshold, classes=[0], verbose=False)[0]
+                        boxes = _extract_person_boxes(result)
+                        pose_jpeg = None
+                        if result.keypoints is not None:
+                            pose_annotated = _draw_count_badge(result.plot(), len(boxes))
+                            ok, buf = cv2.imencode(".jpg", pose_annotated, [cv2.IMWRITE_JPEG_QUALITY, _JPEG_QUALITY])
+                            if ok:
+                                pose_jpeg = buf.tobytes()
+                        last_infer = now
+                    finally:
+                        infer_lock.release()
+                if pose_jpeg is not None:
+                    with self._lock:
+                        self._jpeg = pose_jpeg
+                    elapsed = time.monotonic() - t0
+                    time.sleep(max(0.0, _CAPTURE_INTERVAL - elapsed))
+                    continue
+                annotated = _draw_cached_detections(frame, boxes)
             except Exception:
                 logger.exception("[live_stream] 추론 오류 (rtsp=%s)", self.rtsp_url)
                 annotated = frame
@@ -93,7 +155,7 @@ class _LiveWorker:
             except Exception:
                 logger.exception("[live_stream] 인코딩 오류 (rtsp=%s)", self.rtsp_url)
             elapsed = time.monotonic() - t0
-            time.sleep(max(0.0, _INFER_INTERVAL - elapsed))
+            time.sleep(max(0.0, _CAPTURE_INTERVAL - elapsed))
 
     def get_jpeg(self) -> bytes:
         with self._lock:

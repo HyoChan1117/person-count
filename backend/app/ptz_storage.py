@@ -32,6 +32,21 @@ def get_one(place_id: int) -> dict | None:
     return next((p for p in _read()["places"] if p["id"] == place_id), None)
 
 
+def auto_patrol_enabled(place: dict) -> bool:
+    """정기 순찰 대상인지. 이 값이 생기기 전에 만든 장소는 켜져 있던 것으로 본다."""
+    return bool(place.get("auto_patrol", True))
+
+
+def set_auto_patrol(place_id: int, enabled: bool) -> dict | None:
+    data = _read()
+    for place in data["places"]:
+        if place["id"] == place_id:
+            place["auto_patrol"] = bool(enabled)
+            _write(data)
+            return place
+    return None
+
+
 def create(name: str, camera: dict, classroom_id: int | None = None) -> dict:
     data = _read()
     place = {
@@ -42,6 +57,8 @@ def create(name: str, camera: dict, classroom_id: int | None = None) -> dict:
         "camera": camera,
         "zones": [],
         "next_zone_id": 1,
+        # 10분 주기 정기 순찰 대상에 포함할지. 끄면 수동 순찰만 가능하다.
+        "auto_patrol": True,
     }
     data["places"].append(place)
     data["next_id"] += 1

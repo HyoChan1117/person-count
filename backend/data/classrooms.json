@@ -688,12 +688,12 @@
         }
       ],
       "created_at": "2026-06-08T22:46:55.565831",
-      "updated_at": "2026-09-19T22:16:08.643802",
-      "prompt": "각 사람이 좌석에 앉아 있는지(seated), 서 있는지(standing) 판단하세요.",
+      "updated_at": "2026-09-23T14:37:36.956689",
+      "prompt": "# 카운트 제외 대상\n- 의자에 걸려있는 담요\n- yolo가 탐지 못한 사람\n각 사람이 좌석에 앉아 있는지(seated), 서 있는지(standing) 판단하세요.",
       "seat_prompt": "1. YOLO가 놓친 앉아있는 사람이 없는지 반드시 재확인합니다.\n2. 하체가 보이지 않거나 머리와 등만 보여도 앉아있는 사람으로 판단합니다.\n3. 사람인지 불확실하더라도 앉아있을 가능성이 있으면 점유로 판단합니다.",
       "yolo_model": "yolo26x-pose",
-      "conf_threshold": 0.3,
-      "yolo_llm_model": "claude-opus-5",
+      "conf_threshold": 0.1,
+      "yolo_llm_model": "claude-sonnet-5",
       "yolo_llm_conf_threshold": 0.2,
       "yolo_llm_yolo_model": "yolo26x",
       "schedule": {
@@ -838,7 +838,21 @@
           }
         ]
       }
+    },
+    {
+      "id": 4,
+      "name": "창조관 304호",
+      "cameras": [],
+      "prompt": null,
+      "yolo_model": "yolov8x",
+      "conf_threshold": null,
+      "yolo_llm_model": "claude-sonnet-5",
+      "yolo_llm_conf_threshold": null,
+      "yolo_llm_yolo_model": "yolo26x-pose",
+      "schedule": null,
+      "created_at": "2026-09-21T18:48:07.126970",
+      "updated_at": "2026-09-21T18:48:07.126970"
     }
   ],
-  "next_id": 4
+  "next_id": 6
 }

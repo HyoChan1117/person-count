@@ -8,16 +8,11 @@
           <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 좌석 확인</router-link>
           <div class="mt-1 flex items-center gap-3">
             <h1 class="text-3xl font-bold tracking-tight text-fg">대시보드</h1>
-            <span v-if="mockActive" class="rounded-full border border-line px-2.5 py-0.5 text-xs font-medium text-fg-muted">목데이터</span>
           </div>
           <p class="mt-1 text-lg text-fg-muted">{{ classroom?.name }} 실시간 인원 현황</p>
         </div>
 
         <div class="flex shrink-0 items-center gap-gutter">
-          <button type="button" :class="[BTN_OUTLINE, mockActive ? '!border-fg-muted !bg-line !text-fg' : '']" :aria-pressed="mockActive" @click="toggleMock">
-            {{ mockActive ? '목데이터 끄기' : '목데이터로 보기' }}
-          </button>
-
           <div class="flex items-center gap-1 rounded-card border border-line bg-card p-1.5">
             <button type="button" :disabled="seatLoading" :class="BTN_PRIMARY" @click="fetchSeatOccupancy">
               {{ seatLoading ? '분석 중...' : 'YOLO 분석' }}
@@ -179,7 +174,6 @@ import CameraSeatCard from '@/components/dashboard/CameraSeatCard.vue'
 import api from '@/api'
 import { generateMockImageDataUrl } from '@/utils/mockImage'
 import { cssColor } from '@/utils/cssColor'
-import { useMockToggle } from '@/composables/useMockToggle'
 
 // 클래스는 Tailwind가 스캔할 수 있도록 전부 리터럴로 적는다.
 const FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted'
@@ -226,7 +220,7 @@ const yoloLlmResult = ref(null)
 
 const mapData = ref(null)
 
-// ── 목데이터 모드 ────────────────────────────────────────────────────────────
+// ── 로컬 샘플 데이터 ─────────────────────────────────────────────────────────
 
 const MOCK_SEAT_IDS = ['1', '2', '3', '4', '5', '6']
 const MOCK_CAMERAS = [
@@ -276,10 +270,7 @@ function resetAnalysisResults() {
   liveOn.value = false
 }
 
-const { mockActive, toggleMock } = useMockToggle(
-  () => { resetAnalysisResults(); fetchSeatOccupancy() },
-  resetAnalysisResults,
-)
+const mockActive = ref(false)
 
 // ── 실시간 YOLO 탐지 ─────────────────────────────────────────────────────────
 
@@ -290,7 +281,7 @@ const mockLiveImg = ref('')
 
 const liveCameras = computed(() => (mockActive.value ? MOCK_CAMERAS : (classroom.value?.cameras ?? []).filter(c => c.rtsp_url)))
 
-// 목데이터 영상 배경은 디자인 토큰 색을 쓴다(얼굴 사진 없음)
+// 샘플 영상 배경은 디자인 토큰 색을 쓴다(얼굴 사진 없음)
 const mockLiveFrame = () => generateMockImageDataUrl('MOCK LIVE FEED', 960, 540, cssColor('canvas'))
 
 function toggleLive() {

@@ -8,6 +8,8 @@
 #   docker compose -f docker-compose.yml up -d
 services:
   backend:
+    ports:
+      - "8000:8000"
     volumes:
       - ./backend/app:/app/app
       - ./backend/main.py:/app/main.py

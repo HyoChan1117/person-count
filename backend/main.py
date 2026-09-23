@@ -1,4 +1,10 @@
+from pathlib import Path
+
 from dotenv import load_dotenv
+
+_HERE = Path(__file__).resolve().parent
+load_dotenv(_HERE.parent / ".env")
+load_dotenv(_HERE / ".env")
 load_dotenv()
 
 import asyncio

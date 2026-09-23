@@ -171,7 +171,7 @@ def _run_seat_occupancy(frame: np.ndarray, camera, yolo_model: str = "yolov8x", 
     use_pose = False
 
     try:
-        from app.services.real_detection import _get_yolo, _CONF_THRESH, infer_lock
+        from app.services.real_detection import _get_yolo, _CONF_THRESH, infer_lock, yolo_device
         conf = conf_threshold if conf_threshold is not None else _CONF_THRESH
         try:
             pose_model = _get_yolo(_POSE_MODEL_NAME)
@@ -180,7 +180,7 @@ def _run_seat_occupancy(frame: np.ndarray, camera, yolo_model: str = "yolov8x", 
             pose_model = _get_yolo(yolo_model)
 
         with infer_lock:
-            pose_result = pose_model(frame, verbose=False, conf=conf, classes=[0], imgsz=640)[0]
+            pose_result = pose_model(frame, verbose=False, device=yolo_device(), conf=conf, classes=[0], imgsz=640)[0]
         if pose_result.boxes is not None:
             min_h = frame.shape[0] * 0.05
             kps_data = pose_result.keypoints.data.cpu().numpy() if (use_pose and pose_result.keypoints is not None) else None

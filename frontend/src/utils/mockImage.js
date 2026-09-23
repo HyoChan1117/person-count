@@ -1,4 +1,4 @@
-// 실제 카메라/사진이 없을 때 목데이터 미리보기용 플레이스홀더 이미지를 생성한다.
+// 실제 카메라/사진이 없을 때 로컬 플레이스홀더 이미지를 생성한다.
 export function generateMockImageDataUrl(text = 'MOCK', width = 640, height = 360, bg = '#3f3f46') {
   const canvas = document.createElement('canvas')
   canvas.width = width

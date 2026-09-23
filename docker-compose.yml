@@ -1,10 +1,16 @@
 services:
   backend:
     build: ./backend
-    env_file: ./backend/.env.production
+    env_file:
+      - ./backend/.env.production
+      - ./.env
     gpus: all
     environment:
       CORS_ORIGINS: "*"
+      YOLO_DEVICE: "0"
+      LIVE_INFER_FPS: "10"
+      LIVE_CAPTURE_FPS: "15"
+      LIVE_EMIT_INTERVAL: "0.033"
     volumes:
       - ./backend/data:/app/data
       - ./backend/models:/app/models:ro

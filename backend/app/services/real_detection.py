@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 import threading
+import os
 from pathlib import Path
 
 _MODELS_DIR = Path(__file__).parent.parent.parent / "models"
 _CONF_THRESH = 0.60
+_DEVICE = os.getenv("YOLO_DEVICE", "auto").lower()
 
 _yolo_cache: dict[str, object] = {}
 
@@ -21,6 +23,16 @@ infer_lock = threading.Lock()
 # 처음 요청하면(예: 대시보드 사전 준비 + 실시간 탐지 시작) 락이 없을 때 두 스레드가 각각
 # x-large 모델을 통째로 로드해 메모리가 순간적으로 두 배로 뛴다.
 _load_lock = threading.Lock()
+
+
+def yolo_device() -> str:
+    if _DEVICE not in ("", "auto"):
+        return _DEVICE
+    try:
+        import torch
+        return "0" if torch.cuda.is_available() else "cpu"
+    except Exception:
+        return "cpu"
 
 
 def _get_yolo(model_name: str = "yolo26x"):

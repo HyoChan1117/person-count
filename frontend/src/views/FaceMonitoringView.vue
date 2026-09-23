@@ -24,8 +24,12 @@
           :pass-through="passThrough"
           :next-zone="nextZone"
           :busy="busy"
+          :returning="returning"
+          :returned-zone="returnedZone"
+          :auto-patrol="autoPatrol"
           v-model:record-all="recordAll"
           @toggle="toggle"
+          @toggle-auto="toggleAuto"
         />
 
         <UiCard v-if="seatLogs.length" class="flex flex-col gap-gutter">
@@ -183,12 +187,57 @@ watch(() => status.value.running, (running) => {
   timer = running ? setInterval(poll, 1000) : null
 }, { immediate: true })
 
+// 순찰을 중지하면 카메라는 멈춘 그 자리에 그대로 남는다. 한 바퀴를 다 돌았을 때와 같은 자리에
+// 서 있도록 초기 고정 구역(자리 영역이 없는 마지막 구역)으로 되돌린다.
+const returning = ref(false)
+const returnedZone = ref('')
+const homeZone = computed(() => [...zoneList.value].reverse().find((z) => !(z.rois?.length)) ?? null)
+
+async function returnHome() {
+  const zone = homeZone.value
+  if (!zone) return   // 되돌아갈 고정 구역을 만들지 않은 장소는 그대로 둔다
+  returning.value = true
+  try {
+    await api.post(`/face/places/${placeId}/zones/${zone.id}/goto`)
+    returnedZone.value = zone.name
+  } catch (e) {
+    // 중지 자체는 이미 끝났으므로 "중지 실패"처럼 보이지 않게 따로 알린다
+    returnedZone.value = ''
+    alert(`순찰은 중지했지만 초기 위치로 되돌리지 못했습니다 — ${e.response?.data?.detail ?? e.message}`)
+  } finally {
+    returning.value = false
+  }
+}
+
+// 10분 주기 정기 순찰 대상 여부(장소별, 서버에 저장된다). 설정이 없던 장소는 켜져 있던 것으로 본다.
+const autoPatrol = computed(() => place.value?.auto_patrol ?? true)
+
+async function toggleAuto() {
+  const enabled = !autoPatrol.value
+  busy.value = true
+  try {
+    await api.put(`/face/places/${placeId}/patrol/auto`, { enabled })
+    // 끄는 순간 돌고 있는 순찰이 있으면 그것까지 멈추고 초기 위치로 되돌린다
+    if (!enabled && status.value.running) {
+      await api.post(`/face/places/${placeId}/patrol/stop`)
+      await returnHome()
+    }
+    await fetchAll()
+  } catch (e) {
+    alert(e.response?.data?.detail ?? e.message)
+  } finally {
+    busy.value = false
+  }
+}
+
 async function toggle() {
   busy.value = true
   try {
     if (status.value.running) {
       await api.post(`/face/places/${placeId}/patrol/stop`)
+      await returnHome()
     } else {
+      returnedZone.value = ''
       await api.post(`/face/places/${placeId}/patrol/start`, { record_all: recordAll.value })
     }
     await fetchAll()

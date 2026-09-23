@@ -8,18 +8,10 @@
           <router-link to="/classrooms" class="text-sm text-fg-muted transition-colors hover:text-fg">← 목록</router-link>
           <div class="mt-1 flex items-center gap-2">
             <h1 class="text-3xl font-bold tracking-tight text-fg">카메라 설정</h1>
-            <span v-if="mockActive" class="rounded-full border border-state-unknown/30 bg-state-unknown/10 px-2 py-0.5 text-xs font-semibold text-state-unknown">목데이터</span>
           </div>
           <p class="mt-1 text-lg text-fg-muted">{{ classroom?.name }}의 CCTV와 좌석 선을 설정합니다</p>
         </div>
         <div class="flex shrink-0 items-center gap-2">
-        <button
-          @click="toggleMock"
-          class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted"
-          :class="mockActive
-            ? 'border-state-unknown/40 bg-state-unknown/10 text-state-unknown hover:bg-state-unknown/15'
-            : 'border-line text-fg-muted hover:bg-line/40 hover:text-fg'"
-        >{{ mockActive ? '목데이터 끄기' : '목데이터로 보기' }}</button>
         <router-link :to="`/dashboard/${classroomId}`" class="rounded-lg border border-line px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-line/40 hover:text-fg">
           대시보드
         </router-link>
@@ -342,7 +334,6 @@
 import { ref, computed, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { useClassroomStore } from '@/stores/classroomStore.js'
-import { useMockToggle } from '@/composables/useMockToggle'
 import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import NavIcon from '@/components/ui/NavIcon.vue'
 import api from '@/api'
@@ -355,7 +346,7 @@ const cStore = useClassroomStore()
 const classroomId = computed(() => Number(route.params.id))
 const classroom = computed(() => cStore.current)
 
-// 카메라가 없어도 UI를 확인할 수 있는 목데이터 모드
+// 로컬 화면 확인용 샘플 카메라 목록
 const mockCameraList = ref([
   {
     camera_id: 'MOCK1',
@@ -385,13 +376,7 @@ function resetCameraSelection() {
   frameImage.value = null
 }
 
-const { mockActive, toggleMock } = useMockToggle(
-  () => {
-    resetCameraSelection()
-    if (mockCameraList.value.length) selectCamera(mockCameraList.value[0])
-  },
-  resetCameraSelection,
-)
+const mockActive = ref(false)
 
 const cameras = computed(() => (mockActive.value ? mockCameraList.value : (classroom.value?.cameras ?? [])))
 
@@ -459,7 +444,7 @@ async function uploadBgReference(e) {
   if (mockActive.value) {
     bgHasReference.value = true
     bgResult.value = null
-    alert('(목데이터) 빈 교실 기준 이미지가 저장되었습니다.')
+    alert('빈 교실 기준 이미지가 저장되었습니다.')
     return
   }
   savingBg.value = true
@@ -492,7 +477,7 @@ async function saveBgReference() {
   if (mockActive.value) {
     bgHasReference.value = true
     bgResult.value = null
-    alert('(목데이터) 빈 교실 기준이 저장되었습니다.')
+    alert('빈 교실 기준이 저장되었습니다.')
     return
   }
   savingBg.value = true
@@ -654,7 +639,7 @@ const capturing = ref(false)
 const captureError = ref(null)
 const snapshotImg = ref(null)
 
-// 목데이터 모드에서 사용할 가짜 프레임(강의실 배치를 흉내낸 캔버스)을 생성
+// 로컬 화면 확인용 프레임(강의실 배치를 흉내낸 캔버스)을 생성
 async function loadMockFrame() {
   capturing.value = true
   captureError.value = null

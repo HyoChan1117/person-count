@@ -12,11 +12,14 @@ import requests
 from requests.auth import HTTPDigestAuth
 
 _TIMEOUT = 5.0
+_SESSION = requests.Session()
+_SESSION.trust_env = False
 
 # 카메라가 capabilities로 보고한 실제 절대좌표 범위
 PAN_RANGE = (0, 3600)
 TILT_RANGE = (-249, 750)
 ZOOM_RANGE = (10, 250)
+PTZ_MOVE_SPEED = 100
 
 
 def default_camera() -> dict:
@@ -63,7 +66,7 @@ def _clamp(value: int, bounds: tuple[int, int]) -> int:
 
 def get_position(cam: dict) -> dict:
     """현재 절대 위치 조회. {pan, tilt, zoom}"""
-    r = requests.get(f"{_base(cam)}/status", auth=_auth(cam), timeout=_TIMEOUT)
+    r = _SESSION.get(f"{_base(cam)}/status", auth=_auth(cam), timeout=_TIMEOUT)
     r.raise_for_status()
     return {
         "pan": _tag(r.text, "azimuth"),
@@ -74,14 +77,21 @@ def get_position(cam: dict) -> dict:
 
 def move_absolute(cam: dict, pan: int, tilt: int, zoom: int) -> None:
     """저장해 둔 구역 좌표로 이동."""
-    body = (
+    def body_with_speed(speed: int | None) -> str:
+        speed_xml = f"<speed>{_clamp(speed, (1, 100))}</speed>" if speed is not None else ""
+        return (
         "<PTZData><AbsoluteHigh>"
         f"<elevation>{_clamp(tilt, TILT_RANGE)}</elevation>"
         f"<azimuth>{_clamp(pan, PAN_RANGE)}</azimuth>"
         f"<absoluteZoom>{_clamp(zoom, ZOOM_RANGE)}</absoluteZoom>"
+            f"{speed_xml}"
         "</AbsoluteHigh></PTZData>"
-    )
-    r = requests.put(f"{_base(cam)}/absolute", data=body, auth=_auth(cam), timeout=_TIMEOUT)
+        )
+
+    url = f"{_base(cam)}/absolute"
+    r = _SESSION.put(url, data=body_with_speed(PTZ_MOVE_SPEED), auth=_auth(cam), timeout=_TIMEOUT)
+    if r.status_code >= 400:
+        r = _SESSION.put(url, data=body_with_speed(None), auth=_auth(cam), timeout=_TIMEOUT)
     r.raise_for_status()
 
 
@@ -94,7 +104,7 @@ def move_continuous(cam: dict, pan: int = 0, tilt: int = 0, zoom: int = 0) -> No
         f"<zoom>{_clamp(zoom, (-100, 100))}</zoom>"
         "</PTZData>"
     )
-    r = requests.put(f"{_base(cam)}/continuous", data=body, auth=_auth(cam), timeout=_TIMEOUT)
+    r = _SESSION.put(f"{_base(cam)}/continuous", data=body, auth=_auth(cam), timeout=_TIMEOUT)
     r.raise_for_status()
 
 
@@ -104,7 +114,7 @@ def stop(cam: dict) -> None:
 
 def device_info(cam: dict) -> dict:
     """연결 확인용. 카메라 모델/펌웨어를 반환한다."""
-    r = requests.get(f"http://{cam['ip']}:{cam.get('http_port', 80)}/ISAPI/System/deviceInfo",
+    r = _SESSION.get(f"http://{cam['ip']}:{cam.get('http_port', 80)}/ISAPI/System/deviceInfo",
                      auth=_auth(cam), timeout=_TIMEOUT)
     r.raise_for_status()
     return {
