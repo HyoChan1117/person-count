@@ -9,7 +9,9 @@
 services:
   backend:
     ports:
-      - "8000:8000"
+      # 호스트 8000번이 Windows(Hyper-V) 동적 포트 제외 범위에 걸려 바인딩이 막힐 때가 있어
+      # 18000으로 옮겨뒀다. 컨테이너 내부 포트는 그대로 8000.
+      - "18000:8000"
     volumes:
       - ./backend/app:/app/app
       - ./backend/main.py:/app/main.py
