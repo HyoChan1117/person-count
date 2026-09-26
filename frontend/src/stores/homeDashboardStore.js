@@ -308,7 +308,7 @@ export const useHomeDashboardStore = defineStore('homeDashboard', () => {
   return {
     rooms, places, loading, error, stale, lastSuccessAt,
     totalJudgeable, totalUnknown, totalOccupied, occupancyPct, activeRooms,
-    recentDetections, unseenAlerts, primaryPatrol, patrolPlace, selectedPlaceId, collect, patrolBusy, analyzingRooms,
+    recentDetections, unseenAlerts, unseenList, primaryPatrol, patrolPlace, selectedPlaceId, collect, patrolBusy, analyzingRooms,
     start, stop, refresh, markSeen, markAllSeen, analyzeRoom, selectPlace,
     startPatrol, stopPatrol: stopPatrolAction, setAutoPatrol,
   }

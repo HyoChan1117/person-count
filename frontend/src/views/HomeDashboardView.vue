@@ -10,6 +10,9 @@
       @refresh="store.refresh()"
     />
 
+    <!-- 새 미등록 인물이 감지되면 헤더 바로 아래에서 알린다. 확인하면 사라지고, 새 감지가 오면 다시 뜬다 -->
+    <AlertBanner v-if="store.unseenAlerts > 0" class="shrink-0" :alerts="store.unseenList" @ack="store.markAllSeen()" />
+
     <section class="grid shrink-0 grid-cols-3 gap-gutter" aria-label="핵심 지표">
       <UiCard>
         <MetricStat label="전체 점유율" :value="store.occupancyPct ?? '–'" :unit="store.occupancyPct == null ? '' : '%'" :hint="occupancyHint" size="lg" tone="occupied" />
@@ -31,7 +34,8 @@
     <!-- 2xl(1536px) 미만에서는 우측 패널을 카드 그리드 아래로 내려 카드 폭을 확보한다 -->
     <div class="grid flex-none grid-cols-1 gap-section 2xl:min-h-0 2xl:flex-1 2xl:grid-cols-[minmax(0,1fr)_30rem]">
       <!-- 교실마다 가로로 긴 행 하나. 행 높이는 남는 세로를 균등하게 나눠 갖는다 -->
-      <section class="grid min-h-[36rem] auto-rows-fr grid-cols-1 gap-gutter" aria-label="교실별 점유율">
+      <!-- 2xl에서는 경고 배너(약 68px)가 떠도 1080 안에 들어오도록 최소 높이를 낮춘다. 그 미만에서는 이 최소 높이가 영역 높이를 지켜 준다 -->
+      <section class="grid min-h-[36rem] auto-rows-fr grid-cols-1 gap-gutter 2xl:min-h-[32rem]" aria-label="교실별 점유율">
         <template v-if="store.rooms.length">
           <ClassroomOccupancyCard
             v-for="room in store.rooms"
@@ -85,13 +89,17 @@ import { useHomeDashboardStore } from '@/stores/homeDashboardStore'
 import UiCard from '@/components/ui/UiCard.vue'
 import MetricStat from '@/components/ui/MetricStat.vue'
 import DashboardHeader from '@/components/home/DashboardHeader.vue'
+import AlertBanner from '@/components/home/AlertBanner.vue'
 import ClassroomOccupancyCard from '@/components/home/ClassroomOccupancyCard.vue'
 import PatrolStatusPanel from '@/components/home/PatrolStatusPanel.vue'
 import RecentDetectionsList from '@/components/home/RecentDetectionsList.vue'
 import ClassroomSummaryModal from '@/components/home/ClassroomSummaryModal.vue'
 import { countRoomStatuses, describeRoomCounts } from '@/utils/roomStatus'
+import { describeError } from '@/utils/errorMessage'
+import { useToast } from '@/composables/useToast'
 
 const store = useHomeDashboardStore()
+const toast = useToast()
 
 // 모달은 교실 id만 기억하고 값은 스토어에서 찾는다(2분마다 갱신되면 열려 있는 모달도 같이 바뀐다).
 const selectedRoomId = ref(null)
@@ -114,11 +122,16 @@ const ASIDE_ROWS = { 2: '2xl:grid-rows-2', 3: '2xl:grid-rows-3', 4: '2xl:grid-ro
 const asideRowsClass = computed(() => ASIDE_ROWS[Math.min(6, Math.max(2, store.rooms.length))])
 
 // 교실 카드의 '분석' 버튼. 실시간 추론이라 카메라가 응답하지 않으면 오래 걸릴 수 있어 실패를 따로 알린다.
+// alert() 대신 화면을 막지 않는 알림을 띄우고, 바로 다시 시도할 수 있게 한다.
 async function analyzeRoom(roomId) {
   try {
     await store.analyzeRoom(roomId)
   } catch (e) {
-    alert(`좌석 분석에 실패했습니다 — ${e.response?.data?.detail ?? e.message}`)
+    const name = store.rooms.find((r) => r.id === roomId)?.name
+    toast.error(`${name ? `${name} ` : ''}좌석 분석에 실패했습니다`, {
+      detail: describeError(e),
+      action: { label: '다시 시도', onClick: () => analyzeRoom(roomId) },
+    })
   }
 }
 
@@ -129,7 +142,7 @@ async function runPatrol(action) {
   try {
     await action(place)
   } catch (e) {
-    alert(e.response?.data?.detail ?? e.message)
+    toast.error('순찰 명령을 실행하지 못했습니다', { detail: describeError(e) })
   }
 }
 
