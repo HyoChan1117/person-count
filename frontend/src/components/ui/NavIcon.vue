@@ -38,5 +38,10 @@ const PATHS = {
   trash: '<path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 14h10l1-14"/><path d="M9 7V4h6v3"/>',
   image: '<rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m7 17 4-4 3 3 2-2 3 3"/>',
   pin: '<path d="M12 21s6-5.2 6-11a6 6 0 0 0-12 0c0 5.8 6 11 6 11z"/><circle cx="12" cy="10" r="2"/>',
+  // 알림(ToastHost)과 닫기 버튼용
+  check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8v.01"/>',
+  warn: '<path d="M12 4 3 20h18z"/><path d="M12 10v4"/><path d="M12 17v.01"/>',
+  close: '<path d="M6 6l12 12M18 6 6 18"/>',
 }
 </script>
