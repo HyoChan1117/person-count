@@ -69,3 +69,6 @@ backend/data/face/photos/*.jpg
 ecc/
 backend/*.pt
 /*.pt
+
+# 학교 로고
+logo.png

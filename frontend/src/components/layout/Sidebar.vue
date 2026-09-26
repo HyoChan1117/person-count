@@ -1,17 +1,29 @@
 <template>
   <aside class="ds-text flex h-screen w-60 shrink-0 flex-col border-r border-line bg-card">
-    <!-- 브랜드: 무엇을 하는 시스템인지 한 줄로 -->
+    <!-- 브랜드: 무엇을 하는 시스템인지 한 줄로.
+         홈에서는 본문 헤더에 학교 로고가 크게 있으므로 여기서는 반복하지 않고(로고는 화면당 한 번),
+         홈이 아닌 화면에서만 학교 로고를 이 자리에 작게 둔다. 두 모양의 높이가 같아 화면이 움직이지 않는다. -->
     <router-link
       to="/"
       class="flex h-[4.5rem] shrink-0 items-center gap-3 border-b border-line px-5 focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-fg-muted"
     >
-      <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-fg">
-        <NavIcon name="brand" :size="20" />
-      </span>
-      <span class="min-w-0">
-        <span class="block truncate text-base font-semibold leading-tight text-fg">교실 인원 카운트</span>
-        <span class="mt-0.5 block truncate text-xs text-fg-muted">좌석 점유 · 얼굴인식 순찰</span>
-      </span>
+      <template v-if="isHome">
+        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-line bg-canvas text-fg">
+          <NavIcon name="brand" :size="20" />
+        </span>
+        <span class="min-w-0">
+          <span class="block truncate text-base font-semibold leading-tight text-fg">교실 인원 카운트</span>
+          <span class="mt-0.5 block truncate text-xs text-fg-muted">좌석 점유 · 얼굴인식 순찰</span>
+        </span>
+      </template>
+      <template v-else>
+        <img :src="emblemUrl" alt="" class="h-12 w-auto shrink-0" />
+        <span class="min-w-0">
+          <!-- 흰색 글자 이미지라 라이트 테마(.dark 없음)에서는 어둡게 바꾼다 -->
+          <img :src="wordmarkUrl" alt="영진전문대학교 YEUNGJIN UNIVERSITY" class="block h-7 w-auto brightness-[.07] dark:brightness-100" />
+          <span class="mt-1 block truncate text-xs text-fg-muted">교실 인원 카운트</span>
+        </span>
+      </template>
     </router-link>
 
     <!-- 내비게이션 -->
@@ -91,6 +103,8 @@ import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import SystemPromptModal from '@/components/modals/SystemPromptModal.vue'
 import NavIcon from '@/components/ui/NavIcon.vue'
+import emblemUrl from '@/assets/yju-emblem.png'
+import wordmarkUrl from '@/assets/yju-wordmark.png'
 import { useAuthStore } from '@/stores/authStore'
 import { useThemeStore } from '@/stores/themeStore'
 import { SEAT_ACTIONS, FACE_ACTIONS } from '@/constants/navActions'
