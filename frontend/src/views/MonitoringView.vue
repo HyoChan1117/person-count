@@ -109,7 +109,8 @@
             </UiCard>
           </div>
 
-          <div class="grid grid-cols-2 items-start gap-gutter">
+          <!-- 두 카드는 항상 같은 높이(items-stretch). 시각을 골라 왼쪽 카드가 커져도 오른쪽이 함께 맞춰진다 -->
+          <div class="grid grid-cols-2 items-stretch gap-gutter">
             <UiCard>
               <SectionHeader title="시간대별 점유" description="교실 시간표 기준, 정각마다 점유 좌석 수 · 막대를 누르면 그 시각의 좌석을 보여 줍니다" />
               <HourlyBarChart class="mt-card" :hours="hourlyStats" :selected-hour="selectedHour" @select="toggleHour" />
