@@ -41,7 +41,8 @@
       <div class="grid min-h-0 flex-1 grid-cols-1 gap-gutter overflow-hidden xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)]">
 
         <!-- 미리보기 + 제어 -->
-        <div class="flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-card shadow-card">
+        <!-- 카드 폭을 컨테이너로 삼는다: 영상 상자가 남는 세로 공간을 다 먹어 영상보다 길어지지 않게 하려는 것(아래 미리보기 참고) -->
+        <div class="flex min-h-0 flex-col overflow-hidden rounded-card border border-line bg-card shadow-card [container-type:inline-size]">
           <div class="flex shrink-0 items-center justify-between border-b border-line px-card py-3">
             <span class="flex items-center gap-2 text-sm font-semibold text-fg">
               <span class="h-2 w-2 rounded-full bg-state-alert" /> PTZ 카메라
@@ -49,7 +50,7 @@
             <span class="text-xs text-fg-muted">조준용 미리보기 (탐지 없음)</span>
           </div>
           <!-- 조준용 미리보기에도 얼굴이 나올 수 있어 기본 블러. 조준하는 동안 유지되도록 자동 재블러는 끈다 -->
-          <BlurredImage :src="previewSrc" alt="PTZ 카메라 미리보기" :rounded="false" :auto-reblur-ms="0" class="min-h-0 w-full flex-1" />
+          <BlurredImage :src="previewSrc" alt="PTZ 카메라 미리보기" fit="contain" :rounded="false" :auto-reblur-ms="0" class="min-h-0 w-full flex-1 max-h-[calc(100cqw*9/16)]" />
 
           <!-- 방향 제어 (키보드로 조작, 아래 표시는 눌린 키를 보여준다) -->
           <div class="grid shrink-0 grid-cols-1 gap-gutter border-t border-line p-card lg:grid-cols-[auto_auto_minmax(14rem,22rem)] lg:items-center lg:justify-center">

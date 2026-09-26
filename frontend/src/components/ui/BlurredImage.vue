@@ -11,8 +11,11 @@
     <img
       :src="src"
       :alt="alt"
-      class="h-full w-full object-cover transition-[filter] duration-200"
-      :class="revealed ? '' : 'scale-110 blur-xl'"
+      class="h-full w-full transition-[filter] duration-200"
+      :class="[
+        fit === 'contain' ? 'object-contain' : 'object-cover',
+        revealed ? '' : (fit === 'contain' ? 'blur-xl' : 'scale-110 blur-xl'),
+      ]"
       loading="lazy"
     />
     <span
@@ -32,6 +35,9 @@ const props = defineProps({
   alt: { type: String, default: '' },
   rounded: { type: Boolean, default: true },
   autoReblurMs: { type: Number, default: 15000 },
+  // 'cover'는 상자를 꽉 채우려고 가장자리를 자른다(썸네일용). 'contain'은 원본 전체를 보여 준다(조준·확인용).
+  // contain에서는 블러 가장자리를 가리는 확대(scale-110)도 쓰지 않는다 — 확대하면 그만큼 또 잘린다.
+  fit: { type: String, default: 'cover', validator: (v) => v === 'cover' || v === 'contain' },
 })
 const emit = defineEmits(['reveal', 'reblur', 'zoom'])
 
