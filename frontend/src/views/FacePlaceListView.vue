@@ -31,6 +31,8 @@
         <router-link to="/face" class="shrink-0 text-base text-fg-muted underline underline-offset-4 transition-colors hover:text-fg">선택 취소</router-link>
       </div>
 
+      <p v-if="deleteError" role="alert" class="mb-section rounded-card border border-line bg-card px-card py-gutter text-base text-fg">{{ deleteError }}</p>
+
       <p v-if="loading" class="py-20 text-center text-base text-fg-muted">불러오는 중...</p>
 
       <ErrorNotice
@@ -64,7 +66,16 @@
         >
           <div class="flex items-start justify-between gap-2">
             <h2 class="min-w-0 truncate text-xl font-semibold text-fg" :title="p.name">{{ p.name }}</h2>
-            <span class="rounded-full border border-line px-2.5 py-0.5 text-xs text-fg-muted">PTZ</span>
+            <div class="flex shrink-0 items-center gap-2">
+              <span class="rounded-full border border-line px-2.5 py-0.5 text-xs text-fg-muted">PTZ</span>
+              <button
+                v-if="auth.isAdmin && !actionMeta"
+                type="button"
+                :class="LINK_QUIET"
+                :aria-label="`${p.name} 삭제`"
+                @click.stop="deletePlace(p)"
+              >삭제</button>
+            </div>
           </div>
 
           <dl class="mt-card grid grid-cols-2 gap-gutter">
@@ -130,6 +141,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/api'
+import { useAuthStore } from '@/stores/authStore'
 import { FACE_ACTIONS } from '@/constants/navActions'
 import UiCard from '@/components/ui/UiCard.vue'
 import ErrorNotice from '@/components/ui/ErrorNotice.vue'
@@ -143,8 +155,12 @@ const BTN_MAIN_LINK = `flex-1 rounded-lg bg-fg py-2.5 text-center text-sm font-s
 const BTN_SUB = `flex-1 rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-fg-muted transition-colors hover:border-fg-muted/60 hover:text-fg ${FOCUS}`
 const BTN_SUB_LINK = `flex-1 rounded-lg border border-line py-2.5 text-center text-sm font-medium text-fg-muted transition-colors hover:border-fg-muted/60 hover:text-fg ${FOCUS}`
 
+const LINK_QUIET = `shrink-0 rounded-md px-2 py-0.5 text-sm text-fg-muted transition-colors hover:text-fg ${FOCUS}`
+
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
+const deleteError = ref('')
 const places = ref([])
 const classrooms = ref([])
 const peopleCount = ref(0)
@@ -201,6 +217,17 @@ async function createPlace() {
   showForm.value = false
   form.value = { name: '', classroomId: classrooms.value[0]?.id ?? null }
   await fetchPlaces()
+}
+
+async function deletePlace(place) {
+  if (!confirm(`"${place.name}" 장소를 삭제하시겠습니까?\n등록한 카메라 설정과 순찰 구역도 함께 삭제됩니다.`)) return
+  deleteError.value = ''
+  try {
+    await api.delete(`/face/places/${place.id}`)
+    await fetchPlaces()
+  } catch (e) {
+    deleteError.value = `"${place.name}" 장소를 삭제하지 못했습니다: ${e.response?.data?.detail ?? e.message}`
+  }
 }
 
 onMounted(fetchPlaces)
