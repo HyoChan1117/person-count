@@ -840,9 +840,74 @@
       }
     },
     {
-      "id": 4,
-      "name": "창조관 304호",
-      "cameras": [],
+      "id": 6,
+      "name": "EXCO",
+      "cameras": [
+        {
+          "camera_id": "CMUJXN81C",
+          "name": "WIDE",
+          "ip_address": "192.168.50.132",
+          "rtsp_url": "rtsp://admin:gsctest01A!@192.168.50.132:554/Streaming/Channels/201",
+          "roi_polygon": [],
+          "seat_ids": [],
+          "seat_lines": {
+            "A1": [
+              [
+                1039,
+                746
+              ],
+              [
+                1028,
+                1383
+              ],
+              [
+                1400,
+                727
+              ],
+              [
+                1377,
+                1392
+              ]
+            ],
+            "A2": [
+              [
+                1402,
+                730
+              ],
+              [
+                1377,
+                1392
+              ],
+              [
+                1749,
+                721
+              ],
+              [
+                1751,
+                1400
+              ]
+            ],
+            "A3": [
+              [
+                1754,
+                713
+              ],
+              [
+                1760,
+                1375
+              ],
+              [
+                2078,
+                721
+              ],
+              [
+                2120,
+                1381
+              ]
+            ]
+          }
+        }
+      ],
       "prompt": null,
       "yolo_model": "yolov8x",
       "conf_threshold": null,
@@ -850,9 +915,9 @@
       "yolo_llm_conf_threshold": null,
       "yolo_llm_yolo_model": "yolo26x-pose",
       "schedule": null,
-      "created_at": "2026-09-21T18:48:07.126970",
-      "updated_at": "2026-09-21T18:48:07.126970"
+      "created_at": "2026-09-27T23:02:55.404968",
+      "updated_at": "2026-09-27T23:48:59.513207"
     }
   ],
-  "next_id": 6
+  "next_id": 7
 }

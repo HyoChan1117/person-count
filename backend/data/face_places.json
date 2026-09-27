@@ -844,38 +844,6 @@
       ],
       "next_zone_id": 13,
       "auto_patrol": false
-    },
-    {
-      "id": 7,
-      "name": "창조관 304호",
-      "classroom_id": 4,
-      "camera": {
-        "ip": "192.168.50.132",
-        "username": "admin",
-        "password": "gsctest01A!",
-        "http_port": 80,
-        "rtsp_port": 554,
-        "channel_code": "101",
-        "control_channel": 1
-      },
-      "zones": [],
-      "next_zone_id": 1
-    },
-    {
-      "id": 8,
-      "name": "창조관 405호",
-      "classroom_id": 5,
-      "camera": {
-        "ip": "",
-        "username": "",
-        "password": "",
-        "http_port": 80,
-        "rtsp_port": 554,
-        "channel_code": "101",
-        "control_channel": 1
-      },
-      "zones": [],
-      "next_zone_id": 1
     }
   ],
   "next_id": 9

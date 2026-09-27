@@ -1,0 +1,31 @@
+{
+  "snapshots": [
+    {
+      "ts": "2026-09-28T00:10:09",
+      "seats": {
+        "A1": "empty",
+        "A2": "empty",
+        "A3": "empty"
+      },
+      "bucket": 2984203
+    },
+    {
+      "ts": "2026-09-28T00:20:09",
+      "seats": {
+        "A1": "empty",
+        "A2": "empty",
+        "A3": "empty"
+      },
+      "bucket": 2984204
+    },
+    {
+      "ts": "2026-09-28T00:30:08",
+      "seats": {
+        "A1": "empty",
+        "A2": "empty",
+        "A3": "empty"
+      },
+      "bucket": 2984205
+    }
+  ]
+}
