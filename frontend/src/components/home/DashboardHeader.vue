@@ -13,7 +13,7 @@
           <span class="h-1 w-1 rounded-full bg-fg-muted" aria-hidden="true" />
           <span class="text-sm font-medium tracking-[0.14em]">YEUNGJIN UNIVERSITY</span>
         </p>
-        <h1 class="text-3xl font-bold tracking-tight text-fg">교실 인원 카운트</h1>
+        <h1 class="text-3xl font-bold tracking-tight text-fg">스마트 강의실 도우미</h1>
         <!-- 갱신에 실패해 낡은 숫자를 보여 주는 중이면 부제 자리에 알린다(높이는 그대로) -->
         <p v-if="stale" role="status" class="mt-1 flex items-center gap-3 text-lg">
           <span class="rounded-full border border-fg-muted/60 px-3 py-0.5 text-base font-semibold text-fg">데이터가 오래되었습니다</span>

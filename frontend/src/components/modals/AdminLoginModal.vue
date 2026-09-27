@@ -3,7 +3,7 @@
     <div class="w-full max-w-sm rounded-card border border-line bg-card p-card shadow-xl">
       <div class="mb-card">
         <p class="text-xs font-semibold uppercase tracking-wide text-fg-muted">관리자</p>
-        <h2 class="mt-1 text-xl font-bold text-fg">교실 인원 카운트</h2>
+        <h2 class="mt-1 text-xl font-bold text-fg">스마트 강의실 도우미</h2>
         <p class="mt-1 text-sm text-fg-muted">관리자 로그인이 필요합니다.</p>
       </div>
       <form class="space-y-3" @submit.prevent="submit">

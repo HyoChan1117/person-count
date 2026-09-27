@@ -12,7 +12,7 @@
           <NavIcon name="brand" :size="20" />
         </span>
         <span class="min-w-0">
-          <span class="block truncate text-base font-semibold leading-tight text-fg">교실 인원 카운트</span>
+          <span class="block truncate text-base font-semibold leading-tight text-fg">스마트 강의실 도우미</span>
           <span class="mt-0.5 block truncate text-xs text-fg-muted">좌석 점유 · 얼굴인식 순찰</span>
         </span>
       </template>
@@ -21,7 +21,7 @@
         <span class="min-w-0">
           <!-- 흰색 글자 이미지라 라이트 테마(.dark 없음)에서는 어둡게 바꾼다 -->
           <img :src="wordmarkUrl" alt="영진전문대학교 YEUNGJIN UNIVERSITY" class="block h-7 w-auto brightness-[.07] dark:brightness-100" />
-          <span class="mt-1 block truncate text-xs text-fg-muted">교실 인원 카운트</span>
+          <span class="mt-1 block truncate text-xs text-fg-muted">스마트 강의실 도우미</span>
         </span>
       </template>
     </router-link>
