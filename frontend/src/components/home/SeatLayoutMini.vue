@@ -3,7 +3,7 @@
     v-if="box"
     :viewBox="`${box.x} ${box.y} ${box.w} ${box.h}`"
     :style="{ aspectRatio: `${box.w} / ${box.h}` }"
-    class="h-full"
+    class="h-full max-w-full"
     preserveAspectRatio="xMidYMid meet"
     role="img"
     :aria-label="label"

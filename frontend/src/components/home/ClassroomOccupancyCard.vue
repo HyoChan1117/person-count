@@ -15,7 +15,7 @@
       <StatusBadge :status="badge.status" :label="badge.label" size="lg" />
     </div>
 
-    <div class="min-w-0 flex-1">
+    <div class="min-w-32 flex-1">
       <div class="flex items-baseline gap-1">
         <span class="text-metric-sm tabular-nums" :class="pct > 0 ? 'text-state-occupied' : 'text-fg-muted'">{{ pct ?? '–' }}</span>
         <span v-if="pct != null" class="text-xl text-fg-muted">%</span>
@@ -27,8 +27,9 @@
     </div>
 
     <!-- 배치도의 책상 배치만 가져와 좌석 상태색으로 칠한다(클릭은 카드 전체 버튼에 맡긴다).
-         카드 높이를 다 쓰지 않고 한 겹 줄여 카드 안에서 숨 쉴 여백을 남긴다 -->
-    <div v-if="room.map" class="flex h-3/4 shrink-0 items-center">
+         카드 높이를 다 쓰지 않고 한 겹 줄여 카드 안에서 숨 쉴 여백을 남긴다.
+         책상이 옆으로 멀리 떨어진 교실은 배치도가 카드보다 넓어지므로 폭을 카드의 45%로 묶는다 -->
+    <div v-if="room.map" class="flex h-3/4 min-w-0 max-w-[45%] items-center justify-end">
       <SeatLayoutMini :map="room.map" :seat-states="seatStates" />
     </div>
     <SeatMiniBar v-else-if="room.seats.length" :seats="room.seats" class="w-48 shrink-0" />
