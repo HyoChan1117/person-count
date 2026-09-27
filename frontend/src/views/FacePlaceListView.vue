@@ -2,9 +2,22 @@
   <div class="ds-root h-full overflow-y-auto p-section">
     <div class="mx-auto max-w-[1680px]">
       <header class="mb-section flex items-end justify-between gap-section">
-        <div class="min-w-0">
-          <h1 class="text-3xl font-bold tracking-tight text-fg">얼굴 인식</h1>
-          <p class="mt-1 text-lg text-fg-muted">감시 장소를 등록하고 PTZ 카메라와 순찰 구역을 관리합니다</p>
+        <div class="flex min-w-0 items-center gap-6">
+          <img :src="emblemUrl" alt="영진전문대학교 엠블럼" class="h-16 w-auto shrink-0" />
+          <!-- 2xl 이상: 공식 학교명 글자(한글·영문)를 엠블럼 옆에 둔다.
+               글자가 흰색 이미지라 라이트 테마(.dark 없음)에서는 어둡게 바꾼다 -->
+          <img :src="wordmarkUrl" alt="영진전문대학교 YEUNGJIN UNIVERSITY" class="hidden h-9 w-auto shrink-0 brightness-[.07] dark:brightness-100 2xl:block" />
+          <div class="hidden h-12 w-px shrink-0 bg-line 2xl:block" aria-hidden="true" />
+          <div class="min-w-0">
+            <!-- 2xl 미만: 공식 글자가 들어갈 자리가 없어 작은 학교명 줄로 대신한다 -->
+            <p class="mb-1 flex items-center gap-2.5 text-base font-semibold text-fg-muted 2xl:hidden">
+              <span>영진전문대학교</span>
+              <span class="h-1 w-1 rounded-full bg-fg-muted" aria-hidden="true" />
+              <span class="text-sm font-medium tracking-[0.14em]">YEUNGJIN UNIVERSITY</span>
+            </p>
+            <h1 class="text-3xl font-bold tracking-tight text-fg">얼굴 인식</h1>
+            <p class="mt-1 text-lg text-fg-muted">감시 장소를 등록하고 PTZ 카메라와 순찰 구역을 관리합니다</p>
+          </div>
         </div>
 
         <div class="flex shrink-0 items-center gap-gutter">
@@ -146,6 +159,8 @@ import { FACE_ACTIONS } from '@/constants/navActions'
 import UiCard from '@/components/ui/UiCard.vue'
 import ErrorNotice from '@/components/ui/ErrorNotice.vue'
 import NavIcon from '@/components/ui/NavIcon.vue'
+import emblemUrl from '@/assets/yju-emblem.png'
+import wordmarkUrl from '@/assets/yju-wordmark.png'
 
 const FOCUS = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-fg-muted'
 const INPUT = `rounded-lg border border-line bg-canvas px-3 py-2.5 text-sm text-fg placeholder:text-fg-muted focus:outline-none focus-visible:border-fg-muted ${FOCUS}`
