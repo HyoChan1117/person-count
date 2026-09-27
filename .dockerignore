@@ -1,0 +1,20 @@
+# 리포 루트를 빌드 컨텍스트로 쓰는 빌드(jetson/backend.Dockerfile)용.
+# 각 서비스 자체 빌드(backend/, frontend/)는 그 안의 .dockerignore를 따로 쓴다.
+
+.git/
+.claude/
+venv/
+*.pt
+
+backend/data/
+backend/models/
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/**/__pycache__/
+backend/.env*
+!backend/.env.example
+
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
